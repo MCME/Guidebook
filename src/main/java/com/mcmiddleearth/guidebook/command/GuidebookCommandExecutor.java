@@ -52,6 +52,7 @@ public class GuidebookCommandExecutor implements CommandExecutor {
         addCommandHandler("title", new GuidebookTitle(permissionStaff));
         addCommandHandler("on", new GuidebookOn(permission));
         addCommandHandler("off", new GuidebookOff(permission));
+        addCommandHandler("reload", new GuidebookReload(permissionStaff));
         addCommandHandler("dev", new GuidebookDev(permissionStaff));
     }
     

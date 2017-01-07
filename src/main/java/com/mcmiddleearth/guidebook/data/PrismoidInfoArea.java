@@ -16,6 +16,7 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
+import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -32,6 +33,7 @@ public class PrismoidInfoArea extends InfoArea {
     
     public PrismoidInfoArea(ConfigurationSection config) {
         super(config);
+        DevUtil.log("LoadCuboid "+config);
         region = PrismoidRegion.load(config);
     }
     

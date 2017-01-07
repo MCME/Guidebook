@@ -16,6 +16,7 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
+import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -46,8 +47,10 @@ public class CuboidInfoArea extends InfoArea {
             Vector maxPos = new Vector(center.getBlockX()+sizeX/2,
                                        center.getBlockY()+sizeY/2,
                                        center.getBlockZ()+sizeZ/2);
+            DevUtil.log("CreateCuboid "+center+"     "+minPos+"    "+maxPos);
             region = new CuboidRegion(center,minPos, maxPos);
         } else {
+            DevUtil.log("loadCuboid "+config);
             region = CuboidRegion.load(config);
         }
     }

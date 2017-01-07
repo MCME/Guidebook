@@ -17,6 +17,7 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
+import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.FileUtil;
 import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
@@ -70,6 +71,8 @@ public class PluginData {
     }
     
     public static InfoArea deleteInfoArea(String name) {
+        InfoArea area = infoAreas.get(name);
+        area.clearInformedPlayers();
         return infoAreas.remove(name);
     }
     
@@ -91,6 +94,7 @@ public class PluginData {
     
     public static void saveData() throws IOException {
         for(String areaName : infoAreas.keySet()) {
+            DevUtil.log("SaveData "+areaName);
             FileConfiguration config = new YamlConfiguration();
             infoAreas.get(areaName).save(config);
             File worldFolder = new File(dataFolder,infoAreas.get(areaName).getLocation().getWorld().getName());
@@ -103,12 +107,16 @@ public class PluginData {
     }
     
     public static void loadData() {
+        for(InfoArea area:infoAreas.values()) {
+            area.clearInformedPlayers();
+        }
         infoAreas.clear();
             File[] worldFolders = dataFolder.listFiles(FileUtil.getDirFilter());
             for(File folder: worldFolders) {
                 File[] dataFiles = folder.listFiles(FileUtil.getFileExtFilter("yml"));
                 for(File dataFile : dataFiles) {
                     String areaName = FileUtil.getShortName(dataFile);
+                    DevUtil.log("Load area "+areaName);
                     FileConfiguration config = new YamlConfiguration();
                     try {
                         config.load(dataFile);

@@ -19,6 +19,7 @@ package com.mcmiddleearth.guidebook.data;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.command.GuidebookShow;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
+import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.InputUtil;
 import com.mcmiddleearth.pluginutil.TitleUtil;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
@@ -150,6 +151,11 @@ public abstract class InfoArea {
         }
     }
     public void save(ConfigurationSection config) {
+        /*if(region.getLocation()==null) {
+            GuidebookPlugin.getPluginInstance().getLogger().warning("Save region call with NULL location.");
+            return;
+        }*/
+        DevUtil.log("saveInfo "+config+" "+region.toString());
         region.save(config);
         config.set("description", description);
         config.set("title",title);
