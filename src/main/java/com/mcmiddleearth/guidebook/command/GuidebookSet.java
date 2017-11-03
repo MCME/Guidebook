@@ -94,7 +94,7 @@ public class GuidebookSet extends GuidebookCommand implements Confirmationable{
                 area = new SphericalInfoArea(location, radius);
             }
             PluginData.addInfoArea(areaName, area);
-            saveData(cs);
+            saveData(cs,area);
             sendNewAreaMessage(cs);
         }/*
         else {
@@ -150,9 +150,9 @@ public class GuidebookSet extends GuidebookCommand implements Confirmationable{
         }
     }
 
-    private void saveData(CommandSender cs){
+    private void saveData(CommandSender cs, InfoArea area){
         try {
-            PluginData.saveData();
+            PluginData.saveData(area);
         } catch (IOException ex) {
             sendIOErrorMessage(cs);
             Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
@@ -176,7 +176,7 @@ public class GuidebookSet extends GuidebookCommand implements Confirmationable{
         }
         area.setDescription(description);
         PluginData.addInfoArea(areaName, area);
-        saveData(player);
+        saveData(player,area);
         sendCenterSetMessage(player);
     }
     /*@Override

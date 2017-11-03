@@ -55,7 +55,7 @@ public class GuidebookDescription extends GuidebookCommand{
                         try {
                             area.setDescription((BookMeta) handItem.getItemMeta());
                             try {
-                                PluginData.saveData();
+                                PluginData.saveData(area);
                             } catch (IOException ex) {
                                 sendIOErrorMessage(player);
                                 Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
@@ -85,14 +85,14 @@ public class GuidebookDescription extends GuidebookCommand{
         return areaDescription;
     }
 
-    private void saveData(CommandSender cs){
+    /*private void saveData(CommandSender cs){
         try {
             PluginData.saveData();
         } catch (IOException ex) {
             sendIOErrorMessage(cs);
             Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
+    }*/
     
     private void sendAlreadyConversing(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You are already in a converstion.");

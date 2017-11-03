@@ -114,14 +114,14 @@ Logger.getGlobal().info("Desc*** "+areaDescription);
         return areaDescription;
     }
 
-    private void saveData(CommandSender cs){
+    /*private void saveData(CommandSender cs){
         try {
             PluginData.saveData();
         } catch (IOException ex) {
             sendIOErrorMessage(cs);
             Logger.getLogger(GuidebookTitle.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
+    }*/
     
     private void sendAlreadyConversing(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You are already in a converstion.");

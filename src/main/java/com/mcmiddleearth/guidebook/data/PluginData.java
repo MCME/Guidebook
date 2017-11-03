@@ -96,17 +96,19 @@ public class PluginData {
         excludedPlayers.add(player.getUniqueId());
     }
     
-    public static void saveData() throws IOException {
+    public static void saveData(InfoArea area) throws IOException {
         for(String areaName : infoAreas.keySet()) {
-            DevUtil.log("SaveData "+areaName);
-            FileConfiguration config = new YamlConfiguration();
-            infoAreas.get(areaName).save(config);
-            File worldFolder = getWorldFolder(areaName);
-            if(!worldFolder.exists()) {
-                worldFolder.mkdir();
+            if(infoAreas.get(areaName)==area) {
+                DevUtil.log("SaveData "+areaName);
+                FileConfiguration config = new YamlConfiguration();
+                infoAreas.get(areaName).save(config);
+                File worldFolder = getWorldFolder(areaName);
+                if(!worldFolder.exists()) {
+                    worldFolder.mkdir();
+                }
+                File dataFile = getDataFile(worldFolder,areaName);  
+                config.save(dataFile);
             }
-            File dataFile = getDataFile(worldFolder,areaName);  
-            config.save(dataFile);
         }
     }
     

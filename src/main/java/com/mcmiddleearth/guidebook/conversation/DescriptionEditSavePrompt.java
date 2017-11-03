@@ -43,7 +43,7 @@ public class DescriptionEditSavePrompt extends MessagePrompt{
         InfoArea area = (InfoArea) cc.getSessionData("area");
         if((Boolean) cc.getSessionData("save")) {
             try {
-                PluginData.saveData();
+                PluginData.saveData(area);
             } catch (IOException ex) {
                 sendIOErrorMessage(player);
                 Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
