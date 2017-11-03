@@ -45,16 +45,11 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
 
     @Override
     public void confirmed(Player player) {
-        PluginData.deleteInfoArea(areaName);
-        try {
-            PluginData.saveData();
-        } catch (IOException ex) {
-            sendIOErrorMessage(player);
-            Logger.getLogger(GuidebookDelete.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil().sendErrorMessage(player, "There was an error.");
-            return;
+        if(PluginData.deleteInfoArea(areaName)) {
+            PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook area was deleted.");
+        } else {
+            PluginData.getMessageUtil().sendErrorMessage(player, "There was an error while deleting the data file from disk.");
         }
-        PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook area was deleted.");
     }
 
     @Override

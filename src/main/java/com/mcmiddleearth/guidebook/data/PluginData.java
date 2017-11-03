@@ -70,10 +70,14 @@ public class PluginData {
         return infoAreas.put(name, newArea);
     }
     
-    public static InfoArea deleteInfoArea(String name) {
+    public static boolean deleteInfoArea(String name) {
         InfoArea area = infoAreas.get(name);
         area.clearInformedPlayers();
-        return infoAreas.remove(name);
+        boolean result = getDataFile(getWorldFolder(name),name).delete();
+        if(result) {
+            infoAreas.remove(name);
+        }
+        return result;
     }
     
     public static InfoArea getInfoArea(String name) {
@@ -97,12 +101,12 @@ public class PluginData {
             DevUtil.log("SaveData "+areaName);
             FileConfiguration config = new YamlConfiguration();
             infoAreas.get(areaName).save(config);
-            File worldFolder = new File(dataFolder,infoAreas.get(areaName).getLocation().getWorld().getName());
+            File worldFolder = getWorldFolder(areaName);
             if(!worldFolder.exists()) {
                 worldFolder.mkdir();
             }
-            File dataFile = new File(worldFolder, areaName+".yml");
-            config.save(dataFile);    
+            File dataFile = getDataFile(worldFolder,areaName);  
+            config.save(dataFile);
         }
     }
     
@@ -137,6 +141,14 @@ public class PluginData {
                     }
                 }
         }
+    }
+    
+    private static File getWorldFolder(String areaName) {
+        return new File(dataFolder,infoAreas.get(areaName).getLocation().getWorld().getName());        
+    }
+    
+    private static File getDataFile(File folder, String areaName) {
+        return new File(folder, areaName+".yml");
     }
     
     public static void disable() {

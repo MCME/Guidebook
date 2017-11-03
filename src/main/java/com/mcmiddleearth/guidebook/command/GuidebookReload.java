@@ -5,12 +5,8 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 /**
  *
@@ -27,6 +23,7 @@ public class GuidebookReload extends GuidebookCommand{
     @Override
     protected void execute(CommandSender cs, String... args) {
         PluginData.loadData();
+        PluginData.getMessageUtil().sendInfoMessage(cs, "All guidebook areas reloaded from file.");
     }
     
 }
