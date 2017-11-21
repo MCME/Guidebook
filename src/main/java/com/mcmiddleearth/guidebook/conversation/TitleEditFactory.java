@@ -69,7 +69,7 @@ public class TitleEditFactory implements ConversationAbandonedListener{
         InfoArea area = (InfoArea) cc.getSessionData("area");
         if (abandonedEvent.gracefulExit()) {
             try {
-                PluginData.saveData(area);
+                PluginData.saveArea(area);
             } catch (IOException ex) {
                 sendIOErrorMessage(player);
                 Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);

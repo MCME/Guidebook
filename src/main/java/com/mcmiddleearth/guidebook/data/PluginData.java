@@ -25,8 +25,10 @@ import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -50,7 +52,7 @@ public class PluginData {
     @Getter
     private final static Map<String, InfoArea> infoAreas = new HashMap<>();
     
-    private final static Set<UUID> excludedPlayers = new HashSet<>();
+    private static Set<UUID> excludedPlayers = new HashSet<>();
     
     @Getter
     private static final File dataFolder = GuidebookPlugin.getPluginInstance().getDataFolder();
@@ -96,7 +98,18 @@ public class PluginData {
         excludedPlayers.add(player.getUniqueId());
     }
     
-    public static void saveData(InfoArea area) throws IOException {
+    public static void saveExcluded() throws IOException {
+        FileConfiguration config = GuidebookPlugin.getPluginInstance().getConfig();
+        ArrayList<String> tempList = new ArrayList<>(); 
+        for(UUID id: excludedPlayers) {
+            tempList.add(id.toString());
+        }
+        config.set("excludedPlayers", tempList);
+        GuidebookPlugin.getPluginInstance().saveConfig();
+Logger.getGlobal().info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    }
+    
+    public static void saveArea(InfoArea area) throws IOException {
         for(String areaName : infoAreas.keySet()) {
             if(infoAreas.get(areaName)==area) {
                 DevUtil.log("SaveData "+areaName);
@@ -113,6 +126,13 @@ public class PluginData {
     }
     
     public static void loadData() {
+        FileConfiguration config = GuidebookPlugin.getPluginInstance().getConfig();
+        excludedPlayers = new HashSet<UUID>();
+        List<String> tempList = new ArrayList<>();
+        tempList =  config.getStringList("excludedPlayers");
+        for(String id: tempList) {
+            excludedPlayers.add(UUID.fromString(id));
+        }
         for(InfoArea area:infoAreas.values()) {
             area.clearInformedPlayers();
         }
@@ -123,7 +143,7 @@ public class PluginData {
                 for(File dataFile : dataFiles) {
                     String areaName = FileUtil.getShortName(dataFile);
                     DevUtil.log("Load area "+areaName);
-                    FileConfiguration config = new YamlConfiguration();
+                    config = new YamlConfiguration();
                     try {
                         config.load(dataFile);
                         if(SphericalRegion.isValidConfig(config)) {
@@ -154,6 +174,11 @@ public class PluginData {
     }
     
     public static void disable() {
+        try {
+            saveExcluded();
+        } catch (IOException ex) {
+            Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
+        }
         for(InfoArea area: infoAreas.values()) {
             area.clearInformedPlayers();
         }

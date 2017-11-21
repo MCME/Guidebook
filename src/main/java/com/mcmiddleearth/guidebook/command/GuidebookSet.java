@@ -152,7 +152,7 @@ public class GuidebookSet extends GuidebookCommand implements Confirmationable{
 
     private void saveData(CommandSender cs, InfoArea area){
         try {
-            PluginData.saveData(area);
+            PluginData.saveArea(area);
         } catch (IOException ex) {
             sendIOErrorMessage(cs);
             Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);

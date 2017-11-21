@@ -1,6 +1,6 @@
 name: Guidebook
 main: com.mcmiddleearth.guidebook.GuidebookPlugin
-version: 1.0.1
+version: 1.0.2
 description: sending information about places via chat messages
 load: POSTWORLD
 softdepend: [Multiverse-Core]

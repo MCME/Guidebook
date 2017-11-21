@@ -55,7 +55,7 @@ public class GuidebookDescription extends GuidebookCommand{
                         try {
                             area.setDescription((BookMeta) handItem.getItemMeta());
                             try {
-                                PluginData.saveData(area);
+                                PluginData.saveArea(area);
                             } catch (IOException ex) {
                                 sendIOErrorMessage(player);
                                 Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);

@@ -74,7 +74,7 @@ public class GuidebookSize extends GuidebookCommand{
                 ((PrismoidInfoArea)area).setHeight(data[0],data[1]);
             }
             try {
-                PluginData.saveData(area);
+                PluginData.saveArea(area);
             } catch (IOException ex) {
                 sendIOErrorMessage(cs);
                 Logger.getLogger(GuidebookSize.class.getName()).log(Level.SEVERE, null, ex);
