@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 MCME
+ *  Copyright (C) 2016 MCME
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,23 +16,26 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
+import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.command.CommandSender;
 
 /**
  *
  * @author Fraspace5
  */
-public class GuidebookDis extends GuidebookCommand {
+public class GuidebookEnable extends GuidebookCommand {
 
-    public GuidebookDis(String... permissionNodes) {
+    public GuidebookEnable(String... permissionNodes) {
         super(1, true, permissionNodes);
-        setShortDescription(": Disable a guidebook");
-        setUsageDescription(" To use that command type /guidebook disable guidebook");
+        setShortDescription(": Enable a guidebook");
+        setUsageDescription(" To use that command type /guidebook enable guidebook");
     }
 
-    //guidebook disable guidebookname
+    //guidebook enable guidebookname
     //           0        1       
     @Override
     protected void execute(CommandSender cs, String... args) {
@@ -41,8 +44,16 @@ public class GuidebookDis extends GuidebookCommand {
 
             if (PluginData.getInfoAreas().containsKey(args[0])) {
 
-                PluginData.getInfoArea(args[0]).statusOff();
-                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " Disabled");
+                InfoArea area = PluginData.getInfoArea(args[0]);
+                area.statusOn();
+
+                try {
+                    PluginData.saveArea(area);
+                } catch (IOException ex) {
+                    Logger.getLogger(GuidebookEnable.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " Enabled");
 
             } else {
                 PluginData.getMessageUtil().sendErrorMessage(cs, "This area doesn't exist");
@@ -50,7 +61,7 @@ public class GuidebookDis extends GuidebookCommand {
 
         } else {
 
-            PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Usage! /guidebook disable guidebook");
+            PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Usage! /guidebook enable guidebook");
 
         }
 

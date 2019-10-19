@@ -27,9 +27,9 @@ import org.bukkit.command.CommandSender;
  *
  * @author Fraspace5
  */
-public class GuidebookRen extends GuidebookCommand {
+public class GuidebookRename extends GuidebookCommand {
 
-    public GuidebookRen(String... permissionNodes) {
+    public GuidebookRename(String... permissionNodes) {
         super(1, true, permissionNodes);
         setShortDescription(": Rename a guidebook");
         setUsageDescription(" To use that command type /guidebook rename oldname newname");
@@ -54,7 +54,7 @@ public class GuidebookRen extends GuidebookCommand {
                 try {
                     PluginData.saveArea(area);
                 } catch (IOException ex) {
-                    Logger.getLogger(GuidebookRen.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(GuidebookRename.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
             } else {

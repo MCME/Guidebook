@@ -101,6 +101,7 @@ public abstract class InfoArea {
             subtitle = (String) config.get("subtitle");
             showScoreboard = config.getBoolean("showScoreboard");
             showTitle = config.getBoolean("showTitle");
+            status = config.getBoolean("enabled",true);
         }
         if(config.isList("description")) {
             this.description = config.getStringList("description");
@@ -131,6 +132,7 @@ public abstract class InfoArea {
     public boolean isInside(Location loc) {
         return region.isInside(loc);
     }
+    
     public boolean isEnable(){
         
         return status;
@@ -138,12 +140,12 @@ public abstract class InfoArea {
     }
     
     public void statusOn(){
-    status = true;
+        status = true;
     
     }
     
     public void statusOff(){
-    status = false;
+        status = false;
     
     }
     
@@ -181,6 +183,7 @@ public abstract class InfoArea {
         config.set("subtitle",subtitle);
         config.set("showScoreboard", showScoreboard);
         config.set("showTitle",showTitle);
+        config.set("enabled",status);
     }
    
     private void welcomePlayer(final Player player) {
