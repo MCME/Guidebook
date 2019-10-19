@@ -9,7 +9,7 @@ api-version: 1.13
 commands:
     guidebook:
         description: manage guidebook areas
-        usage: invalid subcommand
+        
 permissions:
     guidebook.staff:
         description: Gives access to all guidebook commands

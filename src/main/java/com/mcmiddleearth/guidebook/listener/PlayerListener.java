@@ -40,7 +40,8 @@ public class PlayerListener implements Listener{
         Location playerLocation = player.getLocation();
         for(String key : PluginData.getInfoAreas().keySet()) {
             InfoArea area = PluginData.getInfoAreas().get(key);
-            if(area.isInside(playerLocation) && !area.isInfomed(player)) { 
+            
+            if(area.isInside(playerLocation) && !area.isInfomed(player) && area.isEnable() == true) { 
                 area.addInformedPlayer(player);
             }
             if(!area.isNear(playerLocation)) {

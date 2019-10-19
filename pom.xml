@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mcmiddleearth.com</groupId>
     <artifactId>Guidebook</artifactId>
-    <version>1.1_SNAPSHOT_01</version>
+    <version>1.1_SNAPSHOT_02</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -53,12 +53,6 @@
         <!--Spigot API-->
         <!--Bukkit API-->
         <dependency>
-                <groupId>org.bukkit</groupId>
-                <artifactId>bukkit</artifactId>
-                <version>1.13.2-R0.1-SNAPSHOT</version>
-                <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.boydti</groupId>
             <artifactId>fawe-api</artifactId>
             <version>latest</version>
@@ -83,7 +77,12 @@
         <dependency>
             <groupId>com.mcmiddleearth</groupId>
             <artifactId>PluginUtils</artifactId>
-            <version>1.2-SNAPSHOT-native-002</version>
+            <version>1.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bukkit</groupId>
+            <artifactId>bukkit</artifactId>
+            <version>1.13.2-R0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

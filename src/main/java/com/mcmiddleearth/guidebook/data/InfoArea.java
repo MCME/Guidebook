@@ -59,6 +59,9 @@ public abstract class InfoArea {
     
     private final Set<UUID> informedPlayers = new HashSet<>();
     
+    
+    private boolean status;
+    
     private final BossBar bossBar;
     
     @Getter
@@ -87,6 +90,7 @@ public abstract class InfoArea {
         bossBar.setProgress(0);
         setTitle("unnamed Guidebook area");
         subtitle = "";
+        status = true;
     }
     
     public InfoArea(ConfigurationSection config) {
@@ -126,6 +130,21 @@ public abstract class InfoArea {
     
     public boolean isInside(Location loc) {
         return region.isInside(loc);
+    }
+    public boolean isEnable(){
+        
+        return status;
+        
+    }
+    
+    public void statusOn(){
+    status = true;
+    
+    }
+    
+    public void statusOff(){
+    status = false;
+    
     }
     
     public boolean isInfomed(Player player) {

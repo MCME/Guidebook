@@ -54,6 +54,9 @@ public class GuidebookCommandExecutor implements CommandExecutor {
         addCommandHandler("off", new GuidebookOff(permission));
         addCommandHandler("reload", new GuidebookReload(permissionStaff));
         addCommandHandler("dev", new GuidebookDev(permissionStaff));
+        addCommandHandler("rename", new GuidebookRen(permissionStaff));
+        addCommandHandler("disable", new GuidebookDis(permissionStaff));
+        addCommandHandler("enable", new GuidebookEn(permissionStaff));
     }
     
     @Override
