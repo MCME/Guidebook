@@ -78,7 +78,7 @@ public class GuidebookHelp extends GuidebookCommand{
     }
 
    private void sendManualMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "Manual: TBD");
+        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "Manual: https://www.mcmiddleearth.com/resources/guidebook-plugin-manual.107/");
     }
 
 }

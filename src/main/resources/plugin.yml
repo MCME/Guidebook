@@ -1,13 +1,15 @@
-name: Guidebook
+name: ${project.artifactId}
 main: com.mcmiddleearth.guidebook.GuidebookPlugin
-version: 1.0.2
+version: ${project.version}
 description: sending information about places via chat messages
 load: POSTWORLD
 softdepend: [Multiverse-Core]
+api-version: 1.13
+
 commands:
     guidebook:
         description: manage guidebook areas
-        usage: invalid subcommand
+        
 permissions:
     guidebook.staff:
         description: Gives access to all guidebook commands

@@ -59,6 +59,9 @@ public abstract class InfoArea {
     
     private final Set<UUID> informedPlayers = new HashSet<>();
     
+    
+    private boolean status;
+    
     private final BossBar bossBar;
     
     @Getter
@@ -87,6 +90,7 @@ public abstract class InfoArea {
         bossBar.setProgress(0);
         setTitle("unnamed Guidebook area");
         subtitle = "";
+        status = true;
     }
     
     public InfoArea(ConfigurationSection config) {
@@ -97,6 +101,7 @@ public abstract class InfoArea {
             subtitle = (String) config.get("subtitle");
             showScoreboard = config.getBoolean("showScoreboard");
             showTitle = config.getBoolean("showTitle");
+            status = config.getBoolean("enabled",true);
         }
         if(config.isList("description")) {
             this.description = config.getStringList("description");
@@ -128,6 +133,22 @@ public abstract class InfoArea {
         return region.isInside(loc);
     }
     
+    public boolean isEnable(){
+        
+        return status;
+        
+    }
+    
+    public void statusOn(){
+        status = true;
+    
+    }
+    
+    public void statusOff(){
+        status = false;
+    
+    }
+    
     public boolean isInfomed(Player player) {
         return informedPlayers.contains(player.getUniqueId());
     }
@@ -143,7 +164,7 @@ public abstract class InfoArea {
     }
         
     public void clearInformedPlayers() {
-        for(UUID uuid: informedPlayers) {
+        for(UUID uuid: informedPlayers.toArray(new UUID[informedPlayers.size()])) {
             Player player = Bukkit.getPlayer(uuid);
             if(player!=null) {
                 removeInformedPlayer(player);
@@ -162,6 +183,7 @@ public abstract class InfoArea {
         config.set("subtitle",subtitle);
         config.set("showScoreboard", showScoreboard);
         config.set("showTitle",showTitle);
+        config.set("enabled",status);
     }
    
     private void welcomePlayer(final Player player) {
@@ -189,7 +211,7 @@ public abstract class InfoArea {
     }
 
     public ItemStack getDescriptionBook() {
-        ItemStack book = new ItemStack(Material.BOOK_AND_QUILL,1);
+        ItemStack book = new ItemStack(Material.WRITABLE_BOOK,1);
         BookMeta bookMeta = (BookMeta) book.getItemMeta();
         for(String line: description) {
             bookMeta.addPage(InputUtil.replaceColorCodeWithAltCode(line));
