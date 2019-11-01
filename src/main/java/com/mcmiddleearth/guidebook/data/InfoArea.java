@@ -164,7 +164,7 @@ public abstract class InfoArea {
     }
         
     public void clearInformedPlayers() {
-        for(UUID uuid: informedPlayers) {
+        for(UUID uuid: informedPlayers.toArray(new UUID[informedPlayers.size()])) {
             Player player = Bukkit.getPlayer(uuid);
             if(player!=null) {
                 removeInformedPlayer(player);
