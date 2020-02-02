@@ -16,8 +16,6 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.boydti.fawe.FaweAPI;
-import com.boydti.fawe.object.FawePlayer;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.conversation.ConfirmationFactory;
 import com.mcmiddleearth.guidebook.conversation.Confirmationable;
@@ -26,9 +24,9 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
+//import com.mcmiddleearth.pluginutil.FAWEUtil;
 import com.mcmiddleearth.pluginutil.NumericUtil;
-import com.sk89q.worldedit.IncompleteRegionException;
-import com.sk89q.worldedit.WorldEdit;
+import com.mcmiddleearth.pluginutil.WEUtil;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
@@ -88,7 +86,8 @@ public class GuidebookSet extends GuidebookCommand implements Confirmationable{
             }
         } else {
             //try {
-                region = FawePlayer.wrap(p).getSelection();
+                region = WEUtil.getSelection(p);
+                //region = FawePlayer.wrap(p).getSelection();
             //} catch (NullPointerException | IncompleteRegionException ex) {}
             if(!(region instanceof CuboidRegion || region instanceof Polygonal2DRegion) ) {
                 sendInvalidSelection(p);
