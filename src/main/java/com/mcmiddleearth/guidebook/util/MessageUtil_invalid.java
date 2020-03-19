@@ -17,7 +17,6 @@
 package com.mcmiddleearth.guidebook.util;
 
 import java.util.Map;
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -30,10 +29,7 @@ import org.bukkit.entity.Player;
 
 public class MessageUtil_invalid {
     
-    @Getter
     private static final String PREFIX   = "[Guidebook] ";
-    
-    @Getter
     private static final String NOPREFIX = "";
     
     public static void sendErrorMessage(CommandSender sender, String message) {
@@ -92,6 +88,12 @@ public class MessageUtil_invalid {
         rawText = rawText.concat("]");
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), rawText);
     }
-        
 
+    public static String getPREFIX() {
+        return PREFIX;
+    }
+
+    public static String getNOPREFIX() {
+        return NOPREFIX;
+    }
 }

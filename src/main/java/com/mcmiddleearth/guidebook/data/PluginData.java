@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import lombok.Getter;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -46,15 +45,12 @@ import org.bukkit.entity.Player;
  */
 public class PluginData {
 
-    @Getter
     private static final MessageUtil messageUtil = new MessageUtil();
     
-    @Getter
     private final static Map<String, InfoArea> infoAreas = new HashMap<>();
     
     private static Set<UUID> excludedPlayers = new HashSet<>();
     
-    @Getter
     private static final File dataFolder = GuidebookPlugin.getPluginInstance().getDataFolder();
     
     static {
@@ -182,5 +178,17 @@ Logger.getGlobal().info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         for(InfoArea area: infoAreas.values()) {
             area.clearInformedPlayers();
         }
+    }
+
+    public static MessageUtil getMessageUtil() {
+        return messageUtil;
+    }
+
+    public static Map<String, InfoArea> getInfoAreas() {
+        return infoAreas;
+    }
+
+    public static File getDataFolder() {
+        return dataFolder;
     }
 }
