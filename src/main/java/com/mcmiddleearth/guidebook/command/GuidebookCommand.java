@@ -6,8 +6,6 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -19,15 +17,13 @@ public abstract class GuidebookCommand {
     
     private final String[] permissionNodes;
     
-    @Getter
     private final int minArgs;
     
     private boolean playerOnly = true;
     
-    @Getter
-    @Setter
-    private String usageDescription, shortDescription;
-    
+    private String usageDescription;
+    private String shortDescription;
+
     public GuidebookCommand(int minArgs, boolean playerOnly, String... permissionNodes) {
         this.minArgs = minArgs;
         this.playerOnly = playerOnly;
@@ -93,5 +89,25 @@ public abstract class GuidebookCommand {
 
     protected void sendIOErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "There was an error. Guideboo data were NOT saved.");
+    }
+
+    public int getMinArgs() {
+        return minArgs;
+    }
+
+    public String getUsageDescription() {
+        return usageDescription;
+    }
+
+    public void setUsageDescription(String usageDescription) {
+        this.usageDescription = usageDescription;
+    }
+
+    public String getShortDescription() {
+        return shortDescription;
+    }
+
+    public void setShortDescription(String shortDescription) {
+        this.shortDescription = shortDescription;
     }
 }
