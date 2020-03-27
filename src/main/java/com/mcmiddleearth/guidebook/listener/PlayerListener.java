@@ -26,39 +26,17 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class PlayerListener implements Listener{
-    
-    @EventHandler
-    public void playerMove(PlayerMoveEvent event) {
-        final Player player = event.getPlayer();
-        if(PluginData.isExcluded(player)) {
-            return;
-        }
-        Location playerLocation = player.getLocation();
-        for(String key : PluginData.getInfoAreas().keySet()) {
-            InfoArea area = PluginData.getInfoAreas().get(key);
-            
-            if(area.isInside(playerLocation) && !area.isInfomed(player) && area.isEnable() == true) { 
-                area.addInformedPlayer(player);
-            }
-            if(!area.isNear(playerLocation)) {
-                area.removeInformedPlayer(player);
-            }
-        }
-    }
-    
+public class PlayerListener implements Listener {
+
     @EventHandler
     public void playerQuit(PlayerQuitEvent event) {
-        for(InfoArea area:PluginData.getInfoAreas().values()) {
-            if(area.isInfomed(event.getPlayer())) {
+        for (InfoArea area : PluginData.getInfoAreas().values()) {
+            if (area.isInfomed(event.getPlayer())) {
                 area.removeInformedPlayer(event.getPlayer());
             }
         }
     }
-    
-    
 }
 
