@@ -17,9 +17,12 @@
 package com.mcmiddleearth.guidebook;
 
 import com.mcmiddleearth.guidebook.command.GuidebookCommandExecutor;
+import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
-import lombok.Getter;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -28,13 +31,13 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class GuidebookPlugin extends JavaPlugin{
  
-    @Getter
     private static GuidebookPlugin pluginInstance;
 
     @Override
     public void onEnable() {
         pluginInstance = this;
         PluginData.loadData();
+        this.initializePlayerMoveRunnable();
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getCommand("guidebook").setExecutor(new GuidebookCommandExecutor());
         getLogger().info("Enabled!");
@@ -43,5 +46,30 @@ public class GuidebookPlugin extends JavaPlugin{
     @Override
     public void onDisable() {
         PluginData.disable();
+    }
+
+    public static GuidebookPlugin getPluginInstance() {
+        return pluginInstance;
+    }
+
+    public void initializePlayerMoveRunnable() {
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    Location playerLocation = player.getLocation();
+                    for (String key : PluginData.getInfoAreas().keySet()) {
+                        InfoArea area = PluginData.getInfoAreas().get(key);
+                        if (area.isInside(playerLocation) && !area.isInfomed(player) 
+                                && area.isEnable() && !PluginData.isExcluded(player)) {
+                            area.addInformedPlayer(player);
+                        }
+                        if (!area.isNear(playerLocation)) {
+                            area.removeInformedPlayer(player);
+                        }
+                    }
+                }
+            }
+        }, 0L, 20L);
     }
 }

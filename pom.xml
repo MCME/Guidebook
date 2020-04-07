@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mcmiddleearth.com</groupId>
     <artifactId>Guidebook</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.4</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -11,8 +11,6 @@
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
     <build>
-    <!-- <sourceDirectory>${project.build.directory}/generated-sources/delombok</sourceDirectory> -->
-        
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -44,10 +42,6 @@
             <id>dmulloy2-repo</id>
             <url>http://repo.dmulloy2.net/content/groups/public/</url>
         </repository>
-        <!--<repository>
-            <id>fawe-repo</id>
-            <url>http://ci.athion.net/job/FastAsyncWorldEdit/ws/mvn/</url>
-        </repository>-->
         <repository>
             <id>sk89q-snapshots</id>
             <url>http://maven.sk89q.com/artifactory/repo</url>
@@ -60,14 +54,6 @@
           </repository>
     </repositories>
     <dependencies>
-        <!--Spigot API-->
-        <!--Bukkit API-->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.16.12</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

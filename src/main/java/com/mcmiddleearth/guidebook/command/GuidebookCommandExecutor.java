@@ -21,7 +21,6 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.Getter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -33,7 +32,6 @@ import org.bukkit.plugin.PluginDescriptionFile;
  */
 public class GuidebookCommandExecutor implements CommandExecutor {
 
-    @Getter
     private final Map <String, GuidebookCommand> commands = new LinkedHashMap <>();
     
     private final String permission = "guidebook.user";
@@ -89,5 +87,8 @@ public class GuidebookCommandExecutor implements CommandExecutor {
     private void addCommandHandler(String name, GuidebookCommand handler) {
         commands.put(name, handler);
     }
-    
+
+    public Map<String, GuidebookCommand> getCommands() {
+        return commands;
+    }
 }

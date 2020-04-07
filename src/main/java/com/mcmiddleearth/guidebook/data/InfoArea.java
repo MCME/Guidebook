@@ -33,8 +33,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -58,32 +56,20 @@ public abstract class InfoArea {
     protected Region region;
     
     private final Set<UUID> informedPlayers = new HashSet<>();
-    
-    
+    private final int nearDistance = 10;
+
     private boolean status;
     
     private final BossBar bossBar;
     
-    @Getter
     private String title;
-    
-    @Getter
-    @Setter
     private String subtitle;
-    
-    @Getter
-    @Setter
     private boolean showTitle;
-    
-    @Getter
-    @Setter
     private boolean showScoreboard;
             
-    @Getter
     private List<String> description = new ArrayList<>();
     
-    private final int nearDistance = 10;
-    
+
     protected InfoArea() {
         //scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         bossBar = Bukkit.getServer().createBossBar("unnamed Guidebook area", BarColor.YELLOW, BarStyle.SOLID);
@@ -125,6 +111,7 @@ public abstract class InfoArea {
     public Location getLocation() {
         return region.getLocation();
     }
+
     public boolean isNear(Location loc) {
         return region.isNear(loc, nearDistance);
     }
@@ -134,19 +121,15 @@ public abstract class InfoArea {
     }
     
     public boolean isEnable(){
-        
         return status;
-        
     }
     
     public void statusOn(){
         status = true;
-    
     }
     
     public void statusOff(){
         status = false;
-    
     }
     
     public boolean isInfomed(Player player) {
@@ -246,4 +229,35 @@ public abstract class InfoArea {
         description = lines;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public List<String> getDescription() {
+        return description;
+    }
+
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    public void setSubtitle(String subtitle) {
+        this.subtitle = subtitle;
+    }
+
+    public boolean isShowTitle() {
+        return showTitle;
+    }
+
+    public void setShowTitle(boolean showTitle) {
+        this.showTitle = showTitle;
+    }
+
+    public boolean isShowScoreboard() {
+        return showScoreboard;
+    }
+
+    public void setShowScoreboard(boolean showScoreboard) {
+        this.showScoreboard = showScoreboard;
+    }
 }
