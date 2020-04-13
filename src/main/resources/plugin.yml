@@ -3,8 +3,9 @@ main: com.mcmiddleearth.guidebook.GuidebookPlugin
 version: ${project.version}
 description: sending information about places via chat messages
 load: POSTWORLD
-softdepend: [Multiverse-Core]
-api-version: 1.13
+depend: [PluginUtils, bukkit, ProtocolLib, guava]
+softdepend: [Multiverse-Core, worldedit-core, worldedit-bukkit]
+api-version: 1.15
 
 commands:
     guidebook:
