@@ -26,13 +26,6 @@ import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import com.mcmiddleearth.pluginutil.region.Region;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -44,6 +37,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -221,7 +218,7 @@ public abstract class InfoArea {
     
     private void debugString(String string) {
         for(int i=0; i<string.length();i++){
-            Logger.getGlobal().info("i: "+string.charAt(i)+" "+new Integer(string.charAt(i)).intValue()+" "+string.codePointAt(i));
+            Logger.getGlobal().info("i: "+string.charAt(i)+" "+Integer.parseInt(String.valueOf(string.charAt(i)))+" "+string.codePointAt(i));
         }
     }
     
