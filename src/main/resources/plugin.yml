@@ -4,7 +4,7 @@ version: ${project.version}
 description: sending information about places via chat messages
 load: POSTWORLD
 softdepend: [Multiverse-Core, worldedit-core, worldedit-bukkit, PluginUtils, bukkit, ProtocolLib, guava]
-api-version: 1.15
+api-version: 1.19
 
 commands:
     guidebook:
