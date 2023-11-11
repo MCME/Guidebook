@@ -51,11 +51,12 @@ public class GuidebookShow extends GuidebookCommand{
                                                +PluginData.getMessageUtil().STRESSED+area.getTitle()
                                                +PluginData.getMessageUtil().INFO
                                                +". Unfortunately there is no further description for this area.");
+        } else {
+            FancyMessageConfigUtil.addFromStringList(new FancyMessage(MessageType.WHITE, PluginData.getMessageUtil()),
+                                                     area.getDescription())
+                    .setRunDirect()
+                    .send(player);
         }
-        FancyMessageConfigUtil.addFromStringList(new FancyMessage(MessageType.WHITE, PluginData.getMessageUtil()),
-                area.getDescription())
-            .setRunDirect()
-            .send(player);
     }
     
 }
