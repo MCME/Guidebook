@@ -9,18 +9,19 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 /**
- *
  * @author Eriol_Eandur, Ivanpl
  */
 public abstract class GuidebookCommand {
-    
+
     private final String[] permissionNodes;
-    
+
     private final int minArgs;
-    
+
     private boolean playerOnly = true;
-    
+
     private String usageDescription;
     private String shortDescription;
 
@@ -29,48 +30,59 @@ public abstract class GuidebookCommand {
         this.playerOnly = playerOnly;
         this.permissionNodes = permissionNodes;
     }
-    
+
     public void handle(CommandSender cs, String... args) {
         Player p = null;
-        if(cs instanceof Player) {
+        if (cs instanceof Player) {
             p = (Player) cs;
         }
-        
-        if(p == null && playerOnly) {
+
+        if (p == null && playerOnly) {
             sendPlayerOnlyErrorMessage(cs);
             return;
         }
-        
-        if(p != null && !hasPermissions(p)) {
+
+        if (p != null && !hasPermissions(p)) {
             sendNoPermsErrorMessage(p);
             return;
         }
-        
-        if(args.length < minArgs) {
+
+        if (args.length < minArgs) {
             sendMissingArgumentErrorMessage(cs);
             return;
         }
-        
+
         execute(cs, args);
     }
-    
+
     protected abstract void execute(CommandSender cs, String... args);
-    
+
+
+    /**
+     * @param cs   The sender
+     * @param args The arguments provided for this subcommand - <code>/guidebook subcommand arg0 arg1<code>
+     * @return By default, an empty list
+     */
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        // Default - no completions
+        return List.of();
+    }
+
     private void sendPlayerOnlyErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You have to be logged in to run this command.");
     }
-    
+
     private void sendNoPermsErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You don't have permission to run this command.");
     }
-    
+
     protected void sendMissingArgumentErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You're missing arguments for this command.");
     }
-    
+
     protected boolean hasPermissions(Player p) {
-        if(permissionNodes != null) {
-            for(String permission : permissionNodes) {
+        if (permissionNodes != null) {
+            for (String permission : permissionNodes) {
                 if (!p.hasPermission(permission)) {
                     return false;
                 }
@@ -78,12 +90,12 @@ public abstract class GuidebookCommand {
         }
         return true;
     }
-    
+
     protected void sendNoAreaErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "No Guidebook area with that name.");
     }
 
-    protected void sentInvalidArgumentMessage(CommandSender cs) {
+    protected void sendInvalidArgumentMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Argument");
     }
 

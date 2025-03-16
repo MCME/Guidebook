@@ -19,13 +19,12 @@ package com.mcmiddleearth.guidebook.conversation;
 import org.bukkit.entity.Player;
 
 /**
- *
  * @author Eriol_Eandur
  */
 public interface Confirmationable {
-    
+
     public void confirmed(Player player);
-    
+
     public void cancelled(Player player);
-    
+
 }

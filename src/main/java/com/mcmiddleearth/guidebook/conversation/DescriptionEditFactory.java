@@ -23,9 +23,11 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
@@ -36,23 +38,22 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class DescriptionEditFactory implements ConversationAbandonedListener{
-    
+public class DescriptionEditFactory implements ConversationAbandonedListener {
+
     private final ConversationFactory factory;
-    
-    public DescriptionEditFactory(Plugin plugin){
+
+    public DescriptionEditFactory(Plugin plugin) {
         factory = new ConversationFactory(plugin)
-                .withModality(false)
-                .withPrefix(new ConfirmationPrefix())
-                .withEscapeSequence("!cancel")
-                .withFirstPrompt(new DescriptionEditEnterSubcommandPrompt())
-                .withTimeout(120)
-                .addConversationAbandonedListener(this);
+            .withModality(false)
+            .withPrefix(new ConfirmationPrefix())
+            .withEscapeSequence("!cancel")
+            .withFirstPrompt(new DescriptionEditEnterSubcommandPrompt())
+            .withTimeout(120)
+            .addConversationAbandonedListener(this);
     }
-    
+
     public void start(Player player, InfoArea area, String name) {
         Conversation conversation = factory.buildConversation(player);
         ConversationContext context = conversation.getContext();
@@ -62,7 +63,7 @@ public class DescriptionEditFactory implements ConversationAbandonedListener{
         context.setSessionData("save", false);
         conversation.begin();
     }
-   
+
     @Override
     public void conversationAbandoned(ConversationAbandonedEvent abandonedEvent) {
         ConversationContext cc = abandonedEvent.getContext();
@@ -78,7 +79,7 @@ public class DescriptionEditFactory implements ConversationAbandonedListener{
     private void sendEditCancelledMessage(Player player) {
         PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook description conversation was cancelled by command or timeout.");
     }
-    
+
     private void sendEditEndedMessage(Player player) {
         PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook description conversation ended.");
     }

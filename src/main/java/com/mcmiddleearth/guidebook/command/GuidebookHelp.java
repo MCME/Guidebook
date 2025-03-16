@@ -6,54 +6,64 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class GuidebookHelp extends GuidebookCommand{
-    
+public class GuidebookHelp extends GuidebookCommand {
+
     public GuidebookHelp(String... permissionNodes) {
         super(0, true, permissionNodes);
         setShortDescription(": Help for Guidebook.");
         setUsageDescription(" [subcommand]: Without a given [subcommand] shows short help messages for all Guidebook commands. With additional argument shows detailed help for [subcommand].");
     }
-    
+
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length != 1) return List.of();
+
+        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
+            .getExecutor()).getCommands();
+
+        List<String> subcommandNames = new ArrayList<>(commands.keySet());
+        return subcommandNames;
+    }
+
     @Override
     protected void execute(CommandSender cs, String... args) {
         sendHelpStartMessage(cs);
-        Map <String, GuidebookCommand> commands = ((GuidebookCommandExecutor)Bukkit.getPluginCommand("guidebook")
-                                                    .getExecutor()).getCommands();
-        if(args.length>0){
+        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
+            .getExecutor()).getCommands();
+        if (args.length > 0) {
             GuidebookCommand command = commands.get(args[0]);
-            if(command==null) {
+            if (command == null) {
                 sendNoSuchCommandMessage(cs, args[0]);
-            }
-            else {
+            } else {
                 String description = command.getUsageDescription();
-                if(description==null){
+                if (description == null) {
                     description = command.getShortDescription();
                 }
-                if(description!=null){
+                if (description != null) {
                     sendDescriptionMessage(cs, args[0], description);
-                }
-                else {
+                } else {
                     sendNoDescriptionMessage(cs, args[0]);
                 }
             }
-        }
-        else {
+        } else {
             Set<String> keys = commands.keySet();
-            for(String key : keys) {
+            for (String key : keys) {
                 String description = commands.get(key).getShortDescription();
-                if(description!=null){
+                if (description != null) {
                     sendDescriptionMessage(cs, key, description);
-                }
-                else {
+                } else {
                     sendNoDescriptionMessage(cs, key);
                 }
             }
@@ -66,18 +76,18 @@ public class GuidebookHelp extends GuidebookCommand{
     }
 
     private void sendNoSuchCommandMessage(CommandSender cs, String arg) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook "+arg+": There is no such command.");    
+        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + ": There is no such command.");
     }
 
     private void sendDescriptionMessage(CommandSender cs, String arg, String description) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook "+arg+description);
+        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + description);
     }
 
     private void sendNoDescriptionMessage(CommandSender cs, String arg) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook "+arg+": There is no help for this command.");
+        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + ": There is no help for this command.");
     }
 
-   private void sendManualMessage(CommandSender cs) {
+    private void sendManualMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "Manual: https://www.mcmiddleearth.com/resources/guidebook-plugin-manual.107/");
     }
 

@@ -18,13 +18,15 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.bukkit.command.CommandSender;
 
 /**
- *
  * @author Fraspace5
  */
 public class GuidebookEnable extends GuidebookCommand {
@@ -35,13 +37,18 @@ public class GuidebookEnable extends GuidebookCommand {
         setUsageDescription(" To use that command type /guidebook enable guidebook");
     }
 
-    //guidebook enable guidebookname
-    //           0        1       
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        return List.of();
+    }
+
     @Override
     protected void execute(CommandSender cs, String... args) {
-
         if (args.length == 1) {
-
             if (PluginData.getInfoAreas().containsKey(args[0])) {
 
                 InfoArea area = PluginData.getInfoArea(args[0]);
@@ -58,13 +65,8 @@ public class GuidebookEnable extends GuidebookCommand {
             } else {
                 PluginData.getMessageUtil().sendErrorMessage(cs, "This area doesn't exist");
             }
-
         } else {
-
-            PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Usage! /guidebook enable guidebook");
-
+            PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Usage! /guidebook enable <LocationName>");
         }
-
     }
-
 }

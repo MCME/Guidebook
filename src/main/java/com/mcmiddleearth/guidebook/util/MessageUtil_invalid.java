@@ -17,21 +17,21 @@
 package com.mcmiddleearth.guidebook.util;
 
 import java.util.Map;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- *
  * @author Ivanpl, Eriol_Eandur
  */
 
 public class MessageUtil_invalid {
-    
-    private static final String PREFIX   = "[Guidebook] ";
+
+    private static final String PREFIX = "[Guidebook] ";
     private static final String NOPREFIX = "";
-    
+
     public static void sendErrorMessage(CommandSender sender, String message) {
         if (sender instanceof Player) {
             sender.sendMessage(ChatColor.RED + PREFIX + message);
@@ -39,7 +39,7 @@ public class MessageUtil_invalid {
             sender.sendMessage(PREFIX + message);
         }
     }
-    
+
     public static void sendInfoMessage(CommandSender sender, String message) {
         if (sender instanceof Player) {
             sender.sendMessage(ChatColor.AQUA + PREFIX + message);
@@ -47,7 +47,7 @@ public class MessageUtil_invalid {
             sender.sendMessage(PREFIX + message);
         }
     }
-    
+
     public static void sendNoPrefixInfoMessage(CommandSender sender, String message) {
         if (sender instanceof Player) {
             sender.sendMessage(ChatColor.AQUA + NOPREFIX + message);
@@ -55,33 +55,32 @@ public class MessageUtil_invalid {
             sender.sendMessage(NOPREFIX + message);
         }
     }
-    
+
     public static void sendBroadcastMessage(String string) {
         Bukkit.getServer().broadcastMessage(ChatColor.AQUA + PREFIX + string);
     }
 
     public static void sendClickableMessage(Player sender, String message, String onClickCommand) {
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tellraw "+ sender.getName()+" "
-                +"{ text:\""+message+"\", "
-                  +"clickEvent:{ action:run_command,"
-                               + "value:\""+ onClickCommand +"\"}}");
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tellraw " + sender.getName() + " "
+            + "{ text:\"" + message + "\", "
+            + "clickEvent:{ action:run_command,"
+            + "value:\"" + onClickCommand + "\"}}");
     }
-        
-    public static void sendClickableMessage(Player sender, Map<String,String> data) {
-        String rawText = "tellraw "+ sender.getName()+" [";
+
+    public static void sendClickableMessage(Player sender, Map<String, String> data) {
+        String rawText = "tellraw " + sender.getName() + " [";
         boolean first = true;
-        for(String message: data.keySet()) {
-            if(first) {
-                first = false; 
-            }
-            else {
+        for (String message : data.keySet()) {
+            if (first) {
+                first = false;
+            } else {
                 rawText = rawText.concat(",");
             }
-            rawText = rawText.concat("{text:\""+message+"\"");
+            rawText = rawText.concat("{text:\"" + message + "\"");
             String command = data.get(message);
-            if(command!=null) {
+            if (command != null) {
                 rawText = rawText.concat(",clickEvent:{ action:run_command,value:\"");
-                rawText = rawText.concat(command+"\"}");
+                rawText = rawText.concat(command + "\"}");
             }
             rawText = rawText.concat("}");
         }

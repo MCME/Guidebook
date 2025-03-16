@@ -18,26 +18,26 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
+
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.PluginDescriptionFile;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 /**
- *
  * @author Eriol_Eandur
  */
-public class GuidebookCommandExecutor implements CommandExecutor {
+public class GuidebookCommandExecutor implements TabExecutor {
+    private final Map<String, GuidebookCommand> commands = new LinkedHashMap<>();
 
-    private final Map <String, GuidebookCommand> commands = new LinkedHashMap <>();
-    
     private final String permission = "guidebook.user";
     private final String permissionStaff = "guidebook.staff";
-    
+
     public GuidebookCommandExecutor() {
+
         addCommandHandler("delete", new GuidebookDelete(permissionStaff));
         addCommandHandler("details", new GuidebookDetails(permissionStaff));
         addCommandHandler("help", new GuidebookHelp(permissionStaff));
@@ -56,34 +56,55 @@ public class GuidebookCommandExecutor implements CommandExecutor {
         addCommandHandler("disable", new GuidebookDisable(permissionStaff));
         addCommandHandler("enable", new GuidebookEnable(permissionStaff));
     }
-    
+
     @Override
     public boolean onCommand(CommandSender cs, Command cmnd, String string, String[] strings) {
-        if(!string.equalsIgnoreCase("guidebook")) {
+        if (!string.equalsIgnoreCase("guidebook")) {
             return false;
         }
-        if(strings == null || strings.length == 0) {
+        if (strings == null || strings.length == 0) {
             sendNoSubcommandErrorMessage(cs);
             return true;
         }
-        if(commands.containsKey(strings[0].toLowerCase())) {
+        if (commands.containsKey(strings[0].toLowerCase())) {
             commands.get(strings[0].toLowerCase()).handle(cs, Arrays.copyOfRange(strings, 1, strings.length));
         } else {
             sendSubcommandNotFoundErrorMessage(cs);
         }
         return true;
     }
-    
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String string, String[] args) {
+        String firstArg = args[0].toLowerCase();
+        String lastArg = args[args.length - 1].toLowerCase();
+        String[] restArgs = Arrays.copyOfRange(args, 1, args.length);
+
+        List<String> completions = new ArrayList<>();
+
+        if (args.length == 1) {
+            completions.addAll(commands.keySet());
+        } else if (commands.containsKey(firstArg)) {
+            List<String> subcommandCompletions = commands.get(firstArg).getCompletions(sender, restArgs);
+            completions.addAll(subcommandCompletions);
+        }
+
+        // Filter the completions
+        return completions.stream()
+            .filter(completion -> completion.toLowerCase().startsWith(lastArg))
+            .collect(Collectors.toList());
+    }
+
     private void sendNoSubcommandErrorMessage(CommandSender cs) {
         //MessageUtil.sendErrorMessage(cs, "You're missing subcommand name for this command.");
         PluginDescriptionFile descr = GuidebookPlugin.getPluginInstance().getDescription();
-        PluginData.getMessageUtil().sendErrorMessage(cs, descr.getName()+" - version "+descr.getVersion());
+        PluginData.getMessageUtil().sendErrorMessage(cs, descr.getName() + " - version " + descr.getVersion());
     }
-    
+
     private void sendSubcommandNotFoundErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "Subcommand not found.");
     }
-    
+
     private void addCommandHandler(String name, GuidebookCommand handler) {
         commands.put(name, handler);
     }

@@ -28,47 +28,46 @@ import org.bukkit.conversations.Prompt;
 import org.bukkit.entity.Player;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt{
+public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt {
 
     public DescriptionEditEnterSubcommandPrompt() {
-        super(new String[]{"s","a","i","d","r","c","x"});
+        super(new String[]{"s", "a", "i", "d", "r", "c", "x"});
     }
-    
+
     @Override
     public String getPromptText(ConversationContext cc) {
         return "What do you want to do? \n's': show lines\n'a': add a line\n"
-                + "'i': insert a line\n'd': delete a line\n'r': replace a line\n"
-                + "'c': clear all lines\n'x': exit";
+            + "'i': insert a line\n'd': delete a line\n'r': replace a line\n"
+            + "'c': clear all lines\n'x': exit";
     }
-    
+
     @Override
-    protected String getFailedValidationText(ConversationContext context, String invalidInput){
+    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
         return "Invalid input, type in chat one of the following letters or '!cancel'";
     }
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, String input) {
-        switch(input) {
+        switch (input) {
             case "s":
-                PluginData.getMessageUtil().sendInfoMessage((Player)cc.getSessionData("player"),"Current description:");
-                int i=1;
-                for(String line: ((InfoArea)cc.getSessionData("area")).getDescription()) {
+                PluginData.getMessageUtil().sendInfoMessage((Player) cc.getSessionData("player"), "Current description:");
+                int i = 1;
+                for (String line : ((InfoArea) cc.getSessionData("area")).getDescription()) {
                     new FancyMessage(MessageType.HIGHLIGHT_NO_PREFIX, PluginData.getMessageUtil())
-                            .addSimple(ChatColor.DARK_AQUA+"["+i+"] ")
-                            .addFancy(InputUtil.replaceColorCodeWithAltCode(line),
-                                      InputUtil.replaceColorCodeWithAltCode(line), 
-                                      "Click to copy into chat.")
-                            .send((Player)cc.getSessionData("player"));
+                        .addSimple(ChatColor.DARK_AQUA + "[" + i + "] ")
+                        .addFancy(InputUtil.replaceColorCodeWithAltCode(line),
+                            InputUtil.replaceColorCodeWithAltCode(line),
+                            "Click to copy into chat.")
+                        .send((Player) cc.getSessionData("player"));
                     //PluginData.getMessageUtil().sendIndentedInfoMessage((Player)cc.getSessionData("player"), "["+i+"] "+line);
                     i++;
                 }
                 return new DescriptionEditEnterSubcommandPrompt();
             case "c":
-                ((InfoArea)cc.getSessionData("area")).getDescription().clear();
-                sendDescriptionCleared((Player)cc.getSessionData("player"));
+                ((InfoArea) cc.getSessionData("area")).getDescription().clear();
+                sendDescriptionCleared((Player) cc.getSessionData("player"));
                 cc.setSessionData("save", true);
                 return new DescriptionEditEnterSubcommandPrompt();
             case "a":
@@ -81,9 +80,9 @@ public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt{
                 return new DescriptionEditEnterLinePrompt();
         }
     }
-    
+
     public void sendDescriptionCleared(Player player) {
         PluginData.getMessageUtil().sendInfoMessage(player, "All lines cleared.");
     }
-    
+
 }

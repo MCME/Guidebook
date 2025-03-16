@@ -43,29 +43,28 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author Eriol_Eandur
  */
 public abstract class InfoArea {
-    
+
     private static final int CHAT_LENGTH = 90;
-    
+
     protected Region region;
-    
+
     private final Set<UUID> informedPlayers = new HashSet<>();
     private final int nearDistance = 10;
 
     private boolean status;
-    
+
     private final BossBar bossBar;
-    
+
     private String title;
     private String subtitle;
     private boolean showTitle;
     private boolean showScoreboard;
-            
+
     private List<String> description = new ArrayList<>();
-    
+
 
     protected InfoArea() {
         //scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
@@ -75,24 +74,24 @@ public abstract class InfoArea {
         subtitle = "";
         status = true;
     }
-    
+
     public InfoArea(ConfigurationSection config) {
         //this.center = deserializeLocation(config.getConfigurationSection("center"));
         this();
-        if(config.contains("title")) {
+        if (config.contains("title")) {
             setTitle((String) config.get("title"));
             subtitle = (String) config.get("subtitle");
             showScoreboard = config.getBoolean("showScoreboard");
             showTitle = config.getBoolean("showTitle");
-            status = config.getBoolean("enabled",true);
+            status = config.getBoolean("enabled", true);
         }
-        if(config.isList("description")) {
+        if (config.isList("description")) {
             this.description = config.getStringList("description");
         } else {
             this.description.add(config.getString("description"));
         }
     }
-    
+
     public final void setTitle(String newTitle) {
         /*Objective obj = scoreboard.getObjective(newTitle);
         if(obj!=null) {
@@ -104,7 +103,7 @@ public abstract class InfoArea {
         bossBar.setTitle(newTitle);
         title = newTitle;
     }
-    
+
     public Location getLocation() {
         return region.getLocation();
     }
@@ -112,71 +111,72 @@ public abstract class InfoArea {
     public boolean isNear(Location loc) {
         return region.isNear(loc, nearDistance);
     }
-    
+
     public boolean isInside(Location loc) {
         return region.isInside(loc);
     }
-    
-    public boolean isEnable(){
+
+    public boolean isEnable() {
         return status;
     }
-    
-    public void statusOn(){
+
+    public void statusOn() {
         status = true;
     }
-    
-    public void statusOff(){
+
+    public void statusOff() {
         status = false;
     }
-    
+
     public boolean isInfomed(Player player) {
         return informedPlayers.contains(player.getUniqueId());
     }
-    
+
     public void addInformedPlayer(Player player) {
         informedPlayers.add(player.getUniqueId());
         welcomePlayer(player);
     }
-    
+
     public void removeInformedPlayer(Player player) {
         informedPlayers.remove(player.getUniqueId());
         bossBar.removePlayer(player);
     }
-        
+
     public void clearInformedPlayers() {
-        for(UUID uuid: informedPlayers.toArray(new UUID[informedPlayers.size()])) {
+        for (UUID uuid : informedPlayers.toArray(new UUID[informedPlayers.size()])) {
             Player player = Bukkit.getPlayer(uuid);
-            if(player!=null) {
+            if (player != null) {
                 removeInformedPlayer(player);
             }
         }
     }
+
     public void save(ConfigurationSection config) {
         /*if(region.getLocation()==null) {
             GuidebookPlugin.getPluginInstance().getLogger().warning("Save region call with NULL location.");
             return;
         }*/
-        DevUtil.log("saveInfo "+config+" "+region.toString());
+        DevUtil.log("saveInfo " + config + " " + region.toString());
         region.save(config);
         config.set("description", description);
-        config.set("title",title);
-        config.set("subtitle",subtitle);
+        config.set("title", title);
+        config.set("subtitle", subtitle);
         config.set("showScoreboard", showScoreboard);
-        config.set("showTitle",showTitle);
-        config.set("enabled",status);
+        config.set("showTitle", showTitle);
+        config.set("enabled", status);
     }
-   
+
     private void welcomePlayer(final Player player) {
         final InfoArea thisArea = this;
         int messageDelay = 0;
-        if(isShowTitle()) {
+        if (isShowTitle()) {
             TitleUtil.showTitle(player, getTitle(), getSubtitle(), 25, 20, 10);
             messageDelay = 50;
         }
         new BukkitRunnable() {
             @Override
             public void run() {
-                if(isShowScoreboard()) {
+                if (isShowScoreboard()) {
                     //player.setScoreboard(area.getScoreboard());
                     bossBar.addPlayer(player);
                 }
@@ -187,41 +187,41 @@ public abstract class InfoArea {
                 }
             }
         }.runTaskLater(GuidebookPlugin.getPluginInstance(), messageDelay);
-        
+
     }
 
     public ItemStack getDescriptionBook() {
-        ItemStack book = new ItemStack(Material.WRITABLE_BOOK,1);
+        ItemStack book = new ItemStack(Material.WRITABLE_BOOK, 1);
         BookMeta bookMeta = (BookMeta) book.getItemMeta();
-        for(String line: description) {
+        for (String line : description) {
             bookMeta.addPage(InputUtil.replaceColorCodeWithAltCode(line));
         }
         book.setItemMeta(bookMeta);
         return book;
     }
-    
+
     public void setDescription(BookMeta bookMeta) throws MessageParseException {
         List<String> lines = new ArrayList<>();
-        for(int i = 1; i<=bookMeta.getPageCount();i++) { //first page has index 1!!!
+        for (int i = 1; i <= bookMeta.getPageCount(); i++) { //first page has index 1!!!
             String line = bookMeta.getPage(i);
-            lines.add(InputUtil.replaceBookColorCode(line.substring(0,Math.min(CHAT_LENGTH,line.length()))));
+            lines.add(InputUtil.replaceBookColorCode(line.substring(0, Math.min(CHAT_LENGTH, line.length()))));
             //debugString(lines.get(lines.size()-1));
-            if(line.length()>CHAT_LENGTH) {
+            if (line.length() > CHAT_LENGTH) {
                 lines.add(InputUtil.replaceBookColorCode(line.substring(CHAT_LENGTH, line.length()))); //string from book seem to contain random 'Â§0' characters
                 //debugString(lines.get(lines.size()-1));
             }
         }
         FancyMessageConfigUtil.addFromStringList(new FancyMessage(PluginData.getMessageUtil()),
-                                                 lines); //throws MessageParseExeption
+            lines); //throws MessageParseExeption
         description = lines;
     }
-    
+
     private void debugString(String string) {
-        for(int i=0; i<string.length();i++){
-            Logger.getGlobal().info("i: "+string.charAt(i)+" "+Integer.parseInt(String.valueOf(string.charAt(i)))+" "+string.codePointAt(i));
+        for (int i = 0; i < string.length(); i++) {
+            Logger.getGlobal().info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " " + string.codePointAt(i));
         }
     }
-    
+
     public void setDescription(List<String> lines) {
         description = lines;
     }

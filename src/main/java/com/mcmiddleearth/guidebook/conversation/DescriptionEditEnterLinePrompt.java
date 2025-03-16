@@ -26,51 +26,50 @@ import org.bukkit.conversations.Prompt;
 import org.bukkit.entity.Player;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class DescriptionEditEnterLinePrompt extends NumericPrompt{
+public class DescriptionEditEnterLinePrompt extends NumericPrompt {
 
     @Override
     public String getPromptText(ConversationContext cc) {
         return "Enter the number of the line to edit!";
     }
-    
+
     @Override
-    protected String getFailedValidationText(ConversationContext context, String invalidInput){
-        switch((String)context.getSessionData("mode")) {
+    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
+        switch ((String) context.getSessionData("mode")) {
             case "e":
-               return "Type in chat the number of the line you want to edit.";
+                return "Type in chat the number of the line you want to edit.";
             case "i":
-               return "Type in chat the number of the line you want to insert in front of.";
+                return "Type in chat the number of the line you want to insert in front of.";
             case "d":
-               return "Type in chat the number of the line you want to delete.";
+                return "Type in chat the number of the line you want to delete.";
         }
         return "Error!!!";
     }
-    
+
     @Override
     protected boolean isInputValid(ConversationContext cc, String input) {
-        if(!NumericUtil.isInt(input)) {
+        if (!NumericUtil.isInt(input)) {
             return false;
         }
         int line = NumericUtil.getInt(input);
         InfoArea area = (InfoArea) cc.getSessionData("area");
-        return line>0 && line<=area.getDescription().size();
+        return line > 0 && line <= area.getDescription().size();
     }
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, Number input) {
-        if(((String)cc.getSessionData("mode")).equalsIgnoreCase("d")) {
-            ((InfoArea)cc.getSessionData("area")).getDescription().remove(input.intValue()-1);
-            sendLineRemovedMessage((Player)cc.getSessionData("player"));
+        if (((String) cc.getSessionData("mode")).equalsIgnoreCase("d")) {
+            ((InfoArea) cc.getSessionData("area")).getDescription().remove(input.intValue() - 1);
+            sendLineRemovedMessage((Player) cc.getSessionData("player"));
             cc.setSessionData("save", true);
             return new DescriptionEditSavePrompt();
         }
         cc.setSessionData("line", input.intValue());
         return new DescriptionEditEnterDescriptionPrompt();
     }
-    
+
     private void sendLineRemovedMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendInfoMessage(cs, "Line deleted.");
     }

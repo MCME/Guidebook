@@ -21,26 +21,25 @@ import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
 /**
- *
  * @author Eriol_Eandur
  */
 public class SphericalInfoArea extends InfoArea {
- 
+
     public SphericalInfoArea(Location center, int radius) {
-        region = new SphericalRegion(center,radius);
+        region = new SphericalRegion(center, radius);
     }
-    
+
     public SphericalInfoArea(ConfigurationSection config) {
         super(config);
         region = SphericalRegion.load(config);
     }
-    
+
     public void setRadius(int radius) {
-        ((SphericalRegion)region).setRadius(radius);
+        ((SphericalRegion) region).setRadius(radius);
     }
-    
+
     public int getRadius() {
-        return ((SphericalRegion)region).getRadius();
+        return ((SphericalRegion) region).getRadius();
     }
 
     /*@Override

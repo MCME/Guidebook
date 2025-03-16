@@ -22,38 +22,37 @@ import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
 /**
- *
  * @author Eriol_Eandur
  */
 public class PrismoidInfoArea extends InfoArea {
-    
+
     public PrismoidInfoArea(Location center, com.sk89q.worldedit.regions.Polygonal2DRegion weRegion) {
-       region = new PrismoidRegion(center, weRegion);
+        region = new PrismoidRegion(center, weRegion);
     }
-    
+
     public PrismoidInfoArea(ConfigurationSection config) {
         super(config);
-        DevUtil.log("LoadCuboid "+config);
+        DevUtil.log("LoadCuboid " + config);
         region = PrismoidRegion.load(config);
     }
-    
+
     public void setHeight(int minY, int maxY) {
-        ((PrismoidRegion)region).setMinY(minY);
-        ((PrismoidRegion)region).setMaxY(maxY);
+        ((PrismoidRegion) region).setMinY(minY);
+        ((PrismoidRegion) region).setMaxY(maxY);
     }
-    
+
     public int getMinY() {
-        return ((PrismoidRegion)region).getMinY();
+        return ((PrismoidRegion) region).getMinY();
     }
-    
+
     public int getMaxY() {
-        return ((PrismoidRegion)region).getMaxY();
+        return ((PrismoidRegion) region).getMaxY();
     }
-    
+
     public Integer[] getXPoints() {
         return ((PrismoidRegion) region).getXPoints();
     }
-    
+
     public Integer[] getZPoints() {
         return ((PrismoidRegion) region).getZPoints();
     }

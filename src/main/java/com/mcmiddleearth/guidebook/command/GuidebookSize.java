@@ -10,68 +10,68 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.util.Vector;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class GuidebookSize extends GuidebookCommand{
-    
+public class GuidebookSize extends GuidebookCommand {
+
     public GuidebookSize(String... permissionNodes) {
         super(2, true, permissionNodes);
         setShortDescription(": Defines the size of a Guidebook area.");
         setUsageDescription(" <AreaName> <size>: Defines the size of <AreaName>. <size> must be: \nFor spherical areas: <radius>\nFor cuboid areas: <x1 y1 z1 x2 y2 z2> (coords of opposite corners)\nFor prism areas: <y1 y2> (Height range)");
     }
-    
+
     @Override
     protected void execute(CommandSender cs, String... args) {
         InfoArea area = PluginData.getInfoArea(args[0]);
-        if(area==null) {
+        if (area == null) {
             sendNoAreaErrorMessage(cs);
-        }
-        else {
-            if(area instanceof SphericalInfoArea) {
+        } else {
+            if (area instanceof SphericalInfoArea) {
                 int radius = parseInt(cs, args[1]);
-                if(radius==-1) {
+                if (radius == -1) {
                     sendNotANumberMessage(cs);
                     return;
                 }
-                ((SphericalInfoArea)area).setRadius(radius);
-            }
-            else if(area instanceof CuboidInfoArea) {
-                if(args.length<7) {
+                ((SphericalInfoArea) area).setRadius(radius);
+            } else if (area instanceof CuboidInfoArea) {
+                if (args.length < 7) {
                     sendMissingArgumentErrorMessage(cs);
                     return;
                 }
                 int[] data = new int[6];
-                for(int i = 0; i<6; i++) {
-                    data[i] = parseInt(cs, args[i+1]);
-                    if(data[i]==-1) {
+                for (int i = 0; i < 6; i++) {
+                    data[i] = parseInt(cs, args[i + 1]);
+                    if (data[i] == -1) {
                         sendNotANumberMessage(cs);
                         return;
                     }
                 }
-                ((CuboidInfoArea)area).setCorners(new Vector(data[0],data[1],data[2]),
-                                                           new Vector(data[3],data[4],data[5]));
+                ((CuboidInfoArea) area).setCorners(new Vector(data[0], data[1], data[2]),
+                    new Vector(data[3], data[4], data[5]));
             } else {
-                if(args.length<3) {
+                if (args.length < 3) {
                     sendMissingArgumentErrorMessage(cs);
                     return;
                 }
                 int[] data = new int[2];
-                for(int i = 0; i<2; i++) {
-                    data[i] = parseInt(cs, args[i+1]);
-                    if(data[i]==-1) {
+                for (int i = 0; i < 2; i++) {
+                    data[i] = parseInt(cs, args[i + 1]);
+                    if (data[i] == -1) {
                         sendNotANumberMessage(cs);
                         return;
                     }
                 }
-                ((PrismoidInfoArea)area).setHeight(data[0],data[1]);
+                ((PrismoidInfoArea) area).setHeight(data[0], data[1]);
             }
             try {
                 PluginData.saveArea(area);
@@ -123,11 +123,19 @@ public class GuidebookSize extends GuidebookCommand{
         }*/
     }
 
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        return List.of();
+    }
+
     private int parseInt(CommandSender cs, String arg) {
         try {
             return Integer.parseInt(arg);
-        }
-        catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             sendNotANumberMessage(cs);
             return -1;
         }
