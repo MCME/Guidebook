@@ -19,26 +19,25 @@ package com.mcmiddleearth.guidebook.command;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.PluginData;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.PluginDescriptionFile;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Eriol_Eandur
  */
-public class GuidebookCommandExecutor implements CommandExecutor {
-
+public class GuidebookCommandExecutor implements TabExecutor {
     private final Map<String, GuidebookCommand> commands = new LinkedHashMap<>();
 
     private final String permission = "guidebook.user";
     private final String permissionStaff = "guidebook.staff";
 
     public GuidebookCommandExecutor() {
+
         addCommandHandler("delete", new GuidebookDelete(permissionStaff));
         addCommandHandler("details", new GuidebookDetails(permissionStaff));
         addCommandHandler("help", new GuidebookHelp(permissionStaff));
@@ -73,6 +72,27 @@ public class GuidebookCommandExecutor implements CommandExecutor {
             sendSubcommandNotFoundErrorMessage(cs);
         }
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String string, String[] args) {
+        String firstArg = args[0].toLowerCase();
+        String lastArg = args[args.length - 1].toLowerCase();
+        String[] restArgs = Arrays.copyOfRange(args, 1, args.length);
+
+        List<String> completions = new ArrayList<>();
+
+        if (args.length == 1) {
+            completions.addAll(commands.keySet());
+        } else if (commands.containsKey(firstArg)) {
+            List<String> subcommandCompletions = commands.get(firstArg).getCompletions(sender, restArgs);
+            completions.addAll(subcommandCompletions);
+        }
+
+        // Filter the completions
+        return completions.stream()
+            .filter(completion -> completion.toLowerCase().startsWith(lastArg))
+            .collect(Collectors.toList());
     }
 
     private void sendNoSubcommandErrorMessage(CommandSender cs) {

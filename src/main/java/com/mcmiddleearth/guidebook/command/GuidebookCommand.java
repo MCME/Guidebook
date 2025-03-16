@@ -9,6 +9,8 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 /**
  * @author Eriol_Eandur, Ivanpl
  */
@@ -55,6 +57,17 @@ public abstract class GuidebookCommand {
 
     protected abstract void execute(CommandSender cs, String... args);
 
+
+    /**
+     * @param cs   The sender
+     * @param args The arguments provided for this subcommand - <code>/guidebook subcommand arg0 arg1<code>
+     * @return By default, an empty list
+     */
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        // Default - no completions
+        return List.of();
+    }
+
     private void sendPlayerOnlyErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You have to be logged in to run this command.");
     }
@@ -82,7 +95,7 @@ public abstract class GuidebookCommand {
         PluginData.getMessageUtil().sendErrorMessage(cs, "No Guidebook area with that name.");
     }
 
-    protected void sentInvalidArgumentMessage(CommandSender cs) {
+    protected void sendInvalidArgumentMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Argument");
     }
 

@@ -11,9 +11,7 @@ import com.mcmiddleearth.guidebook.conversation.Confirmationable;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -41,6 +39,15 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
             new ConfirmationFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs,
                 "Do you really want to delete guidebook area " + areaName + "?", this);
         }
+    }
+
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        return List.of();
     }
 
     @Override

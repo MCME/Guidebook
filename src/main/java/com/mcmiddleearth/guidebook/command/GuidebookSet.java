@@ -78,7 +78,7 @@
                      notSpherical = false;
                      radius = NumericUtil.getInt(args[2]);
                  } else {
-                     sentInvalidArgumentMessage(cs);
+                     sendInvalidArgumentMessage(cs);
                      return;
                  }
              } else {
@@ -161,6 +161,19 @@
              new ConfirmationFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs,
                  "An area with that name already exists. Do you want to move it to your location and selection?", this);
          }
+     }
+
+     @Override
+     protected List<String> getCompletions(CommandSender cs, String... args) {
+         if (args.length == 1) {
+             return PluginData.getAreaNames();
+         }
+
+         if (args.length == 2) {
+             return List.of("sphere");
+         }
+
+         return List.of();
      }
 
      private void saveData(CommandSender cs, InfoArea area) {

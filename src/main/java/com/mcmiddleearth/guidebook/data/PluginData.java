@@ -187,6 +187,10 @@ public class PluginData {
         return infoAreas;
     }
 
+    public static List<String> getAreaNames() {
+        return new ArrayList<String>(infoAreas.keySet());
+    }
+
     public static File getDataFolder() {
         return dataFolder;
     }

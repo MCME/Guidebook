@@ -12,6 +12,7 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +31,19 @@ public class GuidebookDescription extends GuidebookCommand {
         super(1, true, permissionNodes);
         setShortDescription(": Defines the description of a Guidebook area.");
         setUsageDescription(" <AreaName>: Initiates a conversation to edit the Guidbook area's description.");
+    }
+
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        if (args.length == 2) {
+            return List.of("getbook", "save");
+        }
+
+        return List.of();
     }
 
     @Override

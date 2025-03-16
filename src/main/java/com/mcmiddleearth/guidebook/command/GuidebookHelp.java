@@ -7,6 +7,8 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +24,17 @@ public class GuidebookHelp extends GuidebookCommand {
         super(0, true, permissionNodes);
         setShortDescription(": Help for Guidebook.");
         setUsageDescription(" [subcommand]: Without a given [subcommand] shows short help messages for all Guidebook commands. With additional argument shows detailed help for [subcommand].");
+    }
+
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length != 1) return List.of();
+
+        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
+            .getExecutor()).getCommands();
+
+        List<String> subcommandNames = new ArrayList<>(commands.keySet());
+        return subcommandNames;
     }
 
     @Override

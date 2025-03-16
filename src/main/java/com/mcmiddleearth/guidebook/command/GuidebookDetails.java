@@ -16,6 +16,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 /**
  * @author Eriol_Eandur
  */
@@ -90,4 +92,12 @@ public class GuidebookDetails extends GuidebookCommand {
         }
     }
 
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        return List.of();
+    }
 }

@@ -12,6 +12,7 @@ import com.mcmiddleearth.pluginutil.message.MessageType;
 import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +28,15 @@ public class GuidebookShow extends GuidebookCommand {
         super(1, true, permissionNodes);
         setShortDescription(": Shows the description message of a Guidebook area.");
         setUsageDescription(" <AreaName>: Shows the stored description message of details of area <AreaName> as shown to a player entering the area.");
+    }
+
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        return List.of();
     }
 
     @Override

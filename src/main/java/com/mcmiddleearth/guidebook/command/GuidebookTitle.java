@@ -11,6 +11,7 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -103,6 +104,15 @@ Logger.getGlobal().log(Level.INFO, "Line *** {0}", line);
                 sendParseError(cs);
             }*/
         }
+    }
+
+    @Override
+    protected List<String> getCompletions(CommandSender cs, String... args) {
+        if (args.length == 1) {
+            return PluginData.getAreaNames();
+        }
+
+        return List.of();
     }
 
     private String getDescription(String[] args, int startIndex) {
