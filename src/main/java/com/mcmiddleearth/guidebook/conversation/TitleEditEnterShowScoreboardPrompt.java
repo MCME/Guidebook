@@ -22,26 +22,24 @@ import org.bukkit.conversations.Prompt;
 import org.bukkit.conversations.ValidatingPrompt;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class TitleEditEnterShowScoreboardPrompt extends ValidatingPrompt{
+public class TitleEditEnterShowScoreboardPrompt extends ValidatingPrompt {
 
     @Override
     public String getPromptText(ConversationContext cc) {
-        if(((InfoArea) cc.getSessionData("area")).isShowTitle()) {
+        if (((InfoArea) cc.getSessionData("area")).isShowTitle()) {
             return "Should this Guidebook area show it's title also at the top of screen as long as the player is inside the area?";
-        }
-        else {
+        } else {
             return "Should this Guidebook area show a title at the top of screen as long as the player is inside the area?";
         }
     }
-    
+
     @Override
-    protected String getFailedValidationText(ConversationContext context, String invalidInput){
+    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
         return "Type in 'yes' or 'no'.";
     }
-    
+
     @Override
     protected boolean isInputValid(ConversationContext cc, String input) {
         return input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("no");
@@ -50,17 +48,17 @@ public class TitleEditEnterShowScoreboardPrompt extends ValidatingPrompt{
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, String input) {
         InfoArea area = (InfoArea) cc.getSessionData("area");
-        if(input.equalsIgnoreCase("yes")) {
+        if (input.equalsIgnoreCase("yes")) {
             area.setShowScoreboard(true);
-            if(area.isShowTitle()) {
+            if (area.isShowTitle()) {
                 return Prompt.END_OF_CONVERSATION;
             } else {
                 return new TitleEditEnterTitlePrompt();
             }
-        } else  {
+        } else {
             area.setShowScoreboard(false);
             return Prompt.END_OF_CONVERSATION;
         }
     }
-    
+
 }

@@ -23,25 +23,24 @@ import org.bukkit.conversations.Prompt;
 import org.bukkit.conversations.StringPrompt;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class TitleEditEnterSubtitlePrompt extends StringPrompt{
+public class TitleEditEnterSubtitlePrompt extends StringPrompt {
 
     @Override
     public String getPromptText(ConversationContext cc) {
         return "Enter a new subtitle!";
     }
-    
+
     @Override
     public Prompt acceptInput(ConversationContext cc, String input) {
-        InfoArea area = ((InfoArea)cc.getSessionData("area"));
+        InfoArea area = ((InfoArea) cc.getSessionData("area"));
         area.setSubtitle(InputUtil.replaceAltColorCode(input));
-        if(area.isShowTitle()) {
+        if (area.isShowTitle()) {
             return new TitleEditEnterShowScoreboardPrompt();
         } else {
             return Prompt.END_OF_CONVERSATION;
         }
     }
- 
+
 }

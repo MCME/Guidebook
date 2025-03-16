@@ -25,22 +25,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class ConfirmationFactory implements ConversationAbandonedListener{
-    
+public class ConfirmationFactory implements ConversationAbandonedListener {
+
     private final ConversationFactory factory;
-    
-    public ConfirmationFactory(Plugin plugin){
+
+    public ConfirmationFactory(Plugin plugin) {
         factory = new ConversationFactory(plugin)
-                .withModality(false)
-                .withPrefix(new ConfirmationPrefix())
-                .withFirstPrompt(new ConfirmationPrompt())
-                .withTimeout(60)
-                .addConversationAbandonedListener(this);
+            .withModality(false)
+            .withPrefix(new ConfirmationPrefix())
+            .withFirstPrompt(new ConfirmationPrompt())
+            .withTimeout(60)
+            .addConversationAbandonedListener(this);
     }
-    
+
     public void start(Player player, String query, Confirmationable task) {
         Conversation conversation = factory.buildConversation(player);
         ConversationContext context = conversation.getContext();
@@ -49,15 +48,14 @@ public class ConfirmationFactory implements ConversationAbandonedListener{
         context.setSessionData("query", query);
         conversation.begin();
     }
-   
+
     @Override
     public void conversationAbandoned(ConversationAbandonedEvent abandonedEvent) {
         ConversationContext cc = abandonedEvent.getContext();
         Player player = (Player) cc.getSessionData("player");
         if (abandonedEvent.gracefulExit() && (Boolean) cc.getSessionData("answer")) {
             ((Confirmationable) cc.getSessionData("task")).confirmed(player);
-        }
-        else {
+        } else {
             ((Confirmationable) cc.getSessionData("task")).cancelled(player);
         }
     }

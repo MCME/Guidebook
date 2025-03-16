@@ -22,14 +22,13 @@ import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.ConversationPrefix;
 
 /**
- *
  * @author Eriol_Eandur
  */
 class ConfirmationPrefix implements ConversationPrefix {
 
     @Override
     public String getPrefix(ConversationContext cc) {
-        return ChatColor.AQUA+PluginData.getMessageUtil().getPREFIX();
+        return ChatColor.AQUA + PluginData.getMessageUtil().getPREFIX();
     }
-    
+
 }

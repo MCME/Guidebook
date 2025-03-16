@@ -26,11 +26,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class GuidebookPlugin extends JavaPlugin{
- 
+public class GuidebookPlugin extends JavaPlugin {
+
     private static GuidebookPlugin pluginInstance;
 
     @Override
@@ -42,7 +41,7 @@ public class GuidebookPlugin extends JavaPlugin{
         getCommand("guidebook").setExecutor(new GuidebookCommandExecutor());
         getLogger().info("Enabled!");
     }
-    
+
     @Override
     public void onDisable() {
         PluginData.disable();
@@ -60,8 +59,8 @@ public class GuidebookPlugin extends JavaPlugin{
                     Location playerLocation = player.getLocation();
                     for (String key : PluginData.getInfoAreas().keySet()) {
                         InfoArea area = PluginData.getInfoAreas().get(key);
-                        if (area.isInside(playerLocation) && !area.isInfomed(player) 
-                                && area.isEnable() && !PluginData.isExcluded(player)) {
+                        if (area.isInside(playerLocation) && !area.isInfomed(player)
+                            && area.isEnable() && !PluginData.isExcluded(player)) {
                             area.addInformedPlayer(player);
                         }
                         if (!area.isNear(playerLocation)) {

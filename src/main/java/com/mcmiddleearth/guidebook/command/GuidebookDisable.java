@@ -18,6 +18,7 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,7 +26,6 @@ import java.util.logging.Logger;
 import org.bukkit.command.CommandSender;
 
 /**
- *
  * @author Fraspace5
  */
 public class GuidebookDisable extends GuidebookCommand {

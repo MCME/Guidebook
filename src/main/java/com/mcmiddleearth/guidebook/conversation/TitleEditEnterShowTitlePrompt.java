@@ -22,21 +22,20 @@ import org.bukkit.conversations.Prompt;
 import org.bukkit.conversations.ValidatingPrompt;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class TitleEditEnterShowTitlePrompt extends ValidatingPrompt{
+public class TitleEditEnterShowTitlePrompt extends ValidatingPrompt {
 
     @Override
     public String getPromptText(ConversationContext cc) {
         return "Should this Guidebook area show a title at center of screen when a player enters the area?";
     }
-    
+
     @Override
-    protected String getFailedValidationText(ConversationContext context, String invalidInput){
+    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
         return "Type in 'yes' or 'no'.";
     }
-    
+
     @Override
     protected boolean isInputValid(ConversationContext cc, String input) {
         return input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("no");
@@ -45,13 +44,13 @@ public class TitleEditEnterShowTitlePrompt extends ValidatingPrompt{
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, String input) {
         InfoArea area = (InfoArea) cc.getSessionData("area");
-        if(input.equalsIgnoreCase("yes")) {
+        if (input.equalsIgnoreCase("yes")) {
             area.setShowTitle(true);
             return new TitleEditEnterTitlePrompt();
-        } else  {
+        } else {
             area.setShowTitle(false);
             return new TitleEditEnterShowScoreboardPrompt();
         }
     }
-    
+
 }

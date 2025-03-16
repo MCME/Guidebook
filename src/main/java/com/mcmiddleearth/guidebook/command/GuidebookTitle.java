@@ -9,35 +9,35 @@ import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.conversation.TitleEditFactory;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class GuidebookTitle extends GuidebookCommand{
-    
+public class GuidebookTitle extends GuidebookCommand {
+
     public GuidebookTitle(String... permissionNodes) {
         super(1, true, permissionNodes);
         setShortDescription(": Defines the title of a Guidebook area.");
         setUsageDescription(" <AreaName>: Initiates a conversation to configure a Guidebook area's title.");
     }
-    
+
     @Override
     protected void execute(CommandSender cs, String... args) {
         InfoArea area = PluginData.getInfoArea(args[0]);
-        if(area==null) {
+        if (area == null) {
             sendNoAreaErrorMessage(cs);
-        }
-        else {
-            if(((Player)cs).isConversing()) {
+        } else {
+            if (((Player) cs).isConversing()) {
                 sendAlreadyConversing((Player) cs);
             }
-            new TitleEditFactory(GuidebookPlugin.getPluginInstance()).start((Player)cs, area, args[0]);
+            new TitleEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, args[0]);
         /*    int line = -1;
             int descriptionIndexShift=0;
             if(args.length>3 && NumericUtil.isInt(args[2])) {
@@ -104,13 +104,13 @@ Logger.getGlobal().log(Level.INFO, "Line *** {0}", line);
             }*/
         }
     }
-    
+
     private String getDescription(String[] args, int startIndex) {
         String areaDescription = args[startIndex];
-        for(int i = startIndex+1; i<args.length;i++) {
-            areaDescription = areaDescription + " "+args[i];
+        for (int i = startIndex + 1; i < args.length; i++) {
+            areaDescription = areaDescription + " " + args[i];
         }
-Logger.getGlobal().info("Desc*** "+areaDescription);
+        Logger.getGlobal().info("Desc*** " + areaDescription);
         return areaDescription;
     }
 
@@ -122,7 +122,7 @@ Logger.getGlobal().info("Desc*** "+areaDescription);
             Logger.getLogger(GuidebookTitle.class.getName()).log(Level.SEVERE, null, ex);
         }
     }*/
-    
+
     private void sendAlreadyConversing(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "You are already in a converstion.");
     }

@@ -21,10 +21,9 @@ import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.Prompt;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class ConfirmationPrompt extends BooleanPrompt{
+public class ConfirmationPrompt extends BooleanPrompt {
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, boolean answer) {
@@ -34,7 +33,7 @@ public class ConfirmationPrompt extends BooleanPrompt{
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, String answer) {
-        if(answer.equalsIgnoreCase("true") || answer.equalsIgnoreCase("yes"))
+        if (answer.equalsIgnoreCase("true") || answer.equalsIgnoreCase("yes"))
             return acceptValidatedInput(cc, true);
         else
             return acceptValidatedInput(cc, false);
@@ -44,18 +43,18 @@ public class ConfirmationPrompt extends BooleanPrompt{
     public String getPromptText(ConversationContext cc) {
         return (String) cc.getSessionData("query");
     }
-    
+
     @Override
-    protected boolean isInputValid(ConversationContext context, String answer){
-        return answer.equalsIgnoreCase("no") 
+    protected boolean isInputValid(ConversationContext context, String answer) {
+        return answer.equalsIgnoreCase("no")
             || answer.equalsIgnoreCase("yes")
             || answer.equalsIgnoreCase("false")
             || answer.equalsIgnoreCase("true");
     }
-    
+
     @Override
-    protected String getFailedValidationText(ConversationContext context, String invalidInput){
+    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
         return "Type 'yes' or 'no' in chat.";
     }
-    
+
 }

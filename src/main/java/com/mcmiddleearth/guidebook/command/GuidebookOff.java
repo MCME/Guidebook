@@ -10,20 +10,19 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- *
  * @author Eriol_Eandur
  */
-public class GuidebookOff extends GuidebookCommand{
-    
+public class GuidebookOff extends GuidebookCommand {
+
     public GuidebookOff(String... permissionNodes) {
         super(0, true, permissionNodes);
         setShortDescription(": Excludes a player from Guidebook messages.");
         setUsageDescription(": The player issuing this command will no longer receive Guidebook messages.");
     }
-    
+
     @Override
     protected void execute(CommandSender cs, String... args) {
-        Player player=(Player)cs;
+        Player player = (Player) cs;
         PluginData.exclude(player);
         PluginData.getMessageUtil().sendInfoMessage(cs, "You will no longer receive info messages from Guidebook.");
     }
