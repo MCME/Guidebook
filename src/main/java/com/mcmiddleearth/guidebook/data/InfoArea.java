@@ -128,7 +128,7 @@ public abstract class InfoArea {
         status = false;
     }
 
-    public boolean isInfomed(Player player) {
+    public boolean isInformed(Player player) {
         return informedPlayers.contains(player.getUniqueId());
     }
 
@@ -143,7 +143,7 @@ public abstract class InfoArea {
     }
 
     public void clearInformedPlayers() {
-        for (UUID uuid : informedPlayers.toArray(new UUID[informedPlayers.size()])) {
+        for (UUID uuid : informedPlayers) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
                 removeInformedPlayer(player);

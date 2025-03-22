@@ -30,7 +30,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void playerQuit(PlayerQuitEvent event) {
         for (InfoArea area : PluginData.getInfoAreas().values()) {
-            if (area.isInfomed(event.getPlayer())) {
+            if (area.isInformed(event.getPlayer())) {
                 area.removeInformedPlayer(event.getPlayer());
             }
         }
