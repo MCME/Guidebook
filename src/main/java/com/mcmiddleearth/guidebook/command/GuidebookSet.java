@@ -24,9 +24,10 @@
  import com.mcmiddleearth.guidebook.data.PluginData;
  import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
  import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
-//import com.mcmiddleearth.pluginutil.FAWEUtil;
  import com.mcmiddleearth.pluginutil.NumericUtil;
  import com.mcmiddleearth.pluginutil.WEUtil;
+ import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+ import com.mcmiddleearth.pluginutil.region.SphericalRegion;
  import com.sk89q.worldedit.regions.CuboidRegion;
  import com.sk89q.worldedit.regions.Polygonal2DRegion;
  import com.sk89q.worldedit.regions.Region;
@@ -47,36 +48,33 @@
 
      private InfoArea area;
 
-     private String areaName;
-
      private Location location;
+     private Region WERegion = null;
 
-     private boolean notSpherical;
-
-     private boolean newDynamic;
-
-     private Region region = null;
-
+     private boolean spherical;
      private int radius;
 
      public GuidebookSet(String... permissionNodes) {
          super(1, true, permissionNodes);
-         setShortDescription(": Defines a Guidebook area.");
-         setUsageDescription(" <AreaName>: Location of command sender becomes center of Guidebook area with name <AreaName>.");
+         setShortDescription(": Define a new area, or redefine an existing one");
+         setUsageDescription(" Set's the region of the area to your WE selection or to a sphere (if the sphere & radius arguments are provided)");
      }
 
      @Override
      protected void execute(CommandSender cs, String... args) {
-         areaName = args[0];
-         area = PluginData.getInfoArea(args[0]);
-         location = ((Player) cs).getLocation().clone();
-         notSpherical = true;
+         String areaName = args[0];
+         area = PluginData.getInfoArea(areaName);
+         spherical = false;
+
          Player p = (Player) cs;
+         location = p.getLocation().clone();
+
          if (args.length > 1 && args[1].equalsIgnoreCase("sphere")) {
              if (args.length > 2) {
-                 if (NumericUtil.isInt(args[2])) {
-                     notSpherical = false;
-                     radius = NumericUtil.getInt(args[2]);
+                 String radiusArg = args[2];
+                 if (NumericUtil.isInt(radiusArg)) {
+                     spherical = true;
+                     radius = NumericUtil.getInt(radiusArg);
                  } else {
                      sendInvalidArgumentMessage(cs);
                      return;
@@ -86,80 +84,34 @@
                  return;
              }
          } else {
-             //try {
-             region = WEUtil.getSelection(p);
-             //region = FawePlayer.wrap(p).getSelection();
-             //} catch (NullPointerException | IncompleteRegionException ex) {}
-             if (!(region instanceof CuboidRegion || region instanceof Polygonal2DRegion)) {
+             WERegion = WEUtil.getSelection(p);
+             if (!(WERegion instanceof CuboidRegion || WERegion instanceof Polygonal2DRegion)) {
                  sendInvalidSelection(p);
                  return;
              }
          }
+
+         // Determine if we're creating or moving a region
          if (area == null) {
-             if (notSpherical) {
-                 if (region instanceof CuboidRegion) {
-                     area = new CuboidInfoArea(location, (CuboidRegion) region);
-                 } else {
-                     area = new PrismoidInfoArea(location, (Polygonal2DRegion) region);
-                 }
-             } else {
+             if (spherical) {
                  area = new SphericalInfoArea(location, radius);
+             } else {
+                 if (WERegion instanceof CuboidRegion) {
+                     area = new CuboidInfoArea(location, (CuboidRegion) WERegion);
+                 } else {
+                     area = new PrismoidInfoArea(location, (Polygonal2DRegion) WERegion);
+                 }
              }
              PluginData.addInfoArea(areaName, area);
 
              saveData(cs, area);
              sendNewAreaMessage(cs);
-         }/*
-        else {
-            String message = "A teleportation area with this name already exists. "+
-                    "Do you want to redefine it?";
-            newDynamic = area.isDynamic();
-            if(area.isDynamic()
-                    && !area.getTarget().getWorld().equals(((Player)cs).getWorld())) {
-                newDynamic = false;
-                message = message+" Center and target location will be in different worlds. "
-                                 +"Teleportation type will changed to static.";
-            }
-            /*boolean wasCuboid = area instanceof CuboidTeleportationArea;
-            if(cuboid != wasCuboid) {*/
-           /* new ConfirmationFactory(AutoTeleportPlugin.getPluginInstance()).start((Player) cs, 
-                                    message,this);
-                    /*"Specified shape differs from current shape. "+
-                    "You will need to define area size again. Do you want to continue?", this);
-            /*    return;
-            }
-            area.setCenter(location);
-            area.setDynamic(newDynamic);
-            saveData(cs);
-            sendCenterSetMessage(cs);*/
-         //}
-
-        /*areaName = args[0];
-        area = PluginData.getInfoArea(args[0]);
-        center = ((Player)cs).getLocation().clone();
-        cuboid = true;
-        /*if(args.length>1) {
-            if(args[1].equalsIgnoreCase("sphere")) {
-                cuboid = false;
-            }
-            else if(!args[1].equalsIgnoreCase("cuboid")) {
-                sentInvalidArgumentMessage(cs);
-            }
-        }*/
-        /*if(area==null) {
-            if(cuboid) {
-                area = new CuboidInfoArea(center);
-            }
-            /*else {
-                area = new SphericalInfoArea(center);
-            }*/
-            /*PluginData.addInfoArea(areaName, area);
-            saveData(cs);
-            sendNewAreaMessage(cs);
-        }*/
-         else {
-             new ConfirmationFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs,
-                 "An area with that name already exists. Do you want to move it to your location and selection?", this);
+         } else {
+             new ConfirmationFactory(GuidebookPlugin.getPluginInstance()).start(
+                 p,
+                 "An area with that name already exists. Do you want to move it to your location and selection?",
+                 this
+             );
          }
      }
 
@@ -187,36 +139,36 @@
 
      @Override
      public void confirmed(Player player) {
-         List<String> description = area.getDescription();
-         PluginData.deleteInfoArea(areaName);
-         if (notSpherical) {
-             if (region instanceof CuboidRegion) {
-                 area = new CuboidInfoArea(location, (CuboidRegion) region);
-             } else {
-                 area = new PrismoidInfoArea(location, (Polygonal2DRegion) region);
-             }
-             //area = new CuboidTeleportationArea(location,(CuboidRegion)region);
+         com.mcmiddleearth.pluginutil.region.Region newRegion = null;
+         if (spherical) {
+             newRegion = new SphericalRegion(location, radius);
          } else {
-             area = new SphericalInfoArea(location, radius);
+             if (WERegion instanceof CuboidRegion cuboid) {
+                 newRegion = new com.mcmiddleearth.pluginutil.region.CuboidRegion(location, cuboid);
+             } else if (WERegion instanceof Polygonal2DRegion polygon) {
+                 newRegion = new PrismoidRegion(location, polygon);
+             }
          }
-         area.setDescription(description);
-         PluginData.addInfoArea(areaName, area);
+
+         if (newRegion == null) {
+             PluginData.getMessageUtil().sendErrorMessage(
+                 player,
+                 "Unable to move area because the new region for the area is empty!"
+             );
+             return;
+         }
+         area.setRegion(newRegion);
+
          saveData(player, area);
-         sendCenterSetMessage(player);
+         sendAreaMovedMessage(player);
      }
-    /*@Override
-    public void confirmed(Player player) {
-        area.setCenter(player.getLocation());
-        saveData(player);
-        sendCenterSetMessage(player);
-    }*/
 
      @Override
      public void cancelled(Player player) {
          PluginData.getMessageUtil().sendErrorMessage(player, "You cancelled setting of area. No changes were made.");
      }
 
-     private void sendCenterSetMessage(CommandSender cs) {
+     private void sendAreaMovedMessage(CommandSender cs) {
          PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area was moved to your location and selection.");
      }
 
@@ -225,7 +177,6 @@
      }
 
      private void sendInvalidSelection(Player player) {
-         PluginData.getMessageUtil().sendErrorMessage(player, "For a cuboid area make a valid WorldEdit selection first.");
+         PluginData.getMessageUtil().sendErrorMessage(player, "No WorldEdit selection found! Either make a selection and try again, or specify sphere <radius> after the AreaName");
      }
-
  }

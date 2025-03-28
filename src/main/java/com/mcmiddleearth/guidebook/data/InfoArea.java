@@ -104,6 +104,10 @@ public abstract class InfoArea {
         title = newTitle;
     }
 
+    public void setRegion(Region region) {
+        this.region = region;
+    }
+
     public Location getLocation() {
         return region.getLocation();
     }
