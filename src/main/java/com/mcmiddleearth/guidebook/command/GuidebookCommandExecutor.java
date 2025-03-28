@@ -26,6 +26,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Eriol_Eandur
@@ -91,7 +92,12 @@ public class GuidebookCommandExecutor implements TabExecutor {
 
         // Filter the completions
         return completions.stream()
-            .filter(completion -> completion.toLowerCase().startsWith(lastArg))
+            .filter(completion
+                // Split the completion by '-'
+                // Useful because AreaName completions are structured <worldName>-<projectName>-<guidebookName>
+                -> Arrays.stream(completion.toLowerCase().split("-"))
+                // Include this completion if any split starts with lastArg
+                .anyMatch(part -> part.startsWith(lastArg)))
             .collect(Collectors.toList());
     }
 
