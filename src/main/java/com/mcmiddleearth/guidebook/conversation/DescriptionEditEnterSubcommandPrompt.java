@@ -57,8 +57,8 @@ public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt {
                 for (String line : ((InfoArea) cc.getSessionData("area")).getDescription()) {
                     new FancyMessage(MessageType.HIGHLIGHT_NO_PREFIX, PluginData.getMessageUtil())
                         .addSimple(ChatColor.DARK_AQUA + "[" + i + "] ")
-                        .addFancy(InputUtil.replaceColorCodeWithAltCode(line),
-                            InputUtil.replaceColorCodeWithAltCode(line),
+                        .addFancy(InputUtil.replaceAltColorCode(line),
+                            InputUtil.replaceAltColorCode(line),
                             "Click to copy into chat.")
                         .send((Player) cc.getSessionData("player"));
                     //PluginData.getMessageUtil().sendIndentedInfoMessage((Player)cc.getSessionData("player"), "["+i+"] "+line);
