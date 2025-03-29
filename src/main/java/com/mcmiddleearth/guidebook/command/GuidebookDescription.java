@@ -30,7 +30,7 @@ public class GuidebookDescription extends GuidebookCommand {
     public GuidebookDescription(String... permissionNodes) {
         super(1, true, permissionNodes);
         setShortDescription(": Defines the description of a Guidebook area.");
-        setUsageDescription(" <AreaName>: Initiates a conversation to edit the Guidbook area's description.");
+        setUsageDescription(" <AreaName>: Initiates a conversation to edit the Guidebook area's description.");
     }
 
     @Override
