@@ -38,6 +38,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,9 +51,11 @@ public abstract class InfoArea {
 
     private static final int CHAT_LENGTH = 90;
     private static final int NEAR_DISTANCE = 10;
+    private static final Duration COOLDOWN = Duration.ofMinutes(1);
 
     protected Region region;
 
+    private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
     private final Set<UUID> informedPlayers = new HashSet<>();
 
     private boolean status;
@@ -95,6 +99,10 @@ public abstract class InfoArea {
         return this.region;
     }
 
+    public void setRegion(Region region) {
+        this.region = region;
+    }
+
     public Location getLocation() {
         return region.getLocation();
     }
@@ -119,25 +127,48 @@ public abstract class InfoArea {
         status = false;
     }
 
-    public boolean isInfomed(Player player) {
+    public boolean isInformed(Player player) {
         return informedPlayers.contains(player.getUniqueId());
     }
 
-    public void addInformedPlayer(Player player) {
-        informedPlayers.add(player.getUniqueId());
+
+    public void onRegionEnter(Player player) {
+        UUID playerId = player.getUniqueId();
+        Instant now = Instant.now();
+
+        boolean hasBeenInformed = lastInformedTimes.containsKey(playerId);
+        if (hasBeenInformed) {
+            Instant lastNotified = lastInformedTimes.get(playerId);
+            if (Duration.between(lastNotified, now).compareTo(COOLDOWN) < 0) {
+                // Player has entered the region, but don't welcome them
+                informedPlayers.add(playerId);
+                return;
+            }
+        }
+
+        lastInformedTimes.put(playerId, now);
+        informedPlayers.add(playerId);
         welcomePlayer(player);
     }
 
-    public void removeInformedPlayer(Player player) {
-        informedPlayers.remove(player.getUniqueId());
+    public void onRegionLeave(Player player) {
+        UUID playerId = player.getUniqueId();
+        informedPlayers.remove(playerId);
         bossBar.removePlayer(player);
     }
 
+    public void clearPlayer(Player player) {
+        UUID playerId = player.getUniqueId();
+        bossBar.removePlayer(player);
+        informedPlayers.remove(playerId);
+        lastInformedTimes.remove(playerId);
+    }
+
     public void clearInformedPlayers() {
-        for (UUID uuid : informedPlayers.toArray(new UUID[informedPlayers.size()])) {
+        for (UUID uuid : informedPlayers) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
-                removeInformedPlayer(player);
+                clearPlayer(player);
             }
         }
     }

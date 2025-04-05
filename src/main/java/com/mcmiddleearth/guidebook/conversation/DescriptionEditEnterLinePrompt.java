@@ -32,20 +32,23 @@ public class DescriptionEditEnterLinePrompt extends NumericPrompt {
 
     @Override
     public String getPromptText(ConversationContext cc) {
-        return "Enter the number of the line to edit!";
+        String mode = (String) cc.getSessionData("mode");
+        return switch (mode) {
+            case "r" -> "Enter the number of the line to replace";
+            case "i" -> "Enter the number of the line to insert in front of";
+            case "d" -> "Enter the number of the line to delete";
+            default -> "Enter the number of the line to edit!";
+        };
     }
 
     @Override
     protected String getFailedValidationText(ConversationContext context, String invalidInput) {
-        switch ((String) context.getSessionData("mode")) {
-            case "e":
-                return "Type in chat the number of the line you want to edit.";
-            case "i":
-                return "Type in chat the number of the line you want to insert in front of.";
-            case "d":
-                return "Type in chat the number of the line you want to delete.";
-        }
-        return "Error!!!";
+        return switch ((String) context.getSessionData("mode")) {
+            case "r" -> "Type in chat the number of the line you want to replace";
+            case "i" -> "Type in chat the number of the line you want to insert in front of.";
+            case "d" -> "Type in chat the number of the line you want to delete.";
+            default -> "Error!!!";
+        };
     }
 
     @Override

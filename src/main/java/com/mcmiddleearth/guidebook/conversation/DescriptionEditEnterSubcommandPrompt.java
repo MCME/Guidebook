@@ -33,14 +33,20 @@ import org.bukkit.entity.Player;
 public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt {
 
     public DescriptionEditEnterSubcommandPrompt() {
-        super(new String[]{"s", "a", "i", "d", "r", "c", "x"});
+        super("s", "a", "i", "d", "r", "c", "x");
     }
 
     @Override
     public String getPromptText(ConversationContext cc) {
-        return "What do you want to do? \n's': show lines\n'a': add a line\n"
-            + "'i': insert a line\n'd': delete a line\n'r': replace a line\n"
-            + "'c': clear all lines\n'x': exit";
+        return """
+            What do you want to do?
+            's': show lines
+            'a': add a line
+            'i': insert a line
+            'd': delete a line
+            'r': replace a line
+            'c': clear all lines
+            'x': exit""";
     }
 
     @Override
@@ -50,24 +56,26 @@ public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt {
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, String input) {
+        Player player = (Player) cc.getSessionData("player");
+        InfoArea area = (InfoArea) cc.getSessionData("area");
+
         switch (input) {
             case "s":
-                PluginData.getMessageUtil().sendInfoMessage((Player) cc.getSessionData("player"), "Current description:");
+                PluginData.getMessageUtil().sendInfoMessage(player, "Current description:");
                 int i = 1;
-                for (String line : ((InfoArea) cc.getSessionData("area")).getDescription()) {
+                for (String line : area.getDescription()) {
                     new FancyMessage(MessageType.HIGHLIGHT_NO_PREFIX, PluginData.getMessageUtil())
                         .addSimple(ChatColor.DARK_AQUA + "[" + i + "] ")
-                        .addFancy(InputUtil.replaceColorCodeWithAltCode(line),
-                            InputUtil.replaceColorCodeWithAltCode(line),
+                        .addFancy(InputUtil.replaceAltColorCode(line),
+                            InputUtil.replaceAltColorCode(line),
                             "Click to copy into chat.")
-                        .send((Player) cc.getSessionData("player"));
-                    //PluginData.getMessageUtil().sendIndentedInfoMessage((Player)cc.getSessionData("player"), "["+i+"] "+line);
+                        .send(player);
                     i++;
                 }
                 return new DescriptionEditEnterSubcommandPrompt();
             case "c":
-                ((InfoArea) cc.getSessionData("area")).getDescription().clear();
-                sendDescriptionCleared((Player) cc.getSessionData("player"));
+                area.getDescription().clear();
+                sendDescriptionCleared(player);
                 cc.setSessionData("save", true);
                 return new DescriptionEditEnterSubcommandPrompt();
             case "a":
@@ -84,5 +92,4 @@ public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt {
     public void sendDescriptionCleared(Player player) {
         PluginData.getMessageUtil().sendInfoMessage(player, "All lines cleared.");
     }
-
 }
