@@ -95,16 +95,8 @@ public abstract class InfoArea {
         }
     }
 
-    public final void setTitle(String newTitle) {
-        /*Objective obj = scoreboard.getObjective(newTitle);
-        if(obj!=null) {
-            obj.unregister();
-        }
-        Objective objective = scoreboard.registerNewObjective(newTitle, "dummy");
-        objective.getScore("dummy").setScore(0);
-        objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);*/
-        bossBar.setTitle(newTitle);
-        title = newTitle;
+    public Region getRegion() {
+        return this.region;
     }
 
     public void setRegion(Region region) {
@@ -246,18 +238,24 @@ public abstract class InfoArea {
         description = lines;
     }
 
-    private void debugString(String string) {
-        for (int i = 0; i < string.length(); i++) {
-            Logger.getGlobal().info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " " + string.codePointAt(i));
-        }
-    }
-
     public void setDescription(List<String> lines) {
         description = lines;
     }
 
     public String getTitle() {
         return title;
+    }
+
+    public final void setTitle(String newTitle) {
+        /*Objective obj = scoreboard.getObjective(newTitle);
+        if(obj!=null) {
+            obj.unregister();
+        }
+        Objective objective = scoreboard.registerNewObjective(newTitle, "dummy");
+        objective.getScore("dummy").setScore(0);
+        objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);*/
+        bossBar.setTitle(newTitle);
+        title = newTitle;
     }
 
     public List<String> getDescription() {
@@ -286,5 +284,11 @@ public abstract class InfoArea {
 
     public void setShowScoreboard(boolean showScoreboard) {
         this.showScoreboard = showScoreboard;
+    }
+
+    private void debugString(String string) {
+        for (int i = 0; i < string.length(); i++) {
+            Logger.getGlobal().info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " " + string.codePointAt(i));
+        }
     }
 }
