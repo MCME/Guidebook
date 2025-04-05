@@ -91,16 +91,19 @@ public class GuidebookCommandExecutor implements TabExecutor {
 
         // Filter the completions
         return completions.stream()
-            .filter(completion -> getMatchingSegments(completion, lastArg))
+            // AreaName completions are structured <worldName>-<projectName>-<guidebookName>
+            // So support partial matches
+            .filter(completion -> matchesAnySegment(completion, lastArg))
             .collect(Collectors.toList());
     }
 
-    private boolean getMatchingSegments(String input, String searchTerm) {
+    private boolean matchesAnySegment(String input, String searchTerm) {
         String[] parts = input.toLowerCase().split("-");
+        int partsLength = parts.length;
 
-        for (int i = 0; i < parts.length; i++) {
-            // world-gondor-minas, gondor-minas, minas
-            String segment = String.join("-", Arrays.copyOfRange(parts, i, parts.length));
+        // segment = world-gondor-minas, gondor-minas, minas
+        for (int i = 0; i < partsLength; i++) {
+            String segment = String.join("-", Arrays.copyOfRange(parts, i, partsLength));
             if (segment.startsWith(searchTerm)) {
                 return true;
             }
