@@ -59,12 +59,12 @@ public class GuidebookPlugin extends JavaPlugin {
                     Location playerLocation = player.getLocation();
                     for (String key : PluginData.getInfoAreas().keySet()) {
                         InfoArea area = PluginData.getInfoAreas().get(key);
-                        if (area.isInside(playerLocation) && !area.isInfomed(player)
+                        if (area.isInside(playerLocation) && !area.isInformed(player)
                             && area.isEnable() && !PluginData.isExcluded(player)) {
-                            area.addInformedPlayer(player);
+                            area.onRegionEnter(player);
                         }
                         if (!area.isNear(playerLocation)) {
-                            area.removeInformedPlayer(player);
+                            area.onRegionLeave(player);
                         }
                     }
                 }

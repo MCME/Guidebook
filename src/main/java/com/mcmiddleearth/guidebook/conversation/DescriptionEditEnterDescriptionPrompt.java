@@ -35,7 +35,7 @@ public class DescriptionEditEnterDescriptionPrompt extends StringPrompt {
 
     @Override
     public String getPromptText(ConversationContext cc) {
-        return "Enter a new description!";
+        return "Enter the content of the line!";
     }
 
     @Override
