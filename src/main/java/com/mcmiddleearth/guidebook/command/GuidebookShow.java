@@ -58,7 +58,7 @@ public class GuidebookShow extends GuidebookCommand {
     public static void sendDescription(Player player, InfoArea area) throws MessageParseException {
         if (area.getDescription().isEmpty()) {
             PluginData.getMessageUtil().sendInfoMessage(player, "Welcome to "
-                + PluginData.getMessageUtil().STRESSED + area.getTitle()
+                + PluginData.getMessageUtil().STRESSED + area.getTitle() + " (" + area.getName() + ")"
                 + PluginData.getMessageUtil().INFO
                 + ". Unfortunately there is no further description for this area.");
         } else {

@@ -105,7 +105,7 @@
              PluginData.addInfoArea(areaName, area);
 
              saveData(cs, area);
-             sendNewAreaMessage(cs);
+             sendNewAreaMessage(cs, areaName);
          } else {
              new ConfirmationFactory(GuidebookPlugin.getPluginInstance()).start(
                  p,
@@ -172,8 +172,8 @@
          PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area was moved to your location and selection.");
      }
 
-     private void sendNewAreaMessage(CommandSender cs) {
-         PluginData.getMessageUtil().sendInfoMessage(cs, "New guidebook area created.");
+     private void sendNewAreaMessage(CommandSender cs, String areaName) {
+         PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area '" + areaName + "' created.");
      }
 
      private void sendInvalidSelection(Player player) {

@@ -107,19 +107,18 @@ public class PluginData {
     }
 
     public static void saveArea(InfoArea area) throws IOException {
-        for (String areaName : infoAreas.keySet()) {
-            if (infoAreas.get(areaName) == area) {
-                DevUtil.log("SaveData " + areaName);
-                FileConfiguration config = new YamlConfiguration();
-                infoAreas.get(areaName).save(config);
-                File worldFolder = getWorldFolder(areaName);
-                if (!worldFolder.exists()) {
-                    worldFolder.mkdir();
-                }
-                File dataFile = getDataFile(worldFolder, areaName);
-                config.save(dataFile);
-            }
+        final String areaName = area.getName();
+        DevUtil.log("SaveData " + areaName);
+
+        FileConfiguration config = new YamlConfiguration();
+        area.save(config);
+
+        File worldFolder = getWorldFolder(areaName);
+        if (!worldFolder.exists()) {
+            worldFolder.mkdir();
         }
+        File dataFile = getDataFile(worldFolder, areaName);
+        config.save(dataFile);
     }
 
     public static void loadData() {

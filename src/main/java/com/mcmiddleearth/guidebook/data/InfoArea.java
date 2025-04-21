@@ -311,4 +311,8 @@ public abstract class InfoArea {
             Logger.getGlobal().info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " " + string.codePointAt(i));
         }
     }
+
+    public String getName() {
+        return this.areaName;
+    }
 }
