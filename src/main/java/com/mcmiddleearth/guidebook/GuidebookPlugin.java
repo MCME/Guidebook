@@ -19,7 +19,6 @@ package com.mcmiddleearth.guidebook;
 import com.mcmiddleearth.guidebook.command.GuidebookCommandExecutor;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -69,9 +68,9 @@ public class GuidebookPlugin extends JavaPlugin {
                 Location playerLocation = player.getLocation();
 
                 for (InfoArea area : enabledAreas) {
-                    boolean informed = area.isInformed(player);
+                    boolean isInside = area.containsPlayer(player);
 
-                    if (!informed) {
+                    if (!isInside) {
                         if (area.isInside(playerLocation)) {
                             area.onRegionEnter(player);
                         }

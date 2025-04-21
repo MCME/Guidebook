@@ -61,10 +61,9 @@ public abstract class InfoArea {
     private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
     /**
      * All players currently within the InfoArea
-     * Used to determine if a player has entered/left an InfoArea
-     * TODO: Mention informed otherwise rename
+     * Used to determine if a player has entered or left an InfoArea
      */
-    private final Set<UUID> informedPlayers = new HashSet<>();
+    private final Set<UUID> areaPlayers = new HashSet<>();
 
     private boolean status;
 
@@ -137,8 +136,8 @@ public abstract class InfoArea {
         status = false;
     }
 
-    public boolean isInformed(Player player) {
-        return informedPlayers.contains(player.getUniqueId());
+    public boolean containsPlayer(Player player) {
+        return areaPlayers.contains(player.getUniqueId());
     }
 
     public final void onRegionEnter(Player player) {
@@ -150,14 +149,14 @@ public abstract class InfoArea {
             Instant lastNotified = lastInformedTimes.get(playerId);
             if (Duration.between(lastNotified, now).compareTo(COOLDOWN) < 0) {
                 // Player has entered the region, but don't welcome them
-                informedPlayers.add(playerId);
+                areaPlayers.add(playerId);
                 return;
             }
         }
 
         // Track that the player is in the region even if the Event is cancelled
         // - otherwise onRegionEnter would keep being called!
-        informedPlayers.add(playerId);
+        areaPlayers.add(playerId);
 
         GuidebookSendEvent sendEvent = new GuidebookSendEvent(player, areaName);
         sendEvent.callEvent();
@@ -172,20 +171,18 @@ public abstract class InfoArea {
 
     public final void onRegionLeave(Player player) {
         UUID playerId = player.getUniqueId();
-        informedPlayers.remove(playerId);
+        areaPlayers.remove(playerId);
         bossBar.removePlayer(player);
     }
 
     public void clearPlayer(Player player) {
+        onRegionLeave(player);
         UUID playerId = player.getUniqueId();
-        informedPlayers.remove(playerId);
-        bossBar.removePlayer(player);
-//        onRegionLeave(player);
         lastInformedTimes.remove(playerId);
     }
 
-    public void clearInformedPlayers() {
-        for (UUID uuid : informedPlayers) {
+    public void clearPlayers() {
+        for (UUID uuid : areaPlayers) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
                 clearPlayer(player);
