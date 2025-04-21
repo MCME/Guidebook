@@ -94,12 +94,12 @@
          // Determine if we're creating or moving a region
          if (area == null) {
              if (spherical) {
-                 area = new SphericalInfoArea(location, radius);
+                 area = new SphericalInfoArea(areaName, location, radius);
              } else {
                  if (WERegion instanceof CuboidRegion) {
-                     area = new CuboidInfoArea(location, (CuboidRegion) WERegion);
+                     area = new CuboidInfoArea(areaName, location, (CuboidRegion) WERegion);
                  } else {
-                     area = new PrismoidInfoArea(location, (Polygonal2DRegion) WERegion);
+                     area = new PrismoidInfoArea(areaName, location, (Polygonal2DRegion) WERegion);
                  }
              }
              PluginData.addInfoArea(areaName, area);

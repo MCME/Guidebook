@@ -29,12 +29,14 @@ import org.bukkit.util.Vector;
  */
 public class CuboidInfoArea extends InfoArea {
 
-    public CuboidInfoArea(Location center, com.sk89q.worldedit.regions.CuboidRegion weRegion) {
+    public CuboidInfoArea(String areaName, Location center, com.sk89q.worldedit.regions.CuboidRegion weRegion) {
+        super(areaName);
         region = new CuboidRegion(center, weRegion);
     }
 
-    public CuboidInfoArea(ConfigurationSection config) {
-        super(config);
+    public CuboidInfoArea(String areaName, ConfigurationSection config) {
+        super(areaName, config);
+
         if (config.contains("center")) {
             Location center = deserializeLocation(config.getConfigurationSection("center"));
             int sizeX = config.getInt("xSize");
@@ -82,5 +84,4 @@ public class CuboidInfoArea extends InfoArea {
                 (Double) data.get("z"));
         }
     }
-
 }
