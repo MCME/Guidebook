@@ -18,6 +18,7 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.command.GuidebookShow;
+import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.InputUtil;
@@ -55,7 +56,14 @@ public abstract class InfoArea {
 
     protected Region region;
 
+    private final String areaName;
+
     private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
+    /**
+     * All players currently within the InfoArea
+     * Used to determine if a player has entered/left an InfoArea
+     * TODO: Mention informed otherwise rename
+     */
     private final Set<UUID> informedPlayers = new HashSet<>();
 
     private boolean status;
@@ -69,7 +77,9 @@ public abstract class InfoArea {
 
     private List<String> description = new ArrayList<>();
 
-    protected InfoArea() {
+    protected InfoArea(String areaName) {
+        this.areaName = areaName;
+
         //scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         bossBar = Bukkit.getServer().createBossBar("unnamed Guidebook area", BarColor.YELLOW, BarStyle.SOLID);
         bossBar.setProgress(0);
@@ -78,9 +88,9 @@ public abstract class InfoArea {
         status = true;
     }
 
-    public InfoArea(ConfigurationSection config) {
-        //this.center = deserializeLocation(config.getConfigurationSection("center"));
-        this();
+    public InfoArea(String areaName, ConfigurationSection config) {
+        this(areaName);
+
         if (config.contains("title")) {
             setTitle((String) config.get("title"));
             subtitle = (String) config.get("subtitle");
@@ -131,8 +141,7 @@ public abstract class InfoArea {
         return informedPlayers.contains(player.getUniqueId());
     }
 
-
-    public void onRegionEnter(Player player) {
+    public final void onRegionEnter(Player player) {
         UUID playerId = player.getUniqueId();
         Instant now = Instant.now();
 
@@ -146,12 +155,22 @@ public abstract class InfoArea {
             }
         }
 
-        lastInformedTimes.put(playerId, now);
+        // Track that the player is in the region even if the Event is cancelled
+        // - otherwise onRegionEnter would keep being called!
         informedPlayers.add(playerId);
-        welcomePlayer(player);
+
+        GuidebookSendEvent sendEvent = new GuidebookSendEvent(player, areaName);
+        sendEvent.callEvent();
+        if (sendEvent.isCancelled()) return;
+
+        boolean notificationsEnabled = !PluginData.isExcluded(player);
+        if (notificationsEnabled) {
+            welcomePlayer(player);
+            lastInformedTimes.put(playerId, now);
+        }
     }
 
-    public void onRegionLeave(Player player) {
+    public final void onRegionLeave(Player player) {
         UUID playerId = player.getUniqueId();
         informedPlayers.remove(playerId);
         bossBar.removePlayer(player);
@@ -159,8 +178,9 @@ public abstract class InfoArea {
 
     public void clearPlayer(Player player) {
         UUID playerId = player.getUniqueId();
-        bossBar.removePlayer(player);
         informedPlayers.remove(playerId);
+        bossBar.removePlayer(player);
+//        onRegionLeave(player);
         lastInformedTimes.remove(playerId);
     }
 

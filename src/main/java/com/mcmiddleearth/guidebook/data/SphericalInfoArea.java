@@ -25,12 +25,13 @@ import org.bukkit.configuration.ConfigurationSection;
  */
 public class SphericalInfoArea extends InfoArea {
 
-    public SphericalInfoArea(Location center, int radius) {
+    public SphericalInfoArea(String areaName, Location center, int radius) {
+        super(areaName);
         region = new SphericalRegion(center, radius);
     }
 
-    public SphericalInfoArea(ConfigurationSection config) {
-        super(config);
+    public SphericalInfoArea(String areaName, ConfigurationSection config) {
+        super(areaName, config);
         region = SphericalRegion.load(config);
     }
 

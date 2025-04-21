@@ -26,12 +26,13 @@ import org.bukkit.configuration.ConfigurationSection;
  */
 public class PrismoidInfoArea extends InfoArea {
 
-    public PrismoidInfoArea(Location center, com.sk89q.worldedit.regions.Polygonal2DRegion weRegion) {
+    public PrismoidInfoArea(String areaName, Location center, com.sk89q.worldedit.regions.Polygonal2DRegion weRegion) {
+        super(areaName);
         region = new PrismoidRegion(center, weRegion);
     }
 
-    public PrismoidInfoArea(ConfigurationSection config) {
-        super(config);
+    public PrismoidInfoArea(String areaName, ConfigurationSection config) {
+        super(areaName, config);
         DevUtil.log("LoadCuboid " + config);
         region = PrismoidRegion.load(config);
     }
