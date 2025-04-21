@@ -71,7 +71,7 @@ public class PluginData {
 
     public static boolean deleteInfoArea(String name) {
         InfoArea area = infoAreas.get(name);
-        area.clearInformedPlayers();
+        area.clearPlayers();
         boolean result = getDataFile(getWorldFolder(name), name).delete();
         if (result) {
             infoAreas.remove(name);
@@ -130,7 +130,7 @@ public class PluginData {
             excludedPlayers.add(UUID.fromString(id));
         }
         for (InfoArea area : infoAreas.values()) {
-            area.clearInformedPlayers();
+            area.clearPlayers();
         }
         infoAreas.clear();
         File[] worldFolders = dataFolder.listFiles(FileUtil.getDirFilter());
@@ -171,7 +171,7 @@ public class PluginData {
             Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
         }
         for (InfoArea area : infoAreas.values()) {
-            area.clearInformedPlayers();
+            area.clearPlayers();
         }
     }
 
