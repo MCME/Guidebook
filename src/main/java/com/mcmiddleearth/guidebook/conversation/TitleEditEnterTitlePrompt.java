@@ -31,7 +31,7 @@ public class TitleEditEnterTitlePrompt extends StringPrompt {
     public String getPromptText(ConversationContext cc) {
         InfoArea area = ((InfoArea) cc.getSessionData("area"));
         if (area.isShowTitle()) {
-            return "Enter a new title with 16 characters at most. You can give more information in following subtitle.";
+            return "Enter a new title with 20 characters at most. You can give more information in following subtitle.";
         } else {
             return "Enter a new title.";
         }
@@ -41,7 +41,7 @@ public class TitleEditEnterTitlePrompt extends StringPrompt {
     public Prompt acceptInput(ConversationContext cc, String input) {
         InfoArea area = ((InfoArea) cc.getSessionData("area"));
         if (area.isShowTitle()) {
-            area.setTitle(InputUtil.replaceAltColorCode(input).substring(0, Math.min(input.length(), 16)));
+            area.setTitle(InputUtil.replaceAltColorCode(input).substring(0, Math.min(input.length(), 20)));
             return new TitleEditEnterSubtitlePrompt();
         } else {
             area.setTitle(InputUtil.replaceAltColorCode(input));
