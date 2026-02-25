@@ -71,7 +71,7 @@ public class PluginData {
 
     public static boolean deleteInfoArea(String name) {
         InfoArea area = infoAreas.get(name);
-        area.clearInformedPlayers();
+        area.clearPlayers();
         boolean result = getDataFile(getWorldFolder(name), name).delete();
         if (result) {
             infoAreas.remove(name);
@@ -107,19 +107,18 @@ public class PluginData {
     }
 
     public static void saveArea(InfoArea area) throws IOException {
-        for (String areaName : infoAreas.keySet()) {
-            if (infoAreas.get(areaName) == area) {
-                DevUtil.log("SaveData " + areaName);
-                FileConfiguration config = new YamlConfiguration();
-                infoAreas.get(areaName).save(config);
-                File worldFolder = getWorldFolder(areaName);
-                if (!worldFolder.exists()) {
-                    worldFolder.mkdir();
-                }
-                File dataFile = getDataFile(worldFolder, areaName);
-                config.save(dataFile);
-            }
+        final String areaName = area.getName();
+        DevUtil.log("SaveData " + areaName);
+
+        FileConfiguration config = new YamlConfiguration();
+        area.save(config);
+
+        File worldFolder = getWorldFolder(areaName);
+        if (!worldFolder.exists()) {
+            worldFolder.mkdir();
         }
+        File dataFile = getDataFile(worldFolder, areaName);
+        config.save(dataFile);
     }
 
     public static void loadData() {
@@ -131,7 +130,7 @@ public class PluginData {
             excludedPlayers.add(UUID.fromString(id));
         }
         for (InfoArea area : infoAreas.values()) {
-            area.clearInformedPlayers();
+            area.clearPlayers();
         }
         infoAreas.clear();
         File[] worldFolders = dataFolder.listFiles(FileUtil.getDirFilter());
@@ -144,14 +143,11 @@ public class PluginData {
                 try {
                     config.load(dataFile);
                     if (SphericalRegion.isValidConfig(config)) {
-                        infoAreas.put(areaName,
-                            new SphericalInfoArea(config));
+                        addInfoArea(areaName, new SphericalInfoArea(areaName, config));
                     } else if (PrismoidRegion.isValidConfig(config)) {
-                        infoAreas.put(areaName,
-                            new PrismoidInfoArea(config));
+                        addInfoArea(areaName, new PrismoidInfoArea(areaName, config));
                     } else if (CuboidRegion.isValidConfig(config) || config.contains("xSize")) { // xSize is to notice old data format
-                        infoAreas.put(areaName,
-                            new CuboidInfoArea(config));
+                        addInfoArea(areaName, new CuboidInfoArea(areaName, config));
                     }
                 } catch (IOException | InvalidConfigurationException ex) {
                     Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
@@ -175,7 +171,7 @@ public class PluginData {
             Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
         }
         for (InfoArea area : infoAreas.values()) {
-            area.clearInformedPlayers();
+            area.clearPlayers();
         }
     }
 

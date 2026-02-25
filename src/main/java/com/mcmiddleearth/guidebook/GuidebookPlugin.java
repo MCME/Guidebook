@@ -25,12 +25,21 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
+
 /**
  * @author Eriol_Eandur
  */
 public class GuidebookPlugin extends JavaPlugin {
 
+    private static final long INITIAL_DELAY_TICKS = 0L;
+    private static final long INTERVAL_TICKS = 20L;
+
     private static GuidebookPlugin pluginInstance;
+
+    public static GuidebookPlugin getPluginInstance() {
+        return pluginInstance;
+    }
 
     @Override
     public void onEnable() {
@@ -47,28 +56,34 @@ public class GuidebookPlugin extends JavaPlugin {
         PluginData.disable();
     }
 
-    public static GuidebookPlugin getPluginInstance() {
-        return pluginInstance;
-    }
-
     public void initializePlayerMoveRunnable() {
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    Location playerLocation = player.getLocation();
-                    for (String key : PluginData.getInfoAreas().keySet()) {
-                        InfoArea area = PluginData.getInfoAreas().get(key);
-                        if (area.isInside(playerLocation) && !area.isInformed(player)
-                            && area.isEnable() && !PluginData.isExcluded(player)) {
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            List<InfoArea> enabledAreas = PluginData.getInfoAreas()
+                .values()
+                .stream()
+                .filter(InfoArea::isEnable)
+                .toList();
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                Location playerLocation = player.getLocation();
+
+                for (InfoArea area : enabledAreas) {
+                    boolean isInside = area.containsPlayer(player);
+
+                    if (!isInside) {
+                        if (area.isInside(playerLocation)) {
                             area.onRegionEnter(player);
                         }
-                        if (!area.isNear(playerLocation)) {
-                            area.onRegionLeave(player);
-                        }
+                        continue;
+                    }
+
+                    if (!area.isNear(playerLocation)) {
+                        area.onRegionLeave(player);
                     }
                 }
             }
-        }, 0L, 20L);
+        }, INITIAL_DELAY_TICKS, INTERVAL_TICKS);
     }
 }
+
+

@@ -18,6 +18,7 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.command.GuidebookShow;
+import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.InputUtil;
@@ -55,8 +56,14 @@ public abstract class InfoArea {
 
     protected Region region;
 
+    private final String areaName;
+
     private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
-    private final Set<UUID> informedPlayers = new HashSet<>();
+    /**
+     * All players currently within the InfoArea
+     * Used to determine if a player has entered or left an InfoArea
+     */
+    private final Set<UUID> areaPlayers = new HashSet<>();
 
     private boolean status;
 
@@ -69,7 +76,9 @@ public abstract class InfoArea {
 
     private List<String> description = new ArrayList<>();
 
-    protected InfoArea() {
+    protected InfoArea(String areaName) {
+        this.areaName = areaName;
+
         //scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         bossBar = Bukkit.getServer().createBossBar("unnamed Guidebook area", BarColor.YELLOW, BarStyle.SOLID);
         bossBar.setProgress(0);
@@ -78,9 +87,9 @@ public abstract class InfoArea {
         status = true;
     }
 
-    public InfoArea(ConfigurationSection config) {
-        //this.center = deserializeLocation(config.getConfigurationSection("center"));
-        this();
+    public InfoArea(String areaName, ConfigurationSection config) {
+        this(areaName);
+
         if (config.contains("title")) {
             setTitle((String) config.get("title"));
             subtitle = (String) config.get("subtitle");
@@ -127,12 +136,11 @@ public abstract class InfoArea {
         status = false;
     }
 
-    public boolean isInformed(Player player) {
-        return informedPlayers.contains(player.getUniqueId());
+    public boolean containsPlayer(Player player) {
+        return areaPlayers.contains(player.getUniqueId());
     }
 
-
-    public void onRegionEnter(Player player) {
+    public final void onRegionEnter(Player player) {
         UUID playerId = player.getUniqueId();
         Instant now = Instant.now();
 
@@ -141,31 +149,40 @@ public abstract class InfoArea {
             Instant lastNotified = lastInformedTimes.get(playerId);
             if (Duration.between(lastNotified, now).compareTo(COOLDOWN) < 0) {
                 // Player has entered the region, but don't welcome them
-                informedPlayers.add(playerId);
+                areaPlayers.add(playerId);
                 return;
             }
         }
 
-        lastInformedTimes.put(playerId, now);
-        informedPlayers.add(playerId);
-        welcomePlayer(player);
+        // Track that the player is in the region even if the Event is cancelled
+        // - otherwise onRegionEnter would keep being called!
+        areaPlayers.add(playerId);
+
+        GuidebookSendEvent sendEvent = new GuidebookSendEvent(player, areaName);
+        sendEvent.callEvent();
+        if (sendEvent.isCancelled()) return;
+
+        boolean notificationsEnabled = !PluginData.isExcluded(player);
+        if (notificationsEnabled) {
+            welcomePlayer(player);
+            lastInformedTimes.put(playerId, now);
+        }
     }
 
-    public void onRegionLeave(Player player) {
+    public final void onRegionLeave(Player player) {
         UUID playerId = player.getUniqueId();
-        informedPlayers.remove(playerId);
+        areaPlayers.remove(playerId);
         bossBar.removePlayer(player);
     }
 
     public void clearPlayer(Player player) {
+        onRegionLeave(player);
         UUID playerId = player.getUniqueId();
-        bossBar.removePlayer(player);
-        informedPlayers.remove(playerId);
         lastInformedTimes.remove(playerId);
     }
 
-    public void clearInformedPlayers() {
-        for (UUID uuid : informedPlayers) {
+    public void clearPlayers() {
+        for (UUID uuid : areaPlayers) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
                 clearPlayer(player);
@@ -290,5 +307,9 @@ public abstract class InfoArea {
         for (int i = 0; i < string.length(); i++) {
             Logger.getGlobal().info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " " + string.codePointAt(i));
         }
+    }
+
+    public String getName() {
+        return this.areaName;
     }
 }
