@@ -39,20 +39,15 @@ class GuidebookCommandExecutor {
     GuidebookCommandExecutor() {
 
         addCommandHandler("delete", new GuidebookDelete(permissionStaff));
-        addCommandHandler("details", new GuidebookDetails(permissionStaff));
         addCommandHandler("help", new GuidebookHelp(this, permissionStaff));
         addCommandHandler("list", new GuidebookList(permissionStaff));
         addCommandHandler("set", new GuidebookSet(permissionStaff));
-        addCommandHandler("show", new GuidebookShow(permissionStaff));
         addCommandHandler("size", new GuidebookSize(permissionStaff));
-        addCommandHandler("warp", new GuidebookWarp(permissionStaff));
         addCommandHandler("description", new GuidebookDescription(permissionStaff));
         addCommandHandler("title", new GuidebookTitle(permissionStaff));
         addCommandHandler("reload", new GuidebookReload(permissionStaff));
         addCommandHandler("dev", new GuidebookDev(permissionStaff));
         addCommandHandler("rename", new GuidebookRename(permissionStaff));
-        addCommandHandler("disable", new GuidebookDisable(permissionStaff));
-        addCommandHandler("enable", new GuidebookEnable(permissionStaff));
     }
 
     void execute(CommandSender sender, String[] args) {

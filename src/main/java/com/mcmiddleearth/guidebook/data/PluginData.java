@@ -198,9 +198,11 @@ public class PluginData {
     }
 
     public static List<String> suggestAreaNames(String typed) {
-        return registry.suggest(typed).stream()
-                .map(AreaRegistry.Suggestion::name)
-                .toList();
+        return suggestAreas(typed).stream().map(AreaRegistry.Suggestion::name).toList();
+    }
+
+    public static List<AreaRegistry.Suggestion> suggestAreas(String typed) {
+        return registry.suggest(typed);
     }
 
     public static File getDataFolder() {
