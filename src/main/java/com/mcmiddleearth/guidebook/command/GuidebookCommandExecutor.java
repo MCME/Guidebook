@@ -22,25 +22,25 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.PluginDescriptionFile;
 
 /**
+ * The legacy {@code /guidebook} dispatcher. TEMPORARY until ticket 08: {@link LegacyFallthrough} routes every
+ * subcommand not yet migrated to Brigadier here.
+ *
  * @author Eriol_Eandur
  */
-public class GuidebookCommandExecutor implements TabExecutor {
+class GuidebookCommandExecutor {
     private final Map<String, GuidebookCommand> commands = new LinkedHashMap<>();
 
-    private final String permission = "guidebook.user";
     private final String permissionStaff = "guidebook.staff";
 
-    public GuidebookCommandExecutor() {
+    GuidebookCommandExecutor() {
 
         addCommandHandler("delete", new GuidebookDelete(permissionStaff));
         addCommandHandler("details", new GuidebookDetails(permissionStaff));
-        addCommandHandler("help", new GuidebookHelp(permissionStaff));
+        addCommandHandler("help", new GuidebookHelp(this, permissionStaff));
         addCommandHandler("list", new GuidebookList(permissionStaff));
         addCommandHandler("set", new GuidebookSet(permissionStaff));
         addCommandHandler("show", new GuidebookShow(permissionStaff));
@@ -48,8 +48,6 @@ public class GuidebookCommandExecutor implements TabExecutor {
         addCommandHandler("warp", new GuidebookWarp(permissionStaff));
         addCommandHandler("description", new GuidebookDescription(permissionStaff));
         addCommandHandler("title", new GuidebookTitle(permissionStaff));
-        addCommandHandler("on", new GuidebookOn(permission));
-        addCommandHandler("off", new GuidebookOff(permission));
         addCommandHandler("reload", new GuidebookReload(permissionStaff));
         addCommandHandler("dev", new GuidebookDev(permissionStaff));
         addCommandHandler("rename", new GuidebookRename(permissionStaff));
@@ -57,25 +55,19 @@ public class GuidebookCommandExecutor implements TabExecutor {
         addCommandHandler("enable", new GuidebookEnable(permissionStaff));
     }
 
-    @Override
-    public boolean onCommand(CommandSender cs, Command cmnd, String string, String[] strings) {
-        if (!string.equalsIgnoreCase("guidebook")) {
-            return false;
+    void execute(CommandSender sender, String[] args) {
+        if (args.length == 0) {
+            sendNoSubcommandErrorMessage(sender);
+            return;
         }
-        if (strings == null || strings.length == 0) {
-            sendNoSubcommandErrorMessage(cs);
-            return true;
-        }
-        if (commands.containsKey(strings[0].toLowerCase())) {
-            commands.get(strings[0].toLowerCase()).handle(cs, Arrays.copyOfRange(strings, 1, strings.length));
+        if (commands.containsKey(args[0].toLowerCase())) {
+            commands.get(args[0].toLowerCase()).handle(sender, Arrays.copyOfRange(args, 1, args.length));
         } else {
-            sendSubcommandNotFoundErrorMessage(cs);
+            sendSubcommandNotFoundErrorMessage(sender);
         }
-        return true;
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String string, String[] args) {
+    List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
             return GuidebookCommand.startingWith(args[0], commands.keySet());
         }
@@ -101,7 +93,7 @@ public class GuidebookCommandExecutor implements TabExecutor {
         commands.put(name, handler);
     }
 
-    public Map<String, GuidebookCommand> getCommands() {
+    Map<String, GuidebookCommand> getCommands() {
         return commands;
     }
 }

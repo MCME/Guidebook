@@ -8,10 +8,6 @@ load: POSTWORLD
 softdepend: [Multiverse-Core, WorldEdit, PluginUtils]
 api-version: '${apiVersion}'
 
-commands:
-    guidebook:
-        description: manage guidebook areas
-        
 permissions:
     guidebook.staff:
         description: Gives access to all guidebook commands

@@ -15,6 +15,7 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.mcmiddleearth.com/releases")
     maven("https://maven.enginehub.org/repo/")
+    maven("https://eldonexus.de/repository/maven-public/")
 }
 
 dependencies {
@@ -22,6 +23,8 @@ dependencies {
     compileOnly(libs.pluginutils)
     compileOnly(libs.worldedit.core)
     compileOnly(libs.worldedit.bukkit)
+    compileOnly(libs.strokk.commands.annotations)
+    annotationProcessor(libs.strokk.commands.processor)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

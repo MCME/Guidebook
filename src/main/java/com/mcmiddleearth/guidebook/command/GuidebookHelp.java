@@ -9,7 +9,6 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 /**
@@ -17,8 +16,11 @@ import org.bukkit.command.CommandSender;
  */
 public class GuidebookHelp extends GuidebookCommand {
 
-    public GuidebookHelp(String... permissionNodes) {
+    private final GuidebookCommandExecutor executor;
+
+    public GuidebookHelp(GuidebookCommandExecutor executor, String... permissionNodes) {
         super(0, true, permissionNodes);
+        this.executor = executor;
         setShortDescription(": Help for Guidebook.");
         setUsageDescription(
                 " [subcommand]: Without a given [subcommand] shows short help messages for all Guidebook commands. With additional argument shows detailed help for [subcommand].");
@@ -28,8 +30,7 @@ public class GuidebookHelp extends GuidebookCommand {
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length != 1) return List.of();
 
-        Map<String, GuidebookCommand> commands =
-                ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook").getExecutor()).getCommands();
+        Map<String, GuidebookCommand> commands = executor.getCommands();
 
         return startingWith(args[0], commands.keySet());
     }
@@ -37,8 +38,7 @@ public class GuidebookHelp extends GuidebookCommand {
     @Override
     protected void execute(CommandSender cs, String... args) {
         sendHelpStartMessage(cs);
-        Map<String, GuidebookCommand> commands =
-                ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook").getExecutor()).getCommands();
+        Map<String, GuidebookCommand> commands = executor.getCommands();
         if (args.length > 0) {
             GuidebookCommand command = commands.get(args[0]);
             if (command == null) {

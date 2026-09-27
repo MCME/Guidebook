@@ -16,7 +16,7 @@
  */
 package com.mcmiddleearth.guidebook;
 
-import com.mcmiddleearth.guidebook.command.GuidebookCommandExecutor;
+import com.mcmiddleearth.guidebook.command.GuidebookCommands;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
@@ -46,7 +46,7 @@ public class GuidebookPlugin extends JavaPlugin {
         PluginData.loadData();
         this.initializePlayerMoveRunnable();
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        getCommand("guidebook").setExecutor(new GuidebookCommandExecutor());
+        GuidebookCommands.register(this);
         getLogger().info("Enabled!");
     }
 
