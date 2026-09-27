@@ -46,7 +46,7 @@ public class GuidebookDetails extends GuidebookCommand {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         return List.of();
@@ -54,12 +54,12 @@ public class GuidebookDetails extends GuidebookCommand {
 
     @Override
     protected void execute(CommandSender cs, String... args) {
-        String areaName = args[0];
-        InfoArea area = PluginData.getInfoArea(areaName);
+        InfoArea area = PluginData.getInfoArea(args[0]);
         if (area == null) {
             sendNoAreaErrorMessage(cs);
             return;
         }
+        String areaName = area.getName();
 
         Player sender = (Player) cs;
 

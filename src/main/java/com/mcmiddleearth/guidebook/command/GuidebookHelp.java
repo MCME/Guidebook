@@ -6,7 +6,6 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,8 +31,7 @@ public class GuidebookHelp extends GuidebookCommand {
         Map<String, GuidebookCommand> commands =
                 ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook").getExecutor()).getCommands();
 
-        List<String> subcommandNames = new ArrayList<>(commands.keySet());
-        return subcommandNames;
+        return startingWith(args[0], commands.keySet());
     }
 
     @Override

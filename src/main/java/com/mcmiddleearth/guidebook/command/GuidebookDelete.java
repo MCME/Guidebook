@@ -33,7 +33,7 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
         if (area == null) {
             sendNoAreaErrorMessage(cs);
         } else {
-            areaName = args[0];
+            areaName = area.getName();
             new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
                     .start((Player) cs, "Do you really want to delete guidebook area " + areaName + "?", this);
         }
@@ -42,7 +42,7 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         return List.of();

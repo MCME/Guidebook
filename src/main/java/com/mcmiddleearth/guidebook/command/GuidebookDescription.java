@@ -34,11 +34,11 @@ public class GuidebookDescription extends GuidebookCommand {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         if (args.length == 2) {
-            return List.of("getbook", "save");
+            return startingWith(args[1], List.of("getbook", "save"));
         }
 
         return List.of();
@@ -86,7 +86,7 @@ public class GuidebookDescription extends GuidebookCommand {
             if (((Player) cs).isConversing()) {
                 sendAlreadyConversing((Player) cs);
             }
-            new DescriptionEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, args[0]);
+            new DescriptionEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, area.getName());
         }
     }
 

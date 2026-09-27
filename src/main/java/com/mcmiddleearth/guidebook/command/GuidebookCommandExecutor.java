@@ -18,12 +18,10 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -78,39 +76,15 @@ public class GuidebookCommandExecutor implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String string, String[] args) {
-        String firstArg = args[0].toLowerCase();
-        String lastArg = args[args.length - 1].toLowerCase();
-        String[] restArgs = Arrays.copyOfRange(args, 1, args.length);
-
-        List<String> completions = new ArrayList<>();
-
         if (args.length == 1) {
-            completions.addAll(commands.keySet());
-        } else if (commands.containsKey(firstArg)) {
-            List<String> subcommandCompletions = commands.get(firstArg).getCompletions(sender, restArgs);
-            completions.addAll(subcommandCompletions);
+            return GuidebookCommand.startingWith(args[0], commands.keySet());
         }
 
-        // Filter the completions
-        return completions.stream()
-                // AreaName completions are structured <worldName>-<projectName>-<guidebookName>
-                // So support partial matches
-                .filter(completion -> matchesAnySegment(completion, lastArg))
-                .collect(Collectors.toList());
-    }
-
-    private boolean matchesAnySegment(String input, String searchTerm) {
-        String[] parts = input.toLowerCase().split("-");
-        int partsLength = parts.length;
-
-        // segment = world-gondor-minas, gondor-minas, minas
-        for (int i = 0; i < partsLength; i++) {
-            String segment = String.join("-", Arrays.copyOfRange(parts, i, partsLength));
-            if (segment.startsWith(searchTerm)) {
-                return true;
-            }
+        GuidebookCommand subcommand = commands.get(args[0].toLowerCase());
+        if (subcommand == null) {
+            return List.of();
         }
-        return false;
+        return subcommand.getCompletions(sender, Arrays.copyOfRange(args, 1, args.length));
     }
 
     private void sendNoSubcommandErrorMessage(CommandSender cs) {

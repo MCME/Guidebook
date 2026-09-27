@@ -52,7 +52,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 /**
  * @author Eriol_Eandur
  */
-public abstract class InfoArea {
+public abstract class InfoArea implements AreaView {
 
     private static final int CHAT_LENGTH = 90;
     private static final int NEAR_DISTANCE = 10;
@@ -128,7 +128,8 @@ public abstract class InfoArea {
         return region.isInside(loc);
     }
 
-    public boolean isEnable() {
+    @Override
+    public boolean isEnabled() {
         return status;
     }
 
@@ -263,6 +264,7 @@ public abstract class InfoArea {
         description = lines;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
@@ -315,6 +317,7 @@ public abstract class InfoArea {
         }
     }
 
+    @Override
     public String getName() {
         return this.areaName;
     }

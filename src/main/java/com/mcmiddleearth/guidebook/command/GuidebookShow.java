@@ -32,7 +32,7 @@ public class GuidebookShow extends GuidebookCommand {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         return List.of();
@@ -44,7 +44,8 @@ public class GuidebookShow extends GuidebookCommand {
         if (area == null) {
             sendNoAreaErrorMessage(cs);
         } else {
-            PluginData.getMessageUtil().sendInfoMessage(cs, "Welcome message for Guidebook area " + args[0] + ":");
+            PluginData.getMessageUtil()
+                    .sendInfoMessage(cs, "Welcome message for Guidebook area " + area.getName() + ":");
             try {
                 sendDescription((Player) cs, area);
             } catch (MessageParseException ex) {

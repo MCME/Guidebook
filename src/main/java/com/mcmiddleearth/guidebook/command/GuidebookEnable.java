@@ -38,7 +38,7 @@ public class GuidebookEnable extends GuidebookCommand {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         return List.of();
@@ -47,9 +47,8 @@ public class GuidebookEnable extends GuidebookCommand {
     @Override
     protected void execute(CommandSender cs, String... args) {
         if (args.length == 1) {
-            if (PluginData.getInfoAreas().containsKey(args[0])) {
-
-                InfoArea area = PluginData.getInfoArea(args[0]);
+            InfoArea area = PluginData.getInfoArea(args[0]);
+            if (area != null) {
                 area.statusOn();
 
                 try {
@@ -58,7 +57,7 @@ public class GuidebookEnable extends GuidebookCommand {
                     Logger.getLogger(GuidebookEnable.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
-                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " Enabled");
+                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + area.getName() + " Enabled");
 
             } else {
                 PluginData.getMessageUtil().sendErrorMessage(cs, "This area doesn't exist");

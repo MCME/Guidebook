@@ -6,7 +6,9 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -59,11 +61,18 @@ public abstract class GuidebookCommand {
     /**
      * @param cs   The sender
      * @param args The arguments provided for this subcommand - <code>/guidebook subcommand arg0 arg1<code>
-     * @return By default, an empty list
+     * @return The completions matching the last argument. By default, an empty list
      */
     protected List<String> getCompletions(CommandSender cs, String... args) {
         // Default - no completions
         return List.of();
+    }
+
+    static List<String> startingWith(String typed, Collection<String> options) {
+        String search = typed.toLowerCase(Locale.ROOT);
+        return options.stream()
+                .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(search))
+                .toList();
     }
 
     private void sendPlayerOnlyErrorMessage(CommandSender cs) {

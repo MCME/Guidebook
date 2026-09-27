@@ -48,6 +48,8 @@ public class PluginData {
 
     private static final Map<String, InfoArea> infoAreas = new HashMap<>();
 
+    private static final AreaRegistry<InfoArea> registry = new AreaRegistry<>(infoAreas.values());
+
     private static Set<UUID> excludedPlayers = new HashSet<>();
 
     private static final File dataFolder = GuidebookPlugin.getPluginInstance().getDataFolder();
@@ -86,12 +88,15 @@ public class PluginData {
         getDataFile(getWorldFolder(oldName), oldName).delete();
     }
 
+    /**
+     * @return the Area the typed name reaches (ignoring case, exact case wins), or null if there is none
+     */
     public static InfoArea getInfoArea(String name) {
-        return infoAreas.get(name);
+        return registry.resolve(name).orElse(null);
     }
 
     public static boolean hasInfoArea(String name) {
-        return infoAreas.get(name) != null;
+        return registry.resolve(name).isPresent();
     }
 
     public static void include(Player player) {
@@ -192,8 +197,10 @@ public class PluginData {
         return infoAreas;
     }
 
-    public static List<String> getAreaNames() {
-        return new ArrayList<String>(infoAreas.keySet());
+    public static List<String> suggestAreaNames(String typed) {
+        return registry.suggest(typed).stream()
+                .map(AreaRegistry.Suggestion::name)
+                .toList();
     }
 
     public static File getDataFolder() {

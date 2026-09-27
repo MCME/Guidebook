@@ -38,7 +38,7 @@ public class GuidebookDisable extends GuidebookCommand {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         return List.of();
@@ -47,11 +47,10 @@ public class GuidebookDisable extends GuidebookCommand {
     @Override
     protected void execute(CommandSender cs, String... args) {
         if (args.length == 1) {
-            if (PluginData.getInfoAreas().containsKey(args[0])) {
-
-                InfoArea area = PluginData.getInfoArea(args[0]);
+            InfoArea area = PluginData.getInfoArea(args[0]);
+            if (area != null) {
                 area.statusOff();
-                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " Disabled");
+                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + area.getName() + " Disabled");
                 try {
                     PluginData.saveArea(area);
                 } catch (IOException ex) {

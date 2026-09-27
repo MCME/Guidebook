@@ -22,6 +22,10 @@ dependencies {
     compileOnly(libs.pluginutils)
     compileOnly(libs.worldedit.core)
     compileOnly(libs.worldedit.bukkit)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 java {
@@ -43,6 +47,10 @@ spotless {
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
+
     // Dynamically adding the name, version and api-version to the paper plugin.yml
     processResources {
         val props = mapOf("name" to project.name, "version" to version, "apiVersion" to minecraftVersion)

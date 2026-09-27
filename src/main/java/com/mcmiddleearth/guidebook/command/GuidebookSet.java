@@ -117,11 +117,11 @@ public class GuidebookSet extends GuidebookCommand implements Confirmationable {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         if (args.length == 2) {
-            return List.of("sphere");
+            return startingWith(args[1], List.of("sphere"));
         }
 
         return List.of();

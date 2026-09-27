@@ -34,7 +34,7 @@ public class GuidebookTitle extends GuidebookCommand {
             if (((Player) cs).isConversing()) {
                 sendAlreadyConversing((Player) cs);
             }
-            new TitleEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, args[0]);
+            new TitleEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, area.getName());
             /*    int line = -1;
                         int descriptionIndexShift=0;
                         if(args.length>3 && NumericUtil.isInt(args[2])) {
@@ -105,7 +105,7 @@ public class GuidebookTitle extends GuidebookCommand {
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length == 1) {
-            return PluginData.getAreaNames();
+            return PluginData.suggestAreaNames(args[0]);
         }
 
         return List.of();

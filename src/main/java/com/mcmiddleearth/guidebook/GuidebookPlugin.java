@@ -62,7 +62,7 @@ public class GuidebookPlugin extends JavaPlugin {
                         this,
                         () -> {
                             List<InfoArea> enabledAreas = PluginData.getInfoAreas().values().stream()
-                                    .filter(InfoArea::isEnable)
+                                    .filter(InfoArea::isEnabled)
                                     .toList();
 
                             for (Player player : Bukkit.getOnlinePlayers()) {
