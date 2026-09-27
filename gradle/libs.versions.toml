@@ -1,0 +1,15 @@
+[versions]
+# The Minecraft version (for runServer and plugin.yml's api-version) is read from the front of this
+paper = "26.2.build.129-stable"
+pluginutils = "2.0.4"
+worldedit = "7.4.5"
+run-paper = "3.1.0"
+
+[libraries]
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+pluginutils = { module = "com.mcmiddleearth:PluginUtils", version.ref = "pluginutils" }
+worldedit-core = { module = "com.sk89q.worldedit:worldedit-core", version.ref = "worldedit" }
+worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
+
+[plugins]
+run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
