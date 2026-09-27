@@ -1,6 +1,6 @@
-name: ${project.artifactId}
+name: ${name}
 main: com.mcmiddleearth.guidebook.GuidebookPlugin
-version: ${project.version}
+version: ${version}
 description: sending information about places via chat messages
 load: POSTWORLD
 # Multiverse-Core loads its worlds in its own onEnable. Saved areas look their world up by name
