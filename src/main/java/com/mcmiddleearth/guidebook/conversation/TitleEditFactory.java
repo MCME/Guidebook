@@ -16,18 +16,12 @@
  */
 package com.mcmiddleearth.guidebook.conversation;
 
-import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.command.GuidebookDescription;
-import com.mcmiddleearth.guidebook.command.GuidebookShow;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
-
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
@@ -46,12 +40,12 @@ public class TitleEditFactory implements ConversationAbandonedListener {
 
     public TitleEditFactory(Plugin plugin) {
         factory = new ConversationFactory(plugin)
-            .withModality(false)
-            .withPrefix(new ConfirmationPrefix())
-            .withEscapeSequence("!cancel")
-            .withFirstPrompt(new TitleEditEnterShowTitlePrompt())
-            .withTimeout(120)
-            .addConversationAbandonedListener(this);
+                .withModality(false)
+                .withPrefix(new ConfirmationPrefix())
+                .withEscapeSequence("!cancel")
+                .withFirstPrompt(new TitleEditEnterShowTitlePrompt())
+                .withTimeout(120)
+                .addConversationAbandonedListener(this);
     }
 
     public void start(Player player, InfoArea area, String name) {
@@ -91,7 +85,7 @@ public class TitleEditFactory implements ConversationAbandonedListener {
     }
 
     private void sendEditCancelledMessage(Player player) {
-        PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook description conversation was cancelled by command or timeout.");
+        PluginData.getMessageUtil()
+                .sendInfoMessage(player, "Guidebook description conversation was cancelled by command or timeout.");
     }
-
 }

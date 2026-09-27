@@ -11,11 +11,9 @@ import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.MessageType;
 import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
-
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -27,7 +25,8 @@ public class GuidebookShow extends GuidebookCommand {
     public GuidebookShow(String... permissionNodes) {
         super(1, true, permissionNodes);
         setShortDescription(": Shows the description message of a Guidebook area.");
-        setUsageDescription(" <AreaName>: Shows the stored description message of details of area <AreaName> as shown to a player entering the area.");
+        setUsageDescription(
+                " <AreaName>: Shows the stored description message of details of area <AreaName> as shown to a player entering the area.");
     }
 
     @Override
@@ -57,16 +56,19 @@ public class GuidebookShow extends GuidebookCommand {
 
     public static void sendDescription(Player player, InfoArea area) throws MessageParseException {
         if (area.getDescription().isEmpty()) {
-            PluginData.getMessageUtil().sendInfoMessage(player, "Welcome to "
-                + PluginData.getMessageUtil().STRESSED + area.getTitle() + " (" + area.getName() + ")"
-                + PluginData.getMessageUtil().INFO
-                + ". Unfortunately there is no further description for this area.");
+            PluginData.getMessageUtil()
+                    .sendInfoMessage(
+                            player,
+                            "Welcome to "
+                                    + PluginData.getMessageUtil().STRESSED + area.getTitle() + " (" + area.getName()
+                                    + ")"
+                                    + PluginData.getMessageUtil().INFO
+                                    + ". Unfortunately there is no further description for this area.");
         } else {
-            FancyMessageConfigUtil.addFromStringList(new FancyMessage(MessageType.WHITE, PluginData.getMessageUtil()),
-                    area.getDescription())
-                .setRunDirect()
-                .send(player);
+            FancyMessageConfigUtil.addFromStringList(
+                            new FancyMessage(MessageType.WHITE, PluginData.getMessageUtil()), area.getDescription())
+                    .setRunDirect()
+                    .send(player);
         }
     }
-
 }

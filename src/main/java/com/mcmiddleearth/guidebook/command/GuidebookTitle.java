@@ -9,12 +9,8 @@ import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.conversation.TitleEditFactory;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -39,70 +35,70 @@ public class GuidebookTitle extends GuidebookCommand {
                 sendAlreadyConversing((Player) cs);
             }
             new TitleEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, args[0]);
-        /*    int line = -1;
-            int descriptionIndexShift=0;
-            if(args.length>3 && NumericUtil.isInt(args[2])) {
-                    descriptionIndexShift=1;
-                    line = Math.max(NumericUtil.getInt(args[2]),-1);
-            }
-Logger.getGlobal().log(Level.INFO, "Line *** {0}", line);
-            if(args.length>3 || args[1].equals("-d")) {
-                switch (args[1]) {
-                    case "-i":
-                    {
-                        String areaDescription = getDescription(args,2+descriptionIndexShift);
-                        if(line>0 && line<area.getDescription().size()) {
-                            area.getDescription().add(line-1, areaDescription);
-                            sendLineInsertedMessage(cs);
-                        } else {
-                            sendIndexOutOfBoundsMessage(cs);
-                            return;
+            /*    int line = -1;
+                        int descriptionIndexShift=0;
+                        if(args.length>3 && NumericUtil.isInt(args[2])) {
+                                descriptionIndexShift=1;
+                                line = Math.max(NumericUtil.getInt(args[2]),-1);
                         }
-                        break;
-                    }
-                    case "-r":
-                    {
-                        String areaDescription = getDescription(args,2+descriptionIndexShift);
-                        if(line>0 && line<area.getDescription().size()) {
-                            area.getDescription().set(line-1, areaDescription);
-                            sendLineReplacedMessage(cs);
+            Logger.getGlobal().log(Level.INFO, "Line *** {0}", line);
+                        if(args.length>3 || args[1].equals("-d")) {
+                            switch (args[1]) {
+                                case "-i":
+                                {
+                                    String areaDescription = getDescription(args,2+descriptionIndexShift);
+                                    if(line>0 && line<area.getDescription().size()) {
+                                        area.getDescription().add(line-1, areaDescription);
+                                        sendLineInsertedMessage(cs);
+                                    } else {
+                                        sendIndexOutOfBoundsMessage(cs);
+                                        return;
+                                    }
+                                    break;
+                                }
+                                case "-r":
+                                {
+                                    String areaDescription = getDescription(args,2+descriptionIndexShift);
+                                    if(line>0 && line<area.getDescription().size()) {
+                                        area.getDescription().set(line-1, areaDescription);
+                                        sendLineReplacedMessage(cs);
+                                    } else {
+                                        sendIndexOutOfBoundsMessage(cs);
+                                        return;
+                                    }
+                                    break;
+                                }
+                                case "-d":
+                                {
+                                    if(line>0 && line<area.getDescription().size()) {
+                                        area.getDescription().remove(line-1);
+                                        sendLineRemovedMessage(cs);
+                                    } else {
+                                        sendIndexOutOfBoundsMessage(cs);
+                                        return;
+                                    }
+                                    break;
+                                }
+                                default:
+                                {
+                                    String areaDescription = getDescription(args,1);
+                                    area.getDescription().add(areaDescription);
+                                    sendLineAddedMessage(cs);
+                                }
+                            }
                         } else {
-                            sendIndexOutOfBoundsMessage(cs);
-                            return;
+                            String areaDescription = getDescription(args,1);
+                            area.getDescription().add(areaDescription);
+                            sendLineAddedMessage(cs);
                         }
-                        break;
-                    }
-                    case "-d":
-                    {
-                        if(line>0 && line<area.getDescription().size()) {
-                            area.getDescription().remove(line-1);
-                            sendLineRemovedMessage(cs);
-                        } else {
-                            sendIndexOutOfBoundsMessage(cs);
-                            return;
-                        }
-                        break;
-                    }
-                    default:
-                    {
-                        String areaDescription = getDescription(args,1);
-                        area.getDescription().add(areaDescription);
-                        sendLineAddedMessage(cs);
-                    }
-                }
-            } else {
-                String areaDescription = getDescription(args,1);
-                area.getDescription().add(areaDescription);
-                sendLineAddedMessage(cs);
-            }
-            saveData(cs);
-            sendDescriptionSetMessage(cs);
-            try {
-                GuidebookShow.sendDescription((Player)cs, area);
-            } catch (MessageParseException ex) {
-                Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
-                sendParseError(cs);
-            }*/
+                        saveData(cs);
+                        sendDescriptionSetMessage(cs);
+                        try {
+                            GuidebookShow.sendDescription((Player)cs, area);
+                        } catch (MessageParseException ex) {
+                            Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+                            sendParseError(cs);
+                        }*/
         }
     }
 
@@ -158,11 +154,13 @@ Logger.getGlobal().log(Level.INFO, "Line *** {0}", line);
     }
 
     private void sendParseError(CommandSender cs) {
-        PluginData.getMessageUtil().sendErrorMessage(cs, "There was an error while loading the Descriptions. Probably you entered an invalid description.");
+        PluginData.getMessageUtil()
+                .sendErrorMessage(
+                        cs,
+                        "There was an error while loading the Descriptions. Probably you entered an invalid description.");
     }
 
     private void sendLineAddedMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendInfoMessage(cs, "Line added.");
     }
-
 }

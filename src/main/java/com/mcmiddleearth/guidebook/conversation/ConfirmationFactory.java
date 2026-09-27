@@ -33,11 +33,11 @@ public class ConfirmationFactory implements ConversationAbandonedListener {
 
     public ConfirmationFactory(Plugin plugin) {
         factory = new ConversationFactory(plugin)
-            .withModality(false)
-            .withPrefix(new ConfirmationPrefix())
-            .withFirstPrompt(new ConfirmationPrompt())
-            .withTimeout(60)
-            .addConversationAbandonedListener(this);
+                .withModality(false)
+                .withPrefix(new ConfirmationPrefix())
+                .withFirstPrompt(new ConfirmationPrompt())
+                .withTimeout(60)
+                .addConversationAbandonedListener(this);
     }
 
     public void start(Player player, String query, Confirmationable task) {
@@ -59,5 +59,4 @@ public class ConfirmationFactory implements ConversationAbandonedListener {
             ((Confirmationable) cc.getSessionData("task")).cancelled(player);
         }
     }
-
 }

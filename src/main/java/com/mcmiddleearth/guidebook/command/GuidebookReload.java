@@ -24,5 +24,4 @@ public class GuidebookReload extends GuidebookCommand {
         PluginData.loadData();
         PluginData.getMessageUtil().sendInfoMessage(cs, "All guidebook areas reloaded from file.");
     }
-
 }

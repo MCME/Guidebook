@@ -33,10 +33,8 @@ public class ConfirmationPrompt extends BooleanPrompt {
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext cc, String answer) {
-        if (answer.equalsIgnoreCase("true") || answer.equalsIgnoreCase("yes"))
-            return acceptValidatedInput(cc, true);
-        else
-            return acceptValidatedInput(cc, false);
+        if (answer.equalsIgnoreCase("true") || answer.equalsIgnoreCase("yes")) return acceptValidatedInput(cc, true);
+        else return acceptValidatedInput(cc, false);
     }
 
     @Override
@@ -47,14 +45,13 @@ public class ConfirmationPrompt extends BooleanPrompt {
     @Override
     protected boolean isInputValid(ConversationContext context, String answer) {
         return answer.equalsIgnoreCase("no")
-            || answer.equalsIgnoreCase("yes")
-            || answer.equalsIgnoreCase("false")
-            || answer.equalsIgnoreCase("true");
+                || answer.equalsIgnoreCase("yes")
+                || answer.equalsIgnoreCase("false")
+                || answer.equalsIgnoreCase("true");
     }
 
     @Override
     protected String getFailedValidationText(ConversationContext context, String invalidInput) {
         return "Type 'yes' or 'no' in chat.";
     }
-
 }

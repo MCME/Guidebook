@@ -30,9 +30,9 @@ public class InputUtil {
     }
 
     public static String replaceBookColorCode(String string) {
-        return replaceAltColorCode(string).replace("§0", "")
-            .replace("§§", "§0")
-            .replace("" + (char) 10, "\\n"); //string from book seem to contain random '§0' characters
-
+        return replaceAltColorCode(string)
+                .replace("§0", "")
+                .replace("§§", "§0")
+                .replace("" + (char) 10, "\\n"); // string from book seem to contain random '§0' characters
     }
 }

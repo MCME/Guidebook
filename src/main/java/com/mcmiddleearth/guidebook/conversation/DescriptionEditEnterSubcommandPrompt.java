@@ -65,11 +65,12 @@ public class DescriptionEditEnterSubcommandPrompt extends FixedSetPrompt {
                 int i = 1;
                 for (String line : area.getDescription()) {
                     new FancyMessage(MessageType.HIGHLIGHT_NO_PREFIX, PluginData.getMessageUtil())
-                        .addSimple(ChatColor.DARK_AQUA + "[" + i + "] ")
-                        .addFancy(InputUtil.replaceAltColorCode(line),
-                            InputUtil.replaceAltColorCode(line),
-                            "Click to copy into chat.")
-                        .send(player);
+                            .addSimple(ChatColor.DARK_AQUA + "[" + i + "] ")
+                            .addFancy(
+                                    InputUtil.replaceAltColorCode(line),
+                                    InputUtil.replaceAltColorCode(line),
+                                    "Click to copy into chat.")
+                            .send(player);
                     i++;
                 }
                 return new DescriptionEditEnterSubcommandPrompt();

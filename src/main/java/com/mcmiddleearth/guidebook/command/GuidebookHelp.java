@@ -6,12 +6,10 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
@@ -23,15 +21,16 @@ public class GuidebookHelp extends GuidebookCommand {
     public GuidebookHelp(String... permissionNodes) {
         super(0, true, permissionNodes);
         setShortDescription(": Help for Guidebook.");
-        setUsageDescription(" [subcommand]: Without a given [subcommand] shows short help messages for all Guidebook commands. With additional argument shows detailed help for [subcommand].");
+        setUsageDescription(
+                " [subcommand]: Without a given [subcommand] shows short help messages for all Guidebook commands. With additional argument shows detailed help for [subcommand].");
     }
 
     @Override
     protected List<String> getCompletions(CommandSender cs, String... args) {
         if (args.length != 1) return List.of();
 
-        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
-            .getExecutor()).getCommands();
+        Map<String, GuidebookCommand> commands =
+                ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook").getExecutor()).getCommands();
 
         List<String> subcommandNames = new ArrayList<>(commands.keySet());
         return subcommandNames;
@@ -40,8 +39,8 @@ public class GuidebookHelp extends GuidebookCommand {
     @Override
     protected void execute(CommandSender cs, String... args) {
         sendHelpStartMessage(cs);
-        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
-            .getExecutor()).getCommands();
+        Map<String, GuidebookCommand> commands =
+                ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook").getExecutor()).getCommands();
         if (args.length > 0) {
             GuidebookCommand command = commands.get(args[0]);
             if (command == null) {
@@ -84,11 +83,13 @@ public class GuidebookHelp extends GuidebookCommand {
     }
 
     private void sendNoDescriptionMessage(CommandSender cs, String arg) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + ": There is no help for this command.");
+        PluginData.getMessageUtil()
+                .sendNoPrefixInfoMessage(cs, "/guidebook " + arg + ": There is no help for this command.");
     }
 
     private void sendManualMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "Manual: https://www.mcmiddleearth.com/resources/guidebook-plugin-manual.107/");
+        PluginData.getMessageUtil()
+                .sendNoPrefixInfoMessage(
+                        cs, "Manual: https://www.mcmiddleearth.com/resources/guidebook-plugin-manual.107/");
     }
-
 }

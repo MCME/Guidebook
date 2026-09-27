@@ -10,12 +10,10 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.util.Vector;
 
@@ -27,7 +25,8 @@ public class GuidebookSize extends GuidebookCommand {
     public GuidebookSize(String... permissionNodes) {
         super(2, true, permissionNodes);
         setShortDescription(": Defines the size of a Guidebook area.");
-        setUsageDescription(" <AreaName> <size>: Defines the size of <AreaName>. <size> must be: \nFor spherical areas: <radius>\nFor cuboid areas: <x1 y1 z1 x2 y2 z2> (coords of opposite corners)\nFor prism areas: <y1 y2> (Height range)");
+        setUsageDescription(
+                " <AreaName> <size>: Defines the size of <AreaName>. <size> must be: \nFor spherical areas: <radius>\nFor cuboid areas: <x1 y1 z1 x2 y2 z2> (coords of opposite corners)\nFor prism areas: <y1 y2> (Height range)");
     }
 
     @Override
@@ -56,8 +55,8 @@ public class GuidebookSize extends GuidebookCommand {
                         return;
                     }
                 }
-                ((CuboidInfoArea) area).setCorners(new Vector(data[0], data[1], data[2]),
-                    new Vector(data[3], data[4], data[5]));
+                ((CuboidInfoArea) area)
+                        .setCorners(new Vector(data[0], data[1], data[2]), new Vector(data[3], data[4], data[5]));
             } else {
                 if (args.length < 3) {
                     sendMissingArgumentErrorMessage(cs);
@@ -95,7 +94,7 @@ public class GuidebookSize extends GuidebookCommand {
                 ((SphericalTeleportationArea)area).setRadius(radius);
             }
             else {*/
-                /*if(args.length<4) {
+        /*if(args.length<4) {
                     sendMissingArgumentErrorMessage(cs);
                     return;
                 }

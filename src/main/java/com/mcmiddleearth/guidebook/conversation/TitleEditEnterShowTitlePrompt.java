@@ -52,5 +52,4 @@ public class TitleEditEnterShowTitlePrompt extends ValidatingPrompt {
             return new TitleEditEnterShowScoreboardPrompt();
         }
     }
-
 }

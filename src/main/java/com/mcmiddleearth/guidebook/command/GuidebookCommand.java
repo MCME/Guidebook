@@ -6,10 +6,9 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
+import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
-import java.util.List;
 
 /**
  * @author Eriol_Eandur, Ivanpl
@@ -56,7 +55,6 @@ public abstract class GuidebookCommand {
     }
 
     protected abstract void execute(CommandSender cs, String... args);
-
 
     /**
      * @param cs   The sender

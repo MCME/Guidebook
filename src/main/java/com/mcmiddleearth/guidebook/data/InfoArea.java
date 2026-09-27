@@ -27,6 +27,11 @@ import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import com.mcmiddleearth.pluginutil.region.Region;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -38,12 +43,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Eriol_Eandur
@@ -79,7 +78,7 @@ public abstract class InfoArea {
     protected InfoArea(String areaName) {
         this.areaName = areaName;
 
-        //scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+        // scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         bossBar = Bukkit.getServer().createBossBar("unnamed Guidebook area", BarColor.YELLOW, BarStyle.SOLID);
         bossBar.setProgress(0);
         setTitle("unnamed Guidebook area");
@@ -216,7 +215,7 @@ public abstract class InfoArea {
             @Override
             public void run() {
                 if (isShowScoreboard()) {
-                    //player.setScoreboard(area.getScoreboard());
+                    // player.setScoreboard(area.getScoreboard());
                     bossBar.addPlayer(player);
                 }
                 try {
@@ -226,7 +225,6 @@ public abstract class InfoArea {
                 }
             }
         }.runTaskLater(GuidebookPlugin.getPluginInstance(), messageDelay);
-
     }
 
     public ItemStack getDescriptionBook() {
@@ -241,17 +239,18 @@ public abstract class InfoArea {
 
     public void setDescription(BookMeta bookMeta) throws MessageParseException {
         List<String> lines = new ArrayList<>();
-        for (int i = 1; i <= bookMeta.getPageCount(); i++) { //first page has index 1!!!
+        for (int i = 1; i <= bookMeta.getPageCount(); i++) { // first page has index 1!!!
             String line = bookMeta.getPage(i);
             lines.add(InputUtil.replaceBookColorCode(line.substring(0, Math.min(CHAT_LENGTH, line.length()))));
-            //debugString(lines.get(lines.size()-1));
+            // debugString(lines.get(lines.size()-1));
             if (line.length() > CHAT_LENGTH) {
-                lines.add(InputUtil.replaceBookColorCode(line.substring(CHAT_LENGTH, line.length()))); //string from book seem to contain random 'Â§0' characters
-                //debugString(lines.get(lines.size()-1));
+                lines.add(InputUtil.replaceBookColorCode(line.substring(
+                        CHAT_LENGTH, line.length()))); // string from book seem to contain random 'Â§0' characters
+                // debugString(lines.get(lines.size()-1));
             }
         }
-        FancyMessageConfigUtil.addFromStringList(new FancyMessage(PluginData.getMessageUtil()),
-            lines); //throws MessageParseExeption
+        FancyMessageConfigUtil.addFromStringList(
+                new FancyMessage(PluginData.getMessageUtil()), lines); // throws MessageParseExeption
         description = lines;
     }
 
@@ -305,7 +304,9 @@ public abstract class InfoArea {
 
     private void debugString(String string) {
         for (int i = 0; i < string.length(); i++) {
-            Logger.getGlobal().info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " " + string.codePointAt(i));
+            Logger.getGlobal()
+                    .info("i: " + string.charAt(i) + " " + Integer.parseInt(String.valueOf(string.charAt(i))) + " "
+                            + string.codePointAt(i));
         }
     }
 

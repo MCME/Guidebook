@@ -30,5 +30,4 @@ class ConfirmationPrefix implements ConversationPrefix {
     public String getPrefix(ConversationContext cc) {
         return ChatColor.AQUA + PluginData.getMessageUtil().getPREFIX();
     }
-
 }

@@ -19,9 +19,7 @@ package com.mcmiddleearth.guidebook.conversation;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.InputUtil;
-
 import java.util.List;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.Prompt;
@@ -75,5 +73,4 @@ public class DescriptionEditEnterDescriptionPrompt extends StringPrompt {
     private void sendLineAddedMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendInfoMessage(cs, "Line added.");
     }
-
 }

@@ -23,7 +23,6 @@ import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.SphericalRegion;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -48,7 +46,7 @@ public class PluginData {
 
     private static final MessageUtil messageUtil = new MessageUtil();
 
-    private final static Map<String, InfoArea> infoAreas = new HashMap<>();
+    private static final Map<String, InfoArea> infoAreas = new HashMap<>();
 
     private static Set<UUID> excludedPlayers = new HashSet<>();
 
@@ -155,7 +153,8 @@ public class PluginData {
                         addInfoArea(areaName, new SphericalInfoArea(areaName, config));
                     } else if (PrismoidRegion.isValidConfig(config)) {
                         addInfoArea(areaName, new PrismoidInfoArea(areaName, config));
-                    } else if (CuboidRegion.isValidConfig(config) || config.contains("xSize")) { // xSize is to notice old data format
+                    } else if (CuboidRegion.isValidConfig(config)
+                            || config.contains("xSize")) { // xSize is to notice old data format
                         addInfoArea(areaName, new CuboidInfoArea(areaName, config));
                     }
                 } catch (IOException | InvalidConfigurationException ex) {
@@ -166,7 +165,8 @@ public class PluginData {
     }
 
     private static File getWorldFolder(String areaName) {
-        return new File(dataFolder, infoAreas.get(areaName).getLocation().getWorld().getName());
+        return new File(
+                dataFolder, infoAreas.get(areaName).getLocation().getWorld().getName());
     }
 
     private static File getDataFile(File folder, String areaName) {

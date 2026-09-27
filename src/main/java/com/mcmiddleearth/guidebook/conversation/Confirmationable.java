@@ -26,5 +26,4 @@ public interface Confirmationable {
     public void confirmed(Player player);
 
     public void cancelled(Player player);
-
 }

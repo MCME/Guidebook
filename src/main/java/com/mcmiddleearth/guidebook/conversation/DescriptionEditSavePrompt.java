@@ -20,13 +20,10 @@ import com.mcmiddleearth.guidebook.command.GuidebookDescription;
 import com.mcmiddleearth.guidebook.command.GuidebookShow;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
-
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.MessagePrompt;
@@ -68,7 +65,10 @@ public class DescriptionEditSavePrompt extends MessagePrompt {
     }
 
     private void sendParseError(Player cs) {
-        PluginData.getMessageUtil().sendErrorMessage(cs, "There was an error while loading the Descriptions. Probably you entered an invalid description.");
+        PluginData.getMessageUtil()
+                .sendErrorMessage(
+                        cs,
+                        "There was an error while loading the Descriptions. Probably you entered an invalid description.");
     }
 
     private void sendDescriptionSetMessage(CommandSender cs) {
@@ -78,5 +78,4 @@ public class DescriptionEditSavePrompt extends MessagePrompt {
     protected void sendIOErrorMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "There was an error. Guidebook data were NOT saved.");
     }
-
 }

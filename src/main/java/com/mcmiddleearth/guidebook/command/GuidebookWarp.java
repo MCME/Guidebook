@@ -7,11 +7,9 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.pluginutil.message.MessageUtil;
+import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
-import java.util.List;
 
 /**
  * @author Eriol_Eandur
@@ -47,5 +45,4 @@ public class GuidebookWarp extends GuidebookCommand {
     private void sendWelcomeToCenter(CommandSender cs, String arg) {
         PluginData.getMessageUtil().sendInfoMessage(cs, "You are now at Guidebook area " + arg + ".");
     }
-
 }

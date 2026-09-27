@@ -61,4 +61,3 @@ public class GuidebookDev extends GuidebookCommand {
         }
     }
 }
-

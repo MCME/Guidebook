@@ -10,12 +10,10 @@ import com.mcmiddleearth.guidebook.conversation.DescriptionEditFactory;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -61,7 +59,7 @@ public class GuidebookDescription extends GuidebookCommand {
                 } else if (args[1].equalsIgnoreCase("save")) {
                     ItemStack handItem = player.getInventory().getItemInMainHand();
                     if (!(handItem.getType().equals(Material.WRITABLE_BOOK)
-                        || handItem.getType().equals(Material.WRITTEN_BOOK))) {
+                            || handItem.getType().equals(Material.WRITTEN_BOOK))) {
                         sendNoBookMessage(cs);
                         return;
                     } else {
@@ -71,12 +69,14 @@ public class GuidebookDescription extends GuidebookCommand {
                                 PluginData.saveArea(area);
                             } catch (IOException ex) {
                                 sendIOErrorMessage(player);
-                                Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+                                Logger.getLogger(GuidebookDescription.class.getName())
+                                        .log(Level.SEVERE, null, ex);
                             }
                             sendDescriptionSetMessage(cs);
                             GuidebookShow.sendDescription(player, area);
                         } catch (MessageParseException ex) {
-                            Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(GuidebookDescription.class.getName())
+                                    .log(Level.SEVERE, null, ex);
                             sendParseError(player);
                         }
                         return;
@@ -132,7 +132,10 @@ public class GuidebookDescription extends GuidebookCommand {
     }
 
     private void sendParseError(CommandSender cs) {
-        PluginData.getMessageUtil().sendErrorMessage(cs, "There was an error while loading the Descriptions. Probably you entered an invalid description.");
+        PluginData.getMessageUtil()
+                .sendErrorMessage(
+                        cs,
+                        "There was an error while loading the Descriptions. Probably you entered an invalid description.");
     }
 
     private void sendLineAddedMessage(CommandSender cs) {
@@ -140,11 +143,11 @@ public class GuidebookDescription extends GuidebookCommand {
     }
 
     private void sendBookGivenMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Descriptions was written into a book and placed in your inventory.");
+        PluginData.getMessageUtil()
+                .sendInfoMessage(cs, "Descriptions was written into a book and placed in your inventory.");
     }
 
     private void sendNoBookMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendErrorMessage(cs, "No book in main hand to get the description from.");
     }
-
 }

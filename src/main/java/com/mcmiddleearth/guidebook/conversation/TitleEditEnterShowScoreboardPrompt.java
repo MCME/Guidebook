@@ -60,5 +60,4 @@ public class TitleEditEnterShowScoreboardPrompt extends ValidatingPrompt {
             return Prompt.END_OF_CONVERSATION;
         }
     }
-
 }

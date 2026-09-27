@@ -17,12 +17,10 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.PluginData;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.CommandSender;
 
 /**
@@ -45,7 +43,7 @@ public class GuidebookRename extends GuidebookCommand {
         return List.of();
     }
 
-    //guidebook rename oldname newname
+    // guidebook rename oldname newname
     //                  0       1
     @Override
     protected void execute(CommandSender cs, String... args) {
@@ -56,7 +54,8 @@ public class GuidebookRename extends GuidebookCommand {
 
                 try {
                     PluginData.renameInfoArea(args[0], args[1]);
-                    PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " has been renamed with " + args[1]);
+                    PluginData.getMessageUtil()
+                            .sendInfoMessage(cs, "Guidebook area " + args[0] + " has been renamed with " + args[1]);
                 } catch (IOException ex) {
                     Logger.getLogger(GuidebookRename.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -68,9 +67,6 @@ public class GuidebookRename extends GuidebookCommand {
         } else {
 
             PluginData.getMessageUtil().sendErrorMessage(cs, "Invalid Usage! /guidebook rename <oldname> <newname>");
-
         }
-
     }
-
 }

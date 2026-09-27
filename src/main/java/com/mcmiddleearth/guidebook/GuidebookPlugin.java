@@ -20,12 +20,11 @@ import com.mcmiddleearth.guidebook.command.GuidebookCommandExecutor;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.List;
 
 /**
  * @author Eriol_Eandur
@@ -57,33 +56,35 @@ public class GuidebookPlugin extends JavaPlugin {
     }
 
     public void initializePlayerMoveRunnable() {
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
-            List<InfoArea> enabledAreas = PluginData.getInfoAreas()
-                .values()
-                .stream()
-                .filter(InfoArea::isEnable)
-                .toList();
+        getServer()
+                .getScheduler()
+                .scheduleSyncRepeatingTask(
+                        this,
+                        () -> {
+                            List<InfoArea> enabledAreas = PluginData.getInfoAreas().values().stream()
+                                    .filter(InfoArea::isEnable)
+                                    .toList();
 
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                Location playerLocation = player.getLocation();
+                            for (Player player : Bukkit.getOnlinePlayers()) {
+                                Location playerLocation = player.getLocation();
 
-                for (InfoArea area : enabledAreas) {
-                    boolean isInside = area.containsPlayer(player);
+                                for (InfoArea area : enabledAreas) {
+                                    boolean isInside = area.containsPlayer(player);
 
-                    if (!isInside) {
-                        if (area.isInside(playerLocation)) {
-                            area.onRegionEnter(player);
-                        }
-                        continue;
-                    }
+                                    if (!isInside) {
+                                        if (area.isInside(playerLocation)) {
+                                            area.onRegionEnter(player);
+                                        }
+                                        continue;
+                                    }
 
-                    if (!area.isNear(playerLocation)) {
-                        area.onRegionLeave(player);
-                    }
-                }
-            }
-        }, INITIAL_DELAY_TICKS, INTERVAL_TICKS);
+                                    if (!area.isNear(playerLocation)) {
+                                        area.onRegionLeave(player);
+                                    }
+                                }
+                            }
+                        },
+                        INITIAL_DELAY_TICKS,
+                        INTERVAL_TICKS);
     }
 }
-
-

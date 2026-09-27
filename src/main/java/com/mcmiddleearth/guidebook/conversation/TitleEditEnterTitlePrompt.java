@@ -48,5 +48,4 @@ public class TitleEditEnterTitlePrompt extends StringPrompt {
             return Prompt.END_OF_CONVERSATION;
         }
     }
-
 }

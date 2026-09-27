@@ -10,10 +10,8 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.pluginutil.NumericUtil;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.MessageType;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -42,7 +40,7 @@ public class GuidebookList extends GuidebookCommand {
             page = NumericUtil.getInt(args[pageIndex]);
         }
         FancyMessage header = new FancyMessage(MessageType.INFO, PluginData.getMessageUtil())
-            .addSimple("Guidebook areas (click for details)");
+                .addSimple("Guidebook areas (click for details)");
         List<FancyMessage> messages = new ArrayList<>();
         for (String areaName : PluginData.getInfoAreas().keySet()) {
             if (selection.equals("") || areaName.contains(selection)) {
@@ -54,7 +52,7 @@ public class GuidebookList extends GuidebookCommand {
                 messages.add(message);
             }
         }
-        PluginData.getMessageUtil().sendFancyListMessage((Player) cs, header, messages, "/guidebook list " + selection, page);
+        PluginData.getMessageUtil()
+                .sendFancyListMessage((Player) cs, header, messages, "/guidebook list " + selection, page);
     }
-
 }

@@ -57,7 +57,7 @@ public class PrismoidInfoArea extends InfoArea {
     public Integer[] getZPoints() {
         return ((PrismoidRegion) region).getZPoints();
     }
-    
+
     /*@Override
     public boolean isInside(Location loc) {
         return region.isInside(loc);
@@ -69,20 +69,20 @@ public class PrismoidInfoArea extends InfoArea {
             && loc.getBlockZ() >= getCenter().getBlockZ()-sizeZ/2
             && loc.getBlockZ() <= getCenter().getBlockZ()+sizeZ/2;*/
     /*}
-    
-    @Override
-    public boolean isNear(Location loc) {
-//Logger.getGlobal().info("cuboid isNear "+getPreloadDistance());
-        return region.isNear(loc, getPreloadDistance());
-                /*getCenter().getWorld().equals(loc.getWorld())
-            && loc.getBlockX() >= getCenter().getBlockX()-(sizeX+getPreloadDistance())/2
-            && loc.getBlockX() <= getCenter().getBlockX()+(sizeX+getPreloadDistance())/2
-            && loc.getBlockY() >= getCenter().getBlockY()-(sizeY+getPreloadDistance())/2
-            && loc.getBlockY() <= getCenter().getBlockY()+(sizeY+getPreloadDistance())/2
-            && loc.getBlockZ() >= getCenter().getBlockZ()-(sizeZ+getPreloadDistance())/2
-            && loc.getBlockZ() <= getCenter().getBlockZ()+(sizeZ+getPreloadDistance())/2;*/
-    //}
-    
+
+        @Override
+        public boolean isNear(Location loc) {
+    //Logger.getGlobal().info("cuboid isNear "+getPreloadDistance());
+            return region.isNear(loc, getPreloadDistance());
+                    /*getCenter().getWorld().equals(loc.getWorld())
+                && loc.getBlockX() >= getCenter().getBlockX()-(sizeX+getPreloadDistance())/2
+                && loc.getBlockX() <= getCenter().getBlockX()+(sizeX+getPreloadDistance())/2
+                && loc.getBlockY() >= getCenter().getBlockY()-(sizeY+getPreloadDistance())/2
+                && loc.getBlockY() <= getCenter().getBlockY()+(sizeY+getPreloadDistance())/2
+                && loc.getBlockZ() >= getCenter().getBlockZ()-(sizeZ+getPreloadDistance())/2
+                && loc.getBlockZ() <= getCenter().getBlockZ()+(sizeZ+getPreloadDistance())/2;*/
+    // }
+
     /*@Override
     public Map<String,Object> serialize() {
         Map<String,Object> result = super.serialize();

@@ -10,9 +10,7 @@ import com.mcmiddleearth.guidebook.conversation.ConfirmationFactory;
 import com.mcmiddleearth.guidebook.conversation.Confirmationable;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-
 import java.util.List;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -36,8 +34,8 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
             sendNoAreaErrorMessage(cs);
         } else {
             areaName = args[0];
-            new ConfirmationFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs,
-                "Do you really want to delete guidebook area " + areaName + "?", this);
+            new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
+                    .start((Player) cs, "Do you really want to delete guidebook area " + areaName + "?", this);
         }
     }
 
@@ -55,7 +53,8 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
         if (PluginData.deleteInfoArea(areaName)) {
             PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook area was deleted.");
         } else {
-            PluginData.getMessageUtil().sendErrorMessage(player, "There was an error while deleting the data file from disk.");
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(player, "There was an error while deleting the data file from disk.");
         }
     }
 
@@ -63,5 +62,4 @@ public class GuidebookDelete extends GuidebookCommand implements Confirmationabl
     public void cancelled(Player player) {
         PluginData.getMessageUtil().sendErrorMessage(player, "You cancelled deleting of the area.");
     }
-
 }

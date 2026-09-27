@@ -42,12 +42,10 @@ public class CuboidInfoArea extends InfoArea {
             int sizeX = config.getInt("xSize");
             int sizeY = config.getInt("ySize");
             int sizeZ = config.getInt("zSize");
-            Vector minPos = new Vector(center.getBlockX() - sizeX / 2,
-                center.getBlockY() - sizeY / 2,
-                center.getBlockZ() - sizeZ / 2);
-            Vector maxPos = new Vector(center.getBlockX() + sizeX / 2,
-                center.getBlockY() + sizeY / 2,
-                center.getBlockZ() + sizeZ / 2);
+            Vector minPos = new Vector(
+                    center.getBlockX() - sizeX / 2, center.getBlockY() - sizeY / 2, center.getBlockZ() - sizeZ / 2);
+            Vector maxPos = new Vector(
+                    center.getBlockX() + sizeX / 2, center.getBlockY() + sizeY / 2, center.getBlockZ() + sizeZ / 2);
             DevUtil.log("CreateCuboid " + center + "     " + minPos + "    " + maxPos);
             region = new CuboidRegion(center, minPos, maxPos);
         } else {
@@ -79,9 +77,7 @@ public class CuboidInfoArea extends InfoArea {
         if (world == null) {
             return null;
         } else {
-            return new Location(world, (Double) data.get("x"),
-                (Double) data.get("y"),
-                (Double) data.get("z"));
+            return new Location(world, (Double) data.get("x"), (Double) data.get("y"), (Double) data.get("z"));
         }
     }
 }

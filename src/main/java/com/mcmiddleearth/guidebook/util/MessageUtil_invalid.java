@@ -17,7 +17,6 @@
 package com.mcmiddleearth.guidebook.util;
 
 import java.util.Map;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -26,7 +25,6 @@ import org.bukkit.entity.Player;
 /**
  * @author Ivanpl, Eriol_Eandur
  */
-
 public class MessageUtil_invalid {
 
     private static final String PREFIX = "[Guidebook] ";
@@ -61,10 +59,12 @@ public class MessageUtil_invalid {
     }
 
     public static void sendClickableMessage(Player sender, String message, String onClickCommand) {
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tellraw " + sender.getName() + " "
-            + "{ text:\"" + message + "\", "
-            + "clickEvent:{ action:run_command,"
-            + "value:\"" + onClickCommand + "\"}}");
+        Bukkit.dispatchCommand(
+                Bukkit.getConsoleSender(),
+                "tellraw " + sender.getName() + " "
+                        + "{ text:\"" + message + "\", "
+                        + "clickEvent:{ action:run_command,"
+                        + "value:\"" + onClickCommand + "\"}}");
     }
 
     public static void sendClickableMessage(Player sender, Map<String, String> data) {

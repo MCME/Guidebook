@@ -26,5 +26,4 @@ public class GuidebookOn extends GuidebookCommand {
         PluginData.include(player);
         PluginData.getMessageUtil().sendInfoMessage(cs, "You will now receive info messages from Guidebook.");
     }
-
 }

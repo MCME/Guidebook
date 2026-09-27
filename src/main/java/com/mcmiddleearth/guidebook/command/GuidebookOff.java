@@ -26,5 +26,4 @@ public class GuidebookOff extends GuidebookCommand {
         PluginData.exclude(player);
         PluginData.getMessageUtil().sendInfoMessage(cs, "You will no longer receive info messages from Guidebook.");
     }
-
 }

@@ -18,14 +18,12 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.PluginData;
-
+import java.util.*;
+import java.util.stream.Collectors;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.PluginDescriptionFile;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Eriol_Eandur
@@ -91,10 +89,10 @@ public class GuidebookCommandExecutor implements TabExecutor {
 
         // Filter the completions
         return completions.stream()
-            // AreaName completions are structured <worldName>-<projectName>-<guidebookName>
-            // So support partial matches
-            .filter(completion -> matchesAnySegment(completion, lastArg))
-            .collect(Collectors.toList());
+                // AreaName completions are structured <worldName>-<projectName>-<guidebookName>
+                // So support partial matches
+                .filter(completion -> matchesAnySegment(completion, lastArg))
+                .collect(Collectors.toList());
     }
 
     private boolean matchesAnySegment(String input, String searchTerm) {
@@ -112,7 +110,7 @@ public class GuidebookCommandExecutor implements TabExecutor {
     }
 
     private void sendNoSubcommandErrorMessage(CommandSender cs) {
-        //MessageUtil.sendErrorMessage(cs, "You're missing subcommand name for this command.");
+        // MessageUtil.sendErrorMessage(cs, "You're missing subcommand name for this command.");
         PluginDescriptionFile descr = GuidebookPlugin.getPluginInstance().getDescription();
         PluginData.getMessageUtil().sendErrorMessage(cs, descr.getName() + " - version " + descr.getVersion());
     }

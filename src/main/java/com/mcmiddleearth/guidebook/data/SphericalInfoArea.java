@@ -49,16 +49,16 @@ public class SphericalInfoArea extends InfoArea {
         /*return getCenter().getWorld().equals(loc.getWorld())
             && getCenter().distance(loc) <= radius;*/
     /*}
-    
-    @Override
-    public boolean isNear(Location loc) {
-//Logger.getGlobal().info("spherical isNear "+getPreloadDistance());
-        /*return getCenter().getWorld().equals(loc.getWorld())
-            && getCenter().distance(loc) <= radius+getPreloadDistance();*/
+
+        @Override
+        public boolean isNear(Location loc) {
+    //Logger.getGlobal().info("spherical isNear "+getPreloadDistance());
+            /*return getCenter().getWorld().equals(loc.getWorld())
+                && getCenter().distance(loc) <= radius+getPreloadDistance();*/
     /*    return region.isNear(loc, getPreloadDistance());
     }
-    
-    
+
+
     /*
     @Override
     public Map<String,Object> serialize() {

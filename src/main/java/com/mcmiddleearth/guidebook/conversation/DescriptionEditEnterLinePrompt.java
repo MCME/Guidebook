@@ -76,5 +76,4 @@ public class DescriptionEditEnterLinePrompt extends NumericPrompt {
     private void sendLineRemovedMessage(CommandSender cs) {
         PluginData.getMessageUtil().sendInfoMessage(cs, "Line deleted.");
     }
-
 }
