@@ -16,7 +16,6 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 
 import java.io.IOException;
@@ -55,15 +54,9 @@ public class GuidebookRename extends GuidebookCommand {
 
             if (PluginData.getInfoAreas().containsKey(args[0])) {
 
-                InfoArea area = PluginData.getInfoAreas().get(args[0]);
-
-                PluginData.addInfoArea(args[1], area);
-
-                PluginData.deleteInfoArea(args[0]);
-
-                PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " has been renamed with " + args[1]);
                 try {
-                    PluginData.saveArea(area);
+                    PluginData.renameInfoArea(args[0], args[1]);
+                    PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area " + args[0] + " has been renamed with " + args[1]);
                 } catch (IOException ex) {
                     Logger.getLogger(GuidebookRename.class.getName()).log(Level.SEVERE, null, ex);
                 }

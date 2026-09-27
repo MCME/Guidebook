@@ -79,6 +79,15 @@ public class PluginData {
         return result;
     }
 
+    public static void renameInfoArea(String oldName, String newName) throws IOException {
+        InfoArea area = infoAreas.remove(oldName);
+        area.setName(newName);
+        infoAreas.put(newName, area);
+
+        saveArea(area);
+        getDataFile(getWorldFolder(oldName), oldName).delete();
+    }
+
     public static InfoArea getInfoArea(String name) {
         return infoAreas.get(name);
     }

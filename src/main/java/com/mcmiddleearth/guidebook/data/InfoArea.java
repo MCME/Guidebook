@@ -56,7 +56,7 @@ public abstract class InfoArea {
 
     protected Region region;
 
-    private final String areaName;
+    private String areaName;
 
     private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
     /**
@@ -311,5 +311,9 @@ public abstract class InfoArea {
 
     public String getName() {
         return this.areaName;
+    }
+
+    void setName(String areaName) {
+        this.areaName = areaName;
     }
 }
