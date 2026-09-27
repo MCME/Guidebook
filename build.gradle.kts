@@ -1,6 +1,7 @@
 plugins {
     java
     alias(libs.plugins.run.paper)
+    alias(libs.plugins.spotless)
 }
 
 group = "com.mcmiddleearth"
@@ -26,6 +27,18 @@ dependencies {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+// Points git at the repo's hooks so the pre-commit formatter is enabled for everyone who builds
+if (file(".git").exists()) {
+    providers.exec { commandLine("git", "config", "core.hooksPath", ".githooks") }.result.get()
+}
+
+spotless {
+    java {
+        palantirJavaFormat()
+        removeUnusedImports()
     }
 }
 

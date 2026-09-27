@@ -1,0 +1,18 @@
+#!/bin/sh
+# Formats staged Java files with Spotless (Palantir) and re-stages them.
+# Enabled automatically by the Gradle build (core.hooksPath = .githooks).
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.java')
+[ -z "$files" ] && exit 0
+
+# Re-staging a partially staged file would also commit its unstaged changes, so only check those
+if [ -n "$(git diff --name-only -- $files)" ]; then
+    ./gradlew spotlessCheck -q || {
+        echo "Formatting issues in partially staged files. Run ./gradlew spotlessApply and stage again."
+        exit 1
+    }
+    exit 0
+fi
+
+./gradlew spotlessApply -q || exit 1
+git add -- $files

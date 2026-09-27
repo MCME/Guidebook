@@ -4,6 +4,7 @@ paper = "26.2.build.129-stable"
 pluginutils = "2.0.4"
 worldedit = "7.4.5"
 run-paper = "3.1.0"
+spotless = "8.10.3"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -13,3 +14,4 @@ worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.re
 
 [plugins]
 run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
