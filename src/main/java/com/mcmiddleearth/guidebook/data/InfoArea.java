@@ -182,7 +182,7 @@ public abstract class InfoArea {
     }
 
     public void clearPlayers() {
-        for (UUID uuid : areaPlayers) {
+        for (UUID uuid : new ArrayList<>(areaPlayers)) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
                 clearPlayer(player);
