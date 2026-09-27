@@ -3,8 +3,10 @@ main: com.mcmiddleearth.guidebook.GuidebookPlugin
 version: ${project.version}
 description: sending information about places via chat messages
 load: POSTWORLD
-softdepend: [Multiverse-Core, worldedit-core, worldedit-bukkit, PluginUtils, bukkit, ProtocolLib, guava]
-api-version: 1.19
+# Multiverse-Core loads its worlds in its own onEnable. Saved areas look their world up by name
+# on load, so Guidebook must enable after Multiverse or those lookups return null.
+softdepend: [Multiverse-Core, WorldEdit, PluginUtils]
+api-version: '26.2'
 
 commands:
     guidebook:
