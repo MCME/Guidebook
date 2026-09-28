@@ -24,6 +24,7 @@ public final class GuidebookMessages {
     private static final String PREFIX = "[" + PLUGIN_NAME + "] ";
     // MessageUtil indents by the width of the prefix's name and brackets
     private static final String INDENT = " ".repeat(PLUGIN_NAME.length() + 2);
+    private static final String SHORT_INDENT = "  ";
 
     private GuidebookMessages() {}
 
@@ -35,6 +36,11 @@ public final class GuidebookMessages {
     /** A line indented to follow an {@link #info} line, in the info colour. */
     public static Component infoIndented(ComponentLike... parts) {
         return line(INDENT, INFO, parts);
+    }
+
+    /** A line slightly indented to follow an {@link #info} line, for long lines that would wrap under the full indent. */
+    public static Component infoShortIndented(ComponentLike... parts) {
+        return line(SHORT_INDENT, INFO, parts);
     }
 
     public static Component stressed(String text) {

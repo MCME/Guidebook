@@ -109,7 +109,7 @@ final class GuidebookHelp {
         visibleTo(sender)
                 .forEach(entry -> GuidebookMessages.send(
                         sender,
-                        GuidebookMessages.infoIndented(
+                        GuidebookMessages.infoShortIndented(
                                 GuidebookMessages.runsCommand(
                                         GuidebookMessages.stressed("/guidebook " + entry.name()),
                                         "/guidebook help " + entry.name(),
@@ -133,12 +133,12 @@ final class GuidebookHelp {
         for (String usage : entry.usages()) {
             GuidebookMessages.send(
                     sender,
-                    GuidebookMessages.infoIndented(GuidebookMessages.suggestsCommand(
+                    GuidebookMessages.infoShortIndented(GuidebookMessages.suggestsCommand(
                             GuidebookMessages.stressed("/guidebook " + usage),
                             "/guidebook " + entry.name() + " ",
                             "Click to fill in the command.")));
         }
-        GuidebookMessages.send(sender, GuidebookMessages.infoIndented(Component.text(entry.description())));
+        GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(Component.text(entry.description())));
     }
 
     private static Stream<Entry> visibleTo(CommandSender sender) {
@@ -148,7 +148,7 @@ final class GuidebookHelp {
     private static void sendManual(CommandSender sender) {
         GuidebookMessages.send(
                 sender,
-                GuidebookMessages.infoIndented(
+                GuidebookMessages.infoShortIndented(
                         Component.text("Manual: "),
                         GuidebookMessages.opensUrl(Component.text(MANUAL), MANUAL, "Click to open the manual.")));
     }
