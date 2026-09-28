@@ -35,6 +35,11 @@ public class SphericalInfoArea extends InfoArea {
         region = SphericalRegion.load(config);
     }
 
+    @Override
+    public Shape getShape() {
+        return Shape.SPHERE;
+    }
+
     public void setRadius(int radius) {
         ((SphericalRegion) region).setRadius(radius);
     }

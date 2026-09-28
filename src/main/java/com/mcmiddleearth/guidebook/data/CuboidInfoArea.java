@@ -54,6 +54,11 @@ public class CuboidInfoArea extends InfoArea {
         }
     }
 
+    @Override
+    public Shape getShape() {
+        return Shape.CUBOID;
+    }
+
     public void setCorners(Vector pos1, Vector pos2) {
         ((CuboidRegion) region).setCorners(pos1, pos2);
         /*sizeX = x;

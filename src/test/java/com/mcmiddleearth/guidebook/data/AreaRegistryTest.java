@@ -14,10 +14,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AreaRegistryTest {
 
-    record TestArea(String getName, String getTitle, boolean isEnabled) implements AreaView {}
+    record TestArea(String getName, String getTitle, boolean isEnabled, Shape getShape) implements AreaView {}
 
     private static TestArea area(String name) {
-        return new TestArea(name, "Title of " + name, true);
+        return new TestArea(name, "Title of " + name, true, Shape.CUBOID);
     }
 
     private static AreaRegistry<TestArea> registryOf(TestArea... areas) {
@@ -130,19 +130,22 @@ class AreaRegistryTest {
     }
 
     @Test
-    void aSuggestionsTooltipIsTheAreasTitle() {
-        AreaRegistry<TestArea> registry = registryOf(new TestArea("world-gondor-minas", "Minas Tirith", true));
+    void aSuggestionsTooltipIsTheAreasTitleAndShape() {
+        AreaRegistry<TestArea> registry =
+                registryOf(new TestArea("world-gondor-minas", "Minas Tirith", true, Shape.PRISM));
 
         assertEquals(
-                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith")), registry.suggest("minas"));
+                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith · prism")),
+                registry.suggest("minas"));
     }
 
     @Test
     void aDisabledAreaIsStillSuggestedAndItsTooltipSaysDisabled() {
-        AreaRegistry<TestArea> registry = registryOf(new TestArea("world-gondor-minas", "Minas Tirith", false));
+        AreaRegistry<TestArea> registry =
+                registryOf(new TestArea("world-gondor-minas", "Minas Tirith", false, Shape.SPHERE));
 
         assertEquals(
-                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith (disabled)")),
+                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith · sphere (disabled)")),
                 registry.suggest("minas"));
     }
 }

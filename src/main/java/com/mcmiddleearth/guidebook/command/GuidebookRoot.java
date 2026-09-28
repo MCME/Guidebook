@@ -92,9 +92,15 @@ class GuidebookRoot {
             CommandSender sender,
             @Executor Player player,
             @GuidebookSet.AreaNameSuggestions @StringArg String name,
-            @Literal("sphere") String sphere,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("sphere") String sphere,
             @IntArg(min = 1) int radius) {
         GuidebookSet.sphere(player, name, radius);
+    }
+
+    @Executes("size")
+    @Permission("guidebook.staff")
+    void size(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
+        GuidebookSize.show(sender, area);
     }
 
     @Executes("size")
@@ -102,7 +108,7 @@ class GuidebookRoot {
     void sizeRadius(
             CommandSender sender,
             @CustomArg(AreaArgument.class) InfoArea area,
-            @Literal("radius") String radiusForm,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("radius") String radiusForm,
             @IntArg(min = 1) int radius) {
         GuidebookSize.radius(sender, area, radius);
     }
@@ -112,7 +118,7 @@ class GuidebookRoot {
     void sizeCorners(
             CommandSender sender,
             @CustomArg(AreaArgument.class) InfoArea area,
-            @Literal("corners") String cornersForm,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("corners") String cornersForm,
             BlockPosition pos1,
             BlockPosition pos2) {
         GuidebookSize.corners(sender, area, pos1, pos2);
@@ -123,7 +129,7 @@ class GuidebookRoot {
     void sizeHeight(
             CommandSender sender,
             @CustomArg(AreaArgument.class) InfoArea area,
-            @Literal("height") String heightForm,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("height") String heightForm,
             @IntArg int minY,
             @IntArg int maxY) {
         GuidebookSize.height(sender, area, minY, maxY);

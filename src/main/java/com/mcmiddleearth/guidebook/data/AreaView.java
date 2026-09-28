@@ -10,4 +10,6 @@ public interface AreaView {
     String getTitle();
 
     boolean isEnabled();
+
+    Shape getShape();
 }

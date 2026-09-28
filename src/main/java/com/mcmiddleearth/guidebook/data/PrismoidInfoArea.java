@@ -37,6 +37,11 @@ public class PrismoidInfoArea extends InfoArea {
         region = PrismoidRegion.load(config);
     }
 
+    @Override
+    public Shape getShape() {
+        return Shape.PRISM;
+    }
+
     public void setHeight(int minY, int maxY) {
         ((PrismoidRegion) region).setMinY(Math.min(minY, maxY));
         ((PrismoidRegion) region).setMaxY(Math.max(minY, maxY));

@@ -62,7 +62,8 @@ public class AreaRegistry<A extends AreaView> {
     }
 
     private static String tooltip(AreaView area) {
-        return area.isEnabled() ? area.getTitle() : area.getTitle() + " (disabled)";
+        String tooltip = area.getTitle() + " · " + area.getShape().displayName();
+        return area.isEnabled() ? tooltip : tooltip + " (disabled)";
     }
 
     private static boolean anySegmentStartsWith(String name, String search) {
