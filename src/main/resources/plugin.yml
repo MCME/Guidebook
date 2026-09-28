@@ -12,8 +12,6 @@ permissions:
     guidebook.staff:
         description: Gives access to all guidebook commands
         default: op
-        children:
-            autoteleport.user: true
     guidebook.user:
-        description: gives access to /guidebook on and /guidebook off
+        description: Gives access to /guidebook on, off and help
         default: true

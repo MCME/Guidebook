@@ -56,6 +56,11 @@ public final class GuidebookMessages {
         return withHover(text.clickEvent(ClickEvent.runCommand(command)), hover);
     }
 
+    /** Clicking the text opens {@code url}, and hovering shows {@code hover}. */
+    public static Component opensUrl(Component text, String url, String hover) {
+        return withHover(text.clickEvent(ClickEvent.openUrl(url)), hover);
+    }
+
     public static Component withHover(Component text, String hover) {
         return text.hoverEvent(HoverEvent.showText(Component.text(hover)));
     }
