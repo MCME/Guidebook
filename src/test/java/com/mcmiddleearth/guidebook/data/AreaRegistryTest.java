@@ -130,22 +130,22 @@ class AreaRegistryTest {
     }
 
     @Test
-    void aSuggestionsTooltipIsTheAreasTitleAndShape() {
+    void aSuggestionCarriesTheAreasTitleAndShape() {
         AreaRegistry<TestArea> registry =
                 registryOf(new TestArea("world-gondor-minas", "Minas Tirith", true, Shape.PRISM));
 
         assertEquals(
-                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith · prism")),
+                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith", Shape.PRISM, false)),
                 registry.suggest("minas"));
     }
 
     @Test
-    void aDisabledAreaIsStillSuggestedAndItsTooltipSaysDisabled() {
+    void aDisabledAreaIsStillSuggestedAndMarkedDisabled() {
         AreaRegistry<TestArea> registry =
                 registryOf(new TestArea("world-gondor-minas", "Minas Tirith", false, Shape.SPHERE));
 
         assertEquals(
-                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith · sphere (disabled)")),
+                List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith", Shape.SPHERE, true)),
                 registry.suggest("minas"));
     }
 }

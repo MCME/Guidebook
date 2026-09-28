@@ -57,13 +57,8 @@ public class AreaRegistry<A extends AreaView> {
         String search = typed.toLowerCase(Locale.ROOT);
         return areas.stream()
                 .filter(area -> anySegmentStartsWith(area.getName(), search))
-                .map(area -> new Suggestion(area.getName(), tooltip(area)))
+                .map(area -> new Suggestion(area.getName(), area.getTitle(), area.getShape(), !area.isEnabled()))
                 .toList();
-    }
-
-    private static String tooltip(AreaView area) {
-        String tooltip = area.getTitle() + " · " + area.getShape().displayName();
-        return area.isEnabled() ? tooltip : tooltip + " (disabled)";
     }
 
     private static boolean anySegmentStartsWith(String name, String search) {
@@ -79,5 +74,6 @@ public class AreaRegistry<A extends AreaView> {
         return false;
     }
 
-    public record Suggestion(String name, String tooltip) {}
+    /** A suggested name, with what its tooltip shows about the Area. */
+    public record Suggestion(String name, String title, Shape shape, boolean disabled) {}
 }

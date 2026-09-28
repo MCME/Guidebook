@@ -14,6 +14,7 @@ import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * An existing Area, typed as its name. The name resolves through the {@link AreaRegistry} (ignoring case, exact case
@@ -43,13 +44,25 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
         return suggestAreaNames(builder);
     }
 
-    /** Suggests the Area names matching the typed text, each with its Title (and " (disabled)") as a tooltip. */
+    /** Suggests the Area names matching the typed text, each with its Title, Shape and whether it's disabled. */
     static CompletableFuture<Suggestions> suggestAreaNames(SuggestionsBuilder builder) {
         for (AreaRegistry.Suggestion suggestion : PluginData.suggestAreas(builder.getRemaining())) {
             builder.suggest(
-                    suggestion.name(),
-                    MessageComponentSerializer.message().serialize(Component.text(suggestion.tooltip())));
+                    suggestion.name(), MessageComponentSerializer.message().serialize(tooltip(suggestion)));
         }
         return builder.buildFuture();
+    }
+
+    // e.g. "Minas Tirith ⬟ prism ✖ disabled"
+    private static Component tooltip(AreaRegistry.Suggestion suggestion) {
+        Component tooltip = Component.text(suggestion.title(), NamedTextColor.YELLOW)
+                .append(Component.text(
+                        " " + suggestion.shape().symbol() + " "
+                                + suggestion.shape().displayName(),
+                        NamedTextColor.AQUA));
+        if (suggestion.disabled()) {
+            tooltip = tooltip.append(Component.text(" ✖ disabled", NamedTextColor.RED));
+        }
+        return tooltip;
     }
 }
