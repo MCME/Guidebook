@@ -16,7 +16,6 @@
  */
 package com.mcmiddleearth.guidebook.conversation;
 
-import com.mcmiddleearth.guidebook.command.GuidebookDescription;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import java.io.IOException;
@@ -67,7 +66,7 @@ public class TitleEditFactory implements ConversationAbandonedListener {
                 PluginData.saveArea(area);
             } catch (IOException ex) {
                 sendIOErrorMessage(player);
-                Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TitleEditFactory.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             }
             sendTitleSetMessage(player);

@@ -11,143 +11,76 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Material;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
 /**
+ * {@code description <area> [getbook|save]}: edits an Area's Description in a chat conversation, or through a writable
+ * book. Ticket 09 replaces both with the Edit dialog.
+ *
  * @author Eriol_Eandur
  */
-public class GuidebookDescription extends GuidebookCommand {
+final class GuidebookDescription {
 
-    public GuidebookDescription(String... permissionNodes) {
-        super(1, true, permissionNodes);
-        setShortDescription(": Defines the description of a Guidebook area.");
-        setUsageDescription(" <AreaName>: Initiates a conversation to edit the Guidebook area's description.");
+    private GuidebookDescription() {}
+
+    /** Bare {@code description <area>}: starts the Description conversation. */
+    static void start(Player player, InfoArea area) {
+        if (player.isConversing()) {
+            GuidebookTitle.sendAlreadyConversing(player);
+            return;
+        }
+        new DescriptionEditFactory(GuidebookPlugin.getPluginInstance()).start(player, area, area.getName());
     }
 
-    @Override
-    protected List<String> getCompletions(CommandSender cs, String... args) {
-        if (args.length == 1) {
-            return PluginData.suggestAreaNames(args[0]);
-        }
-
-        if (args.length == 2) {
-            return startingWith(args[1], List.of("getbook", "save"));
-        }
-
-        return List.of();
+    /** {@code getbook}: gives the player a writable book holding the Description. */
+    static void giveBook(Player player, InfoArea area) {
+        player.getInventory().addItem(area.getDescriptionBook());
+        PluginData.getMessageUtil()
+                .sendInfoMessage(player, "The Description was written into a book and placed in your inventory.");
     }
 
-    @Override
-    protected void execute(CommandSender cs, String... args) {
-        InfoArea area = PluginData.getInfoArea(args[0]);
-        if (area == null) {
-            sendNoAreaErrorMessage(cs);
-        } else {
-            if (args.length > 1) {
-                Player player = (Player) cs;
-                if (args[1].equalsIgnoreCase("getbook")) {
-                    player.getInventory().addItem(area.getDescriptionBook());
-                    sendBookGivenMessage(cs);
-                    return;
-                } else if (args[1].equalsIgnoreCase("save")) {
-                    ItemStack handItem = player.getInventory().getItemInMainHand();
-                    if (!(handItem.getType().equals(Material.WRITABLE_BOOK)
-                            || handItem.getType().equals(Material.WRITTEN_BOOK))) {
-                        sendNoBookMessage(cs);
-                        return;
-                    } else {
-                        try {
-                            area.setDescription((BookMeta) handItem.getItemMeta());
-                            try {
-                                PluginData.saveArea(area);
-                            } catch (IOException ex) {
-                                sendIOErrorMessage(player);
-                                Logger.getLogger(GuidebookDescription.class.getName())
-                                        .log(Level.SEVERE, null, ex);
-                            }
-                            sendDescriptionSetMessage(cs);
-                            GuidebookShow.sendDescription(player, area);
-                        } catch (MessageParseException ex) {
-                            Logger.getLogger(GuidebookDescription.class.getName())
-                                    .log(Level.SEVERE, null, ex);
-                            sendParseError(player);
-                        }
-                        return;
-                    }
-                }
-            }
-            if (((Player) cs).isConversing()) {
-                sendAlreadyConversing((Player) cs);
-            }
-            new DescriptionEditFactory(GuidebookPlugin.getPluginInstance()).start((Player) cs, area, area.getName());
+    /** {@code save}: replaces the Description with the book in the player's main hand. */
+    static void saveBook(Player player, InfoArea area) {
+        ItemStack handItem = player.getInventory().getItemInMainHand();
+        if (!(handItem.getType() == Material.WRITABLE_BOOK || handItem.getType() == Material.WRITTEN_BOOK)) {
+            PluginData.getMessageUtil().sendErrorMessage(player, "No book in main hand to get the Description from.");
+            return;
         }
-    }
-
-    private String getDescription(String[] args, int startIndex) {
-        String areaDescription = args[startIndex];
-        for (int i = startIndex + 1; i < args.length; i++) {
-            areaDescription = areaDescription + " " + args[i];
-        }
-        return areaDescription;
-    }
-
-    /*private void saveData(CommandSender cs){
         try {
-            PluginData.saveData();
-        } catch (IOException ex) {
-            sendIOErrorMessage(cs);
+            area.setDescription((BookMeta) handItem.getItemMeta());
+        } catch (MessageParseException ex) {
             Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+            sendParseError(player);
+            return;
         }
-    }*/
-
-    private void sendAlreadyConversing(CommandSender cs) {
-        PluginData.getMessageUtil().sendErrorMessage(cs, "You are already in a converstion.");
+        try {
+            PluginData.saveArea(area);
+        } catch (IOException ex) {
+            Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player, "There was an error. Guidebook area " + area.getName() + " was NOT saved.");
+            return;
+        }
+        PluginData.getMessageUtil()
+                .sendInfoMessage(player, "Description of Guidebook area " + area.getName() + " was saved.");
+        try {
+            GuidebookShow.sendDescription(player, area);
+        } catch (MessageParseException ex) {
+            Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+            sendParseError(player);
+        }
     }
 
-    private void sendDescriptionSetMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Description of guidebook area was saved.");
-    }
-
-    private void sendLineInsertedMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "New line inserted.");
-    }
-
-    private void sendIndexOutOfBoundsMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendErrorMessage(cs, "You specified an invalid line number.");
-    }
-
-    private void sendLineReplacedMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Line replaced.");
-    }
-
-    private void sendLineRemovedMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Line deleted.");
-    }
-
-    private void sendParseError(CommandSender cs) {
+    private static void sendParseError(Player player) {
         PluginData.getMessageUtil()
                 .sendErrorMessage(
-                        cs,
+                        player,
                         "There was an error while loading the Descriptions. Probably you entered an invalid description.");
-    }
-
-    private void sendLineAddedMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Line added.");
-    }
-
-    private void sendBookGivenMessage(CommandSender cs) {
-        PluginData.getMessageUtil()
-                .sendInfoMessage(cs, "Descriptions was written into a book and placed in your inventory.");
-    }
-
-    private void sendNoBookMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendErrorMessage(cs, "No book in main hand to get the description from.");
     }
 }

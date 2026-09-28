@@ -16,7 +16,6 @@
  */
 package com.mcmiddleearth.guidebook.conversation;
 
-import com.mcmiddleearth.guidebook.command.GuidebookDescription;
 import com.mcmiddleearth.guidebook.command.GuidebookShow;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
@@ -44,14 +43,14 @@ public class DescriptionEditSavePrompt extends MessagePrompt {
                 PluginData.saveArea(area);
             } catch (IOException ex) {
                 sendIOErrorMessage(player);
-                Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(DescriptionEditSavePrompt.class.getName()).log(Level.SEVERE, null, ex);
                 return Prompt.END_OF_CONVERSATION;
             }
             sendDescriptionSetMessage(player);
             try {
                 GuidebookShow.sendDescription(player, area);
             } catch (MessageParseException ex) {
-                Logger.getLogger(GuidebookDescription.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(DescriptionEditSavePrompt.class.getName()).log(Level.SEVERE, null, ex);
                 sendParseError(player);
             }
         }

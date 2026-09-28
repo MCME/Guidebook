@@ -135,6 +135,38 @@ class GuidebookRoot {
         GuidebookSize.height(sender, area, minY, maxY);
     }
 
+    @Executes("title")
+    @Permission("guidebook.staff")
+    void title(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        GuidebookTitle.start(player, area);
+    }
+
+    @Executes("description")
+    @Permission("guidebook.staff")
+    void description(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        GuidebookDescription.start(player, area);
+    }
+
+    @Executes("description")
+    @Permission("guidebook.staff")
+    void descriptionGetBook(
+            CommandSender sender,
+            @Executor Player player,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("getbook") String getbook) {
+        GuidebookDescription.giveBook(player, area);
+    }
+
+    @Executes("description")
+    @Permission("guidebook.staff")
+    void descriptionSave(
+            CommandSender sender,
+            @Executor Player player,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("save") String save) {
+        GuidebookDescription.saveBook(player, area);
+    }
+
     @Executes("rename")
     @Permission("guidebook.staff")
     void rename(
