@@ -102,20 +102,28 @@ final class GuidebookHelp {
         return builder.buildFuture();
     }
 
-    /** Lists the commands the sender may run. Clicking one shows its help. */
+    /**
+     * Lists the commands the sender may run, each with its simplest form. Clicking one fills it in, and a command with
+     * more forms links to its own help.
+     */
     static void sendAll(CommandSender sender) {
         GuidebookMessages.send(
-                sender, GuidebookMessages.info(Component.text("Guidebook commands (click one for details):")));
-        visibleTo(sender)
-                .forEach(entry -> GuidebookMessages.send(
-                        sender,
-                        GuidebookMessages.infoShortIndented(
-                                GuidebookMessages.runsCommand(
-                                        GuidebookMessages.stressed("/guidebook " + entry.name()),
-                                        "/guidebook help " + entry.name(),
-                                        "Click for details."),
-                                Component.text(": " + entry.description()))));
+                sender, GuidebookMessages.info(Component.text("Guidebook commands (click one to fill it in):")));
+        visibleTo(sender).forEach(entry -> GuidebookMessages.send(sender, summaryLine(entry)));
         sendManual(sender);
+    }
+
+    private static Component summaryLine(Entry entry) {
+        Component line = GuidebookMessages.infoShortIndented(
+                fillsIn(entry, entry.usages().getFirst()), Component.text(": " + entry.description()));
+        if (entry.usages().size() == 1) {
+            return line;
+        }
+        String help = "/guidebook help " + entry.name();
+        return line.append(Component.text(" (more forms: "))
+                .append(GuidebookMessages.runsCommand(
+                        GuidebookMessages.stressed(help), help, "Click to see every form."))
+                .append(Component.text(")"));
     }
 
     /** Shows each form of one command and what it does, if the sender may run it. */
@@ -131,14 +139,16 @@ final class GuidebookHelp {
         Entry entry = found.get();
         GuidebookMessages.send(sender, GuidebookMessages.info(Component.text("Help for /guidebook " + entry.name())));
         for (String usage : entry.usages()) {
-            GuidebookMessages.send(
-                    sender,
-                    GuidebookMessages.infoShortIndented(GuidebookMessages.suggestsCommand(
-                            GuidebookMessages.stressed("/guidebook " + usage),
-                            "/guidebook " + entry.name() + " ",
-                            "Click to fill in the command.")));
+            GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(fillsIn(entry, usage)));
         }
         GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(Component.text(entry.description())));
+    }
+
+    /** The usage in the stressed colour. Clicking it fills in the command, up to where its arguments start. */
+    private static Component fillsIn(Entry entry, String usage) {
+        String command = "/guidebook " + entry.name() + (usage.equals(entry.name()) ? "" : " ");
+        return GuidebookMessages.suggestsCommand(
+                GuidebookMessages.stressed("/guidebook " + usage), command, "Click to fill in the command.");
     }
 
     private static Stream<Entry> visibleTo(CommandSender sender) {
