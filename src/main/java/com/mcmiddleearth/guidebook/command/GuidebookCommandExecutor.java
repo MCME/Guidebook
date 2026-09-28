@@ -39,9 +39,6 @@ class GuidebookCommandExecutor {
     GuidebookCommandExecutor() {
 
         addCommandHandler("help", new GuidebookHelp(this, permissionStaff));
-        addCommandHandler("list", new GuidebookList(permissionStaff));
-        addCommandHandler("reload", new GuidebookReload(permissionStaff));
-        addCommandHandler("dev", new GuidebookDev(permissionStaff));
     }
 
     void execute(CommandSender sender, String[] args) {

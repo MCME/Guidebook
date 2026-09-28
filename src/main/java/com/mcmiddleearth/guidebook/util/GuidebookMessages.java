@@ -51,6 +51,11 @@ public final class GuidebookMessages {
         return withHover(text.clickEvent(ClickEvent.suggestCommand(command)), hover);
     }
 
+    /** Clicking the text runs {@code command}, and hovering shows {@code hover}. */
+    public static Component runsCommand(Component text, String command, String hover) {
+        return withHover(text.clickEvent(ClickEvent.runCommand(command)), hover);
+    }
+
     public static Component withHover(Component text, String hover) {
         return text.hoverEvent(HoverEvent.showText(Component.text(hover)));
     }

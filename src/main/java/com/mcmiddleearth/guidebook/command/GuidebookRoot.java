@@ -4,6 +4,7 @@ import static net.strokkur.commands.arguments.StringArgType.GREEDY;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
@@ -198,6 +199,85 @@ class GuidebookRoot {
     @Permission("guidebook.staff")
     void delete(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
         GuidebookDelete.delete(sender, area);
+    }
+
+    @Executes("list")
+    @Permission("guidebook.staff")
+    void list(CommandSender sender) {
+        GuidebookList.send(sender, "", 1);
+    }
+
+    // Registered ahead of the filter branch, so a bare number is always a page. Out-of-range pages are clamped rather
+    // rejected, because a rejected number would be parsed as a filter instead
+    @Executes("list")
+    @Permission("guidebook.staff")
+    void listPage(CommandSender sender, @IntArg int page) {
+        GuidebookList.send(sender, "", page);
+    }
+
+    @Executes("list")
+    @Permission("guidebook.staff")
+    void listFiltered(CommandSender sender, @StringArg String filter) {
+        GuidebookList.send(sender, filter, 1);
+    }
+
+    @Executes("list")
+    @Permission("guidebook.staff")
+    void listFilteredPage(CommandSender sender, @StringArg String filter, @IntArg int page) {
+        GuidebookList.send(sender, filter, page);
+    }
+
+    @Executes("reload")
+    @Permission("guidebook.staff")
+    void reload(CommandSender sender) {
+        PluginData.loadData();
+        PluginData.getMessageUtil().sendInfoMessage(sender, "All Guidebook areas reloaded from file.");
+    }
+
+    @Executes("dev")
+    @Permission("guidebook.staff")
+    void dev(CommandSender sender) {
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission("guidebook.staff")
+    void devConsole(
+            CommandSender sender,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("console") String console,
+            boolean output) {
+        DevUtil.setConsoleOutput(output);
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission("guidebook.staff")
+    void devLevel(
+            CommandSender sender,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("level") String levelLiteral,
+            @IntArg int level) {
+        DevUtil.setLevel(level);
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission("guidebook.staff")
+    void devWatch(
+            CommandSender sender,
+            @Executor Player player,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("watch") String watch) {
+        DevUtil.add(player);
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission("guidebook.staff")
+    void devUnwatch(
+            CommandSender sender,
+            @Executor Player player,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("unwatch") String unwatch) {
+        DevUtil.remove(player);
+        GuidebookDev.showState(sender);
     }
 
     private static void setEnabled(CommandSender sender, InfoArea area, boolean enabled) {
