@@ -10,141 +10,86 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
+import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.command.CommandSender;
-import org.bukkit.util.Vector;
+import org.bukkit.entity.Entity;
 
 /**
+ * {@code size <area> radius|corners|height ...}: changes the dimensions of an Area. Each form applies to one Shape, and
+ * a form that doesn't match the Area's Shape names the one that does.
+ *
  * @author Eriol_Eandur
  */
-public class GuidebookSize extends GuidebookCommand {
+final class GuidebookSize {
 
-    public GuidebookSize(String... permissionNodes) {
-        super(2, true, permissionNodes);
-        setShortDescription(": Defines the size of a Guidebook area.");
-        setUsageDescription(
-                " <AreaName> <size>: Defines the size of <AreaName>. <size> must be: \nFor spherical areas: <radius>\nFor cuboid areas: <x1 y1 z1 x2 y2 z2> (coords of opposite corners)\nFor prism areas: <y1 y2> (Height range)");
+    private GuidebookSize() {}
+
+    static void radius(CommandSender sender, InfoArea area, int radius) {
+        if (!(area instanceof SphericalInfoArea sphere)) {
+            sendWrongFormMessage(sender, area);
+            return;
+        }
+        sphere.setRadius(radius);
+        save(sender, area);
     }
 
-    @Override
-    protected void execute(CommandSender cs, String... args) {
-        InfoArea area = PluginData.getInfoArea(args[0]);
-        if (area == null) {
-            sendNoAreaErrorMessage(cs);
-        } else {
-            if (area instanceof SphericalInfoArea) {
-                int radius = parseInt(cs, args[1]);
-                if (radius == -1) {
-                    sendNotANumberMessage(cs);
-                    return;
-                }
-                ((SphericalInfoArea) area).setRadius(radius);
-            } else if (area instanceof CuboidInfoArea) {
-                if (args.length < 7) {
-                    sendMissingArgumentErrorMessage(cs);
-                    return;
-                }
-                int[] data = new int[6];
-                for (int i = 0; i < 6; i++) {
-                    data[i] = parseInt(cs, args[i + 1]);
-                    if (data[i] == -1) {
-                        sendNotANumberMessage(cs);
-                        return;
-                    }
-                }
-                ((CuboidInfoArea) area)
-                        .setCorners(new Vector(data[0], data[1], data[2]), new Vector(data[3], data[4], data[5]));
-            } else {
-                if (args.length < 3) {
-                    sendMissingArgumentErrorMessage(cs);
-                    return;
-                }
-                int[] data = new int[2];
-                for (int i = 0; i < 2; i++) {
-                    data[i] = parseInt(cs, args[i + 1]);
-                    if (data[i] == -1) {
-                        sendNotANumberMessage(cs);
-                        return;
-                    }
-                }
-                ((PrismoidInfoArea) area).setHeight(data[0], data[1]);
-            }
-            try {
-                PluginData.saveArea(area);
-            } catch (IOException ex) {
-                sendIOErrorMessage(cs);
-                Logger.getLogger(GuidebookSize.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            sendSizeSetMessage(cs);
+    static void corners(CommandSender sender, InfoArea area, BlockPosition pos1, BlockPosition pos2) {
+        if (!(area instanceof CuboidInfoArea cuboid)) {
+            sendWrongFormMessage(sender, area);
+            return;
         }
-
-        /*InfoArea area = PluginData.getInfoArea(args[0]);
-        if(area==null) {
-            sendNoAreaErrorMessage(cs);
+        cuboid.setCorners(pos1.toVector(), pos2.toVector());
+        save(sender, area);
+        // Block positions carry no world, so corners typed from another world still land in the Area's world
+        if (sender instanceof Entity entity
+                && !entity.getWorld().equals(area.getLocation().getWorld())) {
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            sender,
+                            "You are not in the world of Guidebook area " + area.getName()
+                                    + ". Its corners were set in its own world, "
+                                    + area.getLocation().getWorld().getName() + ".");
         }
-        else {
-            /*if(area instanceof SphericalTeleportationArea) {
-                int radius = parseInt(cs, args[1]);
-                if(radius==-1) {
-                    return;
-                }
-                ((SphericalTeleportationArea)area).setRadius(radius);
-            }
-            else {*/
-        /*if(args.length<4) {
-                    sendMissingArgumentErrorMessage(cs);
-                    return;
-                }
-                Integer xSize = parseInt(cs, args[1]);
-                if(xSize==-1) {
-                    return;
-                }
-                Integer ySize = parseInt(cs, args[2]);
-                if(ySize==-1) {
-                    return;
-                }
-                Integer zSize = parseInt(cs, args[3]);
-                if(zSize==-1) {
-                    return;
-                }
-                ((CuboidInfoArea)area).setSize(xSize,ySize,zSize);
-            //}
-            try {
-                PluginData.saveData();
-            } catch (IOException ex) {
-                sendIOErrorMessage(cs);
-                Logger.getLogger(GuidebookSize.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            sendSizeSetMessage(cs);
-        }*/
     }
 
-    @Override
-    protected List<String> getCompletions(CommandSender cs, String... args) {
-        if (args.length == 1) {
-            return PluginData.suggestAreaNames(args[0]);
+    static void height(CommandSender sender, InfoArea area, int minY, int maxY) {
+        if (!(area instanceof PrismoidInfoArea prism)) {
+            sendWrongFormMessage(sender, area);
+            return;
         }
-
-        return List.of();
+        prism.setHeight(minY, maxY);
+        save(sender, area);
     }
 
-    private int parseInt(CommandSender cs, String arg) {
+    private static void save(CommandSender sender, InfoArea area) {
         try {
-            return Integer.parseInt(arg);
-        } catch (NumberFormatException e) {
-            sendNotANumberMessage(cs);
-            return -1;
+            PluginData.saveArea(area);
+        } catch (IOException ex) {
+            Logger.getLogger(GuidebookSize.class.getName()).log(Level.SEVERE, null, ex);
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            sender, "There was an error. Guidebook area " + area.getName() + " was NOT saved.");
+            return;
         }
+        PluginData.getMessageUtil().sendInfoMessage(sender, "Size of Guidebook area " + area.getName() + " set.");
     }
 
-    private void sendSizeSetMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Size of Guidebook area set.");
-    }
-
-    private void sendNotANumberMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Invalid argument. Not a whole number.");
+    private static void sendWrongFormMessage(CommandSender sender, InfoArea area) {
+        String name = area.getName();
+        String message =
+                switch (area) {
+                    case SphericalInfoArea ignored ->
+                        "Guidebook area " + name + " is a sphere. Use /guidebook size " + name + " radius <radius>";
+                    case CuboidInfoArea ignored ->
+                        "Guidebook area " + name + " is a cuboid. Use /guidebook size " + name
+                                + " corners <pos1> <pos2>";
+                    case PrismoidInfoArea ignored ->
+                        "Guidebook area " + name + " is a prism. Use /guidebook size " + name + " height <minY> <maxY>";
+                    default -> "Guidebook area " + name + " can't be resized.";
+                };
+        PluginData.getMessageUtil().sendErrorMessage(sender, message);
     }
 }

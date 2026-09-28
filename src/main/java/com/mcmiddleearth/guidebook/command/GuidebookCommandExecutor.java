@@ -40,7 +40,6 @@ class GuidebookCommandExecutor {
 
         addCommandHandler("help", new GuidebookHelp(this, permissionStaff));
         addCommandHandler("list", new GuidebookList(permissionStaff));
-        addCommandHandler("size", new GuidebookSize(permissionStaff));
         addCommandHandler("description", new GuidebookDescription(permissionStaff));
         addCommandHandler("title", new GuidebookTitle(permissionStaff));
         addCommandHandler("reload", new GuidebookReload(permissionStaff));

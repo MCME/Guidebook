@@ -38,8 +38,8 @@ public class PrismoidInfoArea extends InfoArea {
     }
 
     public void setHeight(int minY, int maxY) {
-        ((PrismoidRegion) region).setMinY(minY);
-        ((PrismoidRegion) region).setMaxY(maxY);
+        ((PrismoidRegion) region).setMinY(Math.min(minY, maxY));
+        ((PrismoidRegion) region).setMaxY(Math.max(minY, maxY));
     }
 
     public int getMinY() {

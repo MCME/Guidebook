@@ -5,6 +5,7 @@ import static net.strokkur.commands.arguments.StringArgType.GREEDY;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
+import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -94,6 +95,38 @@ class GuidebookRoot {
             @Literal("sphere") String sphere,
             @IntArg(min = 1) int radius) {
         GuidebookSet.sphere(player, name, radius);
+    }
+
+    @Executes("size")
+    @Permission("guidebook.staff")
+    void sizeRadius(
+            CommandSender sender,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @Literal("radius") String radiusForm,
+            @IntArg(min = 1) int radius) {
+        GuidebookSize.radius(sender, area, radius);
+    }
+
+    @Executes("size")
+    @Permission("guidebook.staff")
+    void sizeCorners(
+            CommandSender sender,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @Literal("corners") String cornersForm,
+            BlockPosition pos1,
+            BlockPosition pos2) {
+        GuidebookSize.corners(sender, area, pos1, pos2);
+    }
+
+    @Executes("size")
+    @Permission("guidebook.staff")
+    void sizeHeight(
+            CommandSender sender,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @Literal("height") String heightForm,
+            @IntArg int minY,
+            @IntArg int maxY) {
+        GuidebookSize.height(sender, area, minY, maxY);
     }
 
     @Executes("rename")
