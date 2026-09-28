@@ -9,9 +9,11 @@ import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.strokkur.commands.Command;
+import net.strokkur.commands.DefaultExecutes;
 import net.strokkur.commands.Executes;
 import net.strokkur.commands.Literal;
 import net.strokkur.commands.arguments.IntArg;
@@ -30,10 +32,20 @@ import org.bukkit.entity.Player;
 @Description("manage guidebook areas")
 class GuidebookRoot {
 
-    // Bare /guidebook has no requirement, so everyone can see the help, filtered to what they may run
-    @Executes
-    void help(CommandSender sender) {
-        GuidebookHelp.sendAll(sender);
+    // Runs for bare /guidebook and every incomplete command, such as "size" or "size <area> radius". The root needs
+    // guidebook.user or guidebook.staff, and the help is filtered to what the sender may run
+    @DefaultExecutes
+    void help(CommandSender sender, List<String> args) {
+        // args is the whole input, which starts with "execute ... run" when run through /execute
+        int root = 0;
+        while (root < args.size() && !args.get(root).matches("(\\w+:)?guidebook")) {
+            root++;
+        }
+        if (root + 1 < args.size()) {
+            GuidebookHelp.sendOne(sender, args.get(root + 1));
+        } else {
+            GuidebookHelp.sendAll(sender);
+        }
     }
 
     @Executes("help")
