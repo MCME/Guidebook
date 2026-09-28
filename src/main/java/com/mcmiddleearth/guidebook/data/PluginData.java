@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -69,23 +70,36 @@ public class PluginData {
         return infoAreas.put(name, newArea);
     }
 
-    public static boolean deleteInfoArea(String name) {
-        InfoArea area = infoAreas.get(name);
+    public static boolean deleteInfoArea(InfoArea area) {
         area.clearPlayers();
-        boolean result = getDataFile(getWorldFolder(name), name).delete();
+        boolean result = getDataFile(area, area.getName()).delete();
         if (result) {
-            infoAreas.remove(name);
+            infoAreas.remove(area.getName());
         }
         return result;
     }
 
-    public static void renameInfoArea(String oldName, String newName) throws IOException {
-        InfoArea area = infoAreas.remove(oldName);
+    /**
+     * @return false if the Area was renamed but its old data file couldn't be deleted, so it would load under both
+     *     names after a reload
+     */
+    public static boolean renameInfoArea(InfoArea area, String newName) throws IOException {
+        String oldName = area.getName();
+        // Found before the rename, while it still points at the old name's file
+        File oldDataFile = getDataFile(area, oldName);
+
+        infoAreas.remove(oldName);
         area.setName(newName);
         infoAreas.put(newName, area);
-
-        saveArea(area);
-        getDataFile(getWorldFolder(oldName), oldName).delete();
+        try {
+            saveArea(area);
+        } catch (IOException ex) {
+            infoAreas.remove(newName);
+            area.setName(oldName);
+            infoAreas.put(oldName, area);
+            throw ex;
+        }
+        return oldDataFile.delete();
     }
 
     /**
@@ -95,8 +109,18 @@ public class PluginData {
         return registry.resolve(name).orElse(null);
     }
 
-    public static boolean hasInfoArea(String name) {
-        return registry.resolve(name).isPresent();
+    /**
+     * @return the Area with exactly this name, or null if there is none
+     */
+    public static InfoArea getInfoAreaExact(String name) {
+        return registry.resolveExact(name).orElse(null);
+    }
+
+    /**
+     * @return why the name can't be given to a new or renamed Area, or empty if it can
+     */
+    public static Optional<String> newAreaNameProblem(String name) {
+        return registry.newNameProblem(name);
     }
 
     public static void include(Player player) {
@@ -125,11 +149,8 @@ public class PluginData {
         FileConfiguration config = new YamlConfiguration();
         area.save(config);
 
-        File worldFolder = getWorldFolder(areaName);
-        if (!worldFolder.exists()) {
-            worldFolder.mkdir();
-        }
-        File dataFile = getDataFile(worldFolder, areaName);
+        File dataFile = getDataFile(area, areaName);
+        dataFile.getParentFile().mkdir();
         config.save(dataFile);
     }
 
@@ -169,13 +190,8 @@ public class PluginData {
         }
     }
 
-    private static File getWorldFolder(String areaName) {
-        return new File(
-                dataFolder, infoAreas.get(areaName).getLocation().getWorld().getName());
-    }
-
-    private static File getDataFile(File folder, String areaName) {
-        return new File(folder, areaName + ".yml");
+    private static File getDataFile(InfoArea area, String areaName) {
+        return new File(new File(dataFolder, area.getLocation().getWorld().getName()), areaName + ".yml");
     }
 
     public static void disable() {

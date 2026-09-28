@@ -40,6 +40,11 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> ctx, SuggestionsBuilder builder) {
+        return suggestAreaNames(builder);
+    }
+
+    /** Suggests the Area names matching the typed text, each with its Title (and " (disabled)") as a tooltip. */
+    static CompletableFuture<Suggestions> suggestAreaNames(SuggestionsBuilder builder) {
         for (AreaRegistry.Suggestion suggestion : PluginData.suggestAreas(builder.getRemaining())) {
             builder.suggest(
                     suggestion.name(),

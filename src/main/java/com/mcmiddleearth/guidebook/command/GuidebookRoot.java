@@ -10,6 +10,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.strokkur.commands.Command;
 import net.strokkur.commands.Executes;
+import net.strokkur.commands.Literal;
+import net.strokkur.commands.arguments.IntArg;
 import net.strokkur.commands.arguments.StringArg;
 import net.strokkur.commands.paper.Description;
 import net.strokkur.commands.paper.Executor;
@@ -75,6 +77,56 @@ class GuidebookRoot {
     @Permission("guidebook.staff")
     void disable(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
         setEnabled(sender, area, false);
+    }
+
+    @Executes("set")
+    @Permission("guidebook.staff")
+    void set(CommandSender sender, @Executor Player player, @GuidebookSet.AreaNameSuggestions @StringArg String name) {
+        GuidebookSet.fromSelection(player, name);
+    }
+
+    @Executes("set")
+    @Permission("guidebook.staff")
+    void setSphere(
+            CommandSender sender,
+            @Executor Player player,
+            @GuidebookSet.AreaNameSuggestions @StringArg String name,
+            @Literal("sphere") String sphere,
+            @IntArg(min = 1) int radius) {
+        GuidebookSet.sphere(player, name, radius);
+    }
+
+    @Executes("rename")
+    @Permission("guidebook.staff")
+    void rename(
+            CommandSender sender,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @CustomArg(NewAreaNameArgument.class) String newName) {
+        String oldName = area.getName();
+        boolean oldFileDeleted;
+        try {
+            oldFileDeleted = PluginData.renameInfoArea(area, newName);
+        } catch (IOException ex) {
+            Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(sender, "There was an error. Guidebook area " + oldName + " was NOT renamed.");
+            return;
+        }
+        PluginData.getMessageUtil()
+                .sendInfoMessage(sender, "Guidebook area " + oldName + " has been renamed to " + newName + ".");
+        if (!oldFileDeleted) {
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            sender,
+                            "The old data file " + oldName
+                                    + ".yml couldn't be deleted. Delete it before reloading, or the Area will load under both names.");
+        }
+    }
+
+    @Executes("delete")
+    @Permission("guidebook.staff")
+    void delete(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
+        GuidebookDelete.delete(sender, area);
     }
 
     private static void setEnabled(CommandSender sender, InfoArea area, boolean enabled) {

@@ -24,159 +24,141 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
-import com.mcmiddleearth.pluginutil.NumericUtil;
 import com.mcmiddleearth.pluginutil.WEUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+import com.mcmiddleearth.pluginutil.region.Region;
 import com.mcmiddleearth.pluginutil.region.SphericalRegion;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
-import com.sk89q.worldedit.regions.Region;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.io.IOException;
-import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.strokkur.commands.CustomSuggestion;
 import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
+ * {@code set <name> [sphere <radius>]}: creates an Area, or moves an existing one after the player confirms.
+ *
  * @author Eriol_Eandur
  */
-public class GuidebookSet extends GuidebookCommand implements Confirmationable {
+final class GuidebookSet {
 
-    private InfoArea area;
+    private GuidebookSet() {}
 
-    private Location location;
-    private Region WERegion = null;
+    /** Marks {@code set}'s name argument, which suggests existing Areas but accepts new names too. */
+    @CustomSuggestion
+    @interface AreaNameSuggestions {}
 
-    private boolean spherical;
-    private int radius;
-
-    public GuidebookSet(String... permissionNodes) {
-        super(1, true, permissionNodes);
-        setShortDescription(": Define a new area, or redefine an existing one");
-        setUsageDescription(
-                " Set's the region of the area to your WE selection or to a sphere (if the sphere & radius arguments are provided)");
+    @AreaNameSuggestions
+    static CompletableFuture<Suggestions> suggest(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return AreaArgument.suggestAreaNames(builder);
     }
 
-    @Override
-    protected void execute(CommandSender cs, String... args) {
-        String areaName = args[0];
-        area = PluginData.getInfoArea(areaName);
-        spherical = false;
+    /** Where the Area goes: the new Area to create, or the Region to move an existing one to. */
+    private record Placement(Function<String, InfoArea> newArea, Region region) {}
 
-        Player p = (Player) cs;
-        location = p.getLocation().clone();
-
-        if (args.length > 1 && args[1].equalsIgnoreCase("sphere")) {
-            if (args.length > 2) {
-                String radiusArg = args[2];
-                if (NumericUtil.isInt(radiusArg)) {
-                    spherical = true;
-                    radius = NumericUtil.getInt(radiusArg);
-                } else {
-                    sendInvalidArgumentMessage(cs);
-                    return;
-                }
-            } else {
-                sendMissingArgumentErrorMessage(cs);
-                return;
-            }
+    static void fromSelection(Player player, String name) {
+        Location location = player.getLocation().clone();
+        com.sk89q.worldedit.regions.Region selection = WEUtil.getSelection(player);
+        if (selection instanceof CuboidRegion cuboid) {
+            set(
+                    player,
+                    name,
+                    new Placement(
+                            areaName -> new CuboidInfoArea(areaName, location, cuboid),
+                            new com.mcmiddleearth.pluginutil.region.CuboidRegion(location, cuboid)));
+        } else if (selection instanceof Polygonal2DRegion polygon) {
+            set(
+                    player,
+                    name,
+                    new Placement(
+                            areaName -> new PrismoidInfoArea(areaName, location, polygon),
+                            new PrismoidRegion(location, polygon)));
         } else {
-            WERegion = WEUtil.getSelection(p);
-            if (!(WERegion instanceof CuboidRegion || WERegion instanceof Polygonal2DRegion)) {
-                sendInvalidSelection(p);
-                return;
-            }
-        }
-
-        // Determine if we're creating or moving a region
-        if (area == null) {
-            if (spherical) {
-                area = new SphericalInfoArea(areaName, location, radius);
-            } else {
-                if (WERegion instanceof CuboidRegion) {
-                    area = new CuboidInfoArea(areaName, location, (CuboidRegion) WERegion);
-                } else {
-                    area = new PrismoidInfoArea(areaName, location, (Polygonal2DRegion) WERegion);
-                }
-            }
-            PluginData.addInfoArea(areaName, area);
-
-            saveData(cs, area);
-            sendNewAreaMessage(cs, areaName);
-        } else {
-            new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
-                    .start(
-                            p,
-                            "An area with that name already exists. Do you want to move it to your location and selection?",
-                            this);
-        }
-    }
-
-    @Override
-    protected List<String> getCompletions(CommandSender cs, String... args) {
-        if (args.length == 1) {
-            return PluginData.suggestAreaNames(args[0]);
-        }
-
-        if (args.length == 2) {
-            return startingWith(args[1], List.of("sphere"));
-        }
-
-        return List.of();
-    }
-
-    private void saveData(CommandSender cs, InfoArea area) {
-        try {
-            PluginData.saveArea(area);
-        } catch (IOException ex) {
-            sendIOErrorMessage(cs);
-            Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    @Override
-    public void confirmed(Player player) {
-        com.mcmiddleearth.pluginutil.region.Region newRegion = null;
-        if (spherical) {
-            newRegion = new SphericalRegion(location, radius);
-        } else {
-            if (WERegion instanceof CuboidRegion cuboid) {
-                newRegion = new com.mcmiddleearth.pluginutil.region.CuboidRegion(location, cuboid);
-            } else if (WERegion instanceof Polygonal2DRegion polygon) {
-                newRegion = new PrismoidRegion(location, polygon);
-            }
-        }
-
-        if (newRegion == null) {
             PluginData.getMessageUtil()
-                    .sendErrorMessage(player, "Unable to move area because the new region for the area is empty!");
+                    .sendErrorMessage(
+                            player,
+                            "No cuboid or polygon WorldEdit selection found! Either make one and try again, or add sphere <radius> after the Area name.");
+        }
+    }
+
+    static void sphere(Player player, String name, int radius) {
+        Location location = player.getLocation().clone();
+        set(
+                player,
+                name,
+                new Placement(
+                        areaName -> new SphericalInfoArea(areaName, location, radius),
+                        new SphericalRegion(location, radius)));
+    }
+
+    private static void set(Player player, String name, Placement placement) {
+        InfoArea existing = PluginData.getInfoAreaExact(name);
+        if (existing != null) {
+            confirmMove(player, existing, placement.region());
             return;
         }
-        area.setRegion(newRegion);
 
-        saveData(player, area);
-        sendAreaMovedMessage(player);
+        Optional<String> problem = PluginData.newAreaNameProblem(name);
+        if (problem.isPresent()) {
+            PluginData.getMessageUtil().sendErrorMessage(player, problem.get() + ". No Area was created.");
+            return;
+        }
+
+        InfoArea area = placement.newArea().apply(name);
+        PluginData.addInfoArea(name, area);
+        if (save(player, area)) {
+            PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook area '" + name + "' created.");
+        }
     }
 
-    @Override
-    public void cancelled(Player player) {
-        PluginData.getMessageUtil().sendErrorMessage(player, "You cancelled setting of area. No changes were made.");
-    }
-
-    private void sendAreaMovedMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area was moved to your location and selection.");
-    }
-
-    private void sendNewAreaMessage(CommandSender cs, String areaName) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Guidebook area '" + areaName + "' created.");
-    }
-
-    private void sendInvalidSelection(Player player) {
-        PluginData.getMessageUtil()
-                .sendErrorMessage(
+    // The confirmation is a chat conversation. Ticket 10 replaces it with a Dialog.
+    private static void confirmMove(Player player, InfoArea area, Region region) {
+        new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
+                .start(
                         player,
-                        "No WorldEdit selection found! Either make a selection and try again, or specify sphere <radius> after the AreaName");
+                        "Guidebook area " + area.getName()
+                                + " already exists. Do you want to move it to your location and selection?",
+                        new Confirmationable() {
+                            @Override
+                            public void confirmed(Player player) {
+                                area.setRegion(region);
+                                if (save(player, area)) {
+                                    PluginData.getMessageUtil()
+                                            .sendInfoMessage(
+                                                    player,
+                                                    "Guidebook area " + area.getName()
+                                                            + " was moved to your location and selection.");
+                                }
+                            }
+
+                            @Override
+                            public void cancelled(Player player) {
+                                PluginData.getMessageUtil()
+                                        .sendErrorMessage(
+                                                player, "You cancelled setting of area. No changes were made.");
+                            }
+                        });
+    }
+
+    private static boolean save(Player player, InfoArea area) {
+        try {
+            PluginData.saveArea(area);
+            return true;
+        } catch (IOException ex) {
+            Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player, "There was an error. Guidebook area " + area.getName() + " was NOT saved.");
+            return false;
+        }
     }
 }

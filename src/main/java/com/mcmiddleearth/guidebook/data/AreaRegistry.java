@@ -18,12 +18,14 @@ public class AreaRegistry<A extends AreaView> {
     }
 
     public Optional<A> resolve(String name) {
-        return areas.stream()
-                .filter(area -> area.getName().equals(name))
-                .findFirst()
+        return resolveExact(name)
                 .or(() -> areas.stream()
                         .filter(area -> area.getName().equalsIgnoreCase(name))
                         .findFirst());
+    }
+
+    public Optional<A> resolveExact(String name) {
+        return areas.stream().filter(area -> area.getName().equals(name)).findFirst();
     }
 
     public static boolean isValidName(String name) {
@@ -32,6 +34,19 @@ public class AreaRegistry<A extends AreaView> {
 
     public boolean isAvailable(String name) {
         return areas.stream().noneMatch(area -> area.getName().equalsIgnoreCase(name));
+    }
+
+    /**
+     * @return why the name can't be given to a new or renamed Area, or empty if it can
+     */
+    public Optional<String> newNameProblem(String name) {
+        if (!isValidName(name)) {
+            return Optional.of("'" + name + "' isn't a valid Area name. Use only letters, digits and _ - . +");
+        }
+        return areas.stream()
+                .filter(area -> area.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .map(area -> "Guidebook area '" + area.getName() + "' already has that name");
     }
 
     /**

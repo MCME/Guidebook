@@ -10,56 +10,51 @@ import com.mcmiddleearth.guidebook.conversation.ConfirmationFactory;
 import com.mcmiddleearth.guidebook.conversation.Confirmationable;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
+ * {@code delete <area>}: deletes an Area after the player confirms.
+ *
  * @author Eriol_Eandur
  */
-public class GuidebookDelete extends GuidebookCommand implements Confirmationable {
+final class GuidebookDelete {
 
-    private String areaName;
+    private GuidebookDelete() {}
 
-    public GuidebookDelete(String... permissionNodes) {
-        super(1, true, permissionNodes);
-        setShortDescription(": Deletes a guidebook area.");
-        setUsageDescription(" <AreaName>: Deletes guidebook area with name <AreaName>.");
-    }
-
-    @Override
-    protected void execute(CommandSender cs, String... args) {
-        InfoArea area = PluginData.getInfoArea(args[0]);
-        if (area == null) {
-            sendNoAreaErrorMessage(cs);
-        } else {
-            areaName = area.getName();
-            new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
-                    .start((Player) cs, "Do you really want to delete guidebook area " + areaName + "?", this);
-        }
-    }
-
-    @Override
-    protected List<String> getCompletions(CommandSender cs, String... args) {
-        if (args.length == 1) {
-            return PluginData.suggestAreaNames(args[0]);
-        }
-
-        return List.of();
-    }
-
-    @Override
-    public void confirmed(Player player) {
-        if (PluginData.deleteInfoArea(areaName)) {
-            PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook area was deleted.");
-        } else {
+    static void delete(CommandSender sender, InfoArea area) {
+        // The confirmation is a chat conversation, which only a player can answer. Ticket 10 replaces it.
+        if (!(sender instanceof Player player)) {
             PluginData.getMessageUtil()
-                    .sendErrorMessage(player, "There was an error while deleting the data file from disk.");
+                    .sendErrorMessage(
+                            sender,
+                            "Deleting a Guidebook area needs a confirmation that only a player can give. Run delete in game.");
+            return;
         }
-    }
+        new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
+                .start(
+                        player,
+                        "Do you really want to delete Guidebook area " + area.getName() + "?",
+                        new Confirmationable() {
+                            @Override
+                            public void confirmed(Player player) {
+                                if (PluginData.deleteInfoArea(area)) {
+                                    PluginData.getMessageUtil()
+                                            .sendInfoMessage(
+                                                    player, "Guidebook area " + area.getName() + " was deleted.");
+                                } else {
+                                    PluginData.getMessageUtil()
+                                            .sendErrorMessage(
+                                                    player,
+                                                    "There was an error while deleting the data file from disk.");
+                                }
+                            }
 
-    @Override
-    public void cancelled(Player player) {
-        PluginData.getMessageUtil().sendErrorMessage(player, "You cancelled deleting of the area.");
+                            @Override
+                            public void cancelled(Player player) {
+                                PluginData.getMessageUtil()
+                                        .sendErrorMessage(player, "You cancelled deleting of the area.");
+                            }
+                        });
     }
 }

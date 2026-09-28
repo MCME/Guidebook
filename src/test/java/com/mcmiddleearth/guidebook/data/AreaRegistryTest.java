@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,15 @@ class AreaRegistryTest {
         assertTrue(registryOf(area("minas")).resolve("edoras").isEmpty());
     }
 
+    @Test
+    void resolvingExactlyFindsOnlyTheAreaWithThatExactName() {
+        TestArea lower = area("minas");
+        TestArea upper = area("Minas");
+
+        assertEquals(upper, registryOf(lower, upper).resolveExact("Minas").orElseThrow());
+        assertTrue(registryOf(lower).resolveExact("MINAS").isEmpty());
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"helms-deep", "Minas_Tirith", "v1.2+old", "0"})
     void acceptsNamesMadeOfLettersDigitsAndUnderscoreHyphenDotPlus(String name) {
@@ -68,6 +78,25 @@ class AreaRegistryTest {
     @Test
     void anUnusedNameIsAvailable() {
         assertTrue(registryOf(area("minas")).isAvailable("minas-tirith"));
+    }
+
+    @Test
+    void aNewNameIsUsableWhenValidAndUnused() {
+        assertEquals(Optional.empty(), registryOf(area("minas")).newNameProblem("minas-tirith"));
+    }
+
+    @Test
+    void aNewNameWithInvalidCharactersIsRefusedNamingTheAllowedCharacters() {
+        assertEquals(
+                Optional.of("'helm's-deep' isn't a valid Area name. Use only letters, digits and _ - . +"),
+                registryOf().newNameProblem("helm's-deep"));
+    }
+
+    @Test
+    void aNewNameInUseIgnoringCaseIsRefusedNamingTheAreaThatHasIt() {
+        assertEquals(
+                Optional.of("Guidebook area 'minas' already has that name"),
+                registryOf(area("minas")).newNameProblem("MINAS"));
     }
 
     private static Set<String> suggestedNames(AreaRegistry<TestArea> registry, String typed) {
