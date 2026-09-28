@@ -7,12 +7,9 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.CuboidInfoArea;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
-import com.mcmiddleearth.guidebook.util.FancyMessageUtil;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import com.mcmiddleearth.pluginutil.message.MessageType;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -27,7 +24,9 @@ import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.World;
 import java.util.ArrayList;
 import java.util.List;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -45,41 +44,45 @@ public final class GuidebookDetails {
     public static void send(CommandSender sender, InfoArea area) {
         String areaName = area.getName();
 
-        FancyMessage header = new FancyMessage(MessageType.INFO, PluginData.getMessageUtil())
-                .addSimple("Details for Guidebook area ")
-                .addFancy(
-                        PluginData.getMessageUtil().STRESSED + areaName + PluginData.getMessageUtil().INFO + ".",
-                        "/guidebook show " + areaName,
-                        "Click for welcome message.");
-        FancyMessageUtil.send(sender, header);
+        GuidebookMessages.send(
+                sender,
+                GuidebookMessages.info(
+                        Component.text("Details for Guidebook area "),
+                        GuidebookMessages.suggestsCommand(
+                                GuidebookMessages.stressed(areaName)
+                                        .append(Component.text(".", GuidebookMessages.INFO)),
+                                "/guidebook show " + areaName,
+                                "Click for welcome message.")));
 
-        FancyMessage location = new FancyMessage(MessageType.INFO_INDENTED, PluginData.getMessageUtil())
-                .addFancy(
-                        ChatColor.GOLD
-                                + "Location" + ChatColor.YELLOW
-                                + ": " + area.getLocation().getWorld().getName()
-                                + " " + area.getLocation().getBlockX()
-                                + " " + area.getLocation().getBlockY()
-                                + " " + area.getLocation().getBlockZ(),
+        Location location = area.getLocation();
+        GuidebookMessages.send(
+                sender,
+                GuidebookMessages.infoIndented(GuidebookMessages.suggestsCommand(
+                        Component.text("Location", NamedTextColor.GOLD)
+                                .append(Component.text(
+                                        ": " + location.getWorld().getName()
+                                                + " " + location.getBlockX()
+                                                + " " + location.getBlockY()
+                                                + " " + location.getBlockZ(),
+                                        NamedTextColor.YELLOW)),
                         "/guidebook warp " + areaName,
-                        "Click for warp command.");
-        FancyMessageUtil.send(sender, location);
+                        "Click for warp command.")));
 
-        FancyMessageUtil.send(sender, shapeMessage(area));
+        GuidebookMessages.send(sender, GuidebookMessages.infoIndented(shapeLine(area)));
 
         if (sender instanceof Player player) {
             selectArea(player, area);
         }
     }
 
-    private static FancyMessage shapeMessage(InfoArea area) {
-        FancyMessage message = new FancyMessage(MessageType.INFO_INDENTED, PluginData.getMessageUtil());
+    // The Shape, with its corners in a tooltip for cuboids and prisms
+    private static Component shapeLine(InfoArea area) {
         return switch (area) {
             case SphericalInfoArea sphere ->
-                message.addSimple(ChatColor.YELLOW + "Spherical area with radius " + sphere.getRadius());
+                Component.text("Spherical area with radius " + sphere.getRadius(), NamedTextColor.YELLOW);
             case CuboidInfoArea cuboid ->
-                message.addTooltipped(
-                        ChatColor.YELLOW + "Cuboid shaped area",
+                tooltipped(
+                        "Cuboid shaped area",
                         " min corner: (" + cuboid.getMinPos().getBlockX() + ","
                                 + cuboid.getMinPos().getBlockY() + ","
                                 + cuboid.getMinPos().getBlockZ() + ")\n"
@@ -99,10 +102,14 @@ public final class GuidebookDetails {
                             .append(zPoints[i])
                             .append(")");
                 }
-                yield message.addTooltipped(ChatColor.YELLOW + "Prism shaped area", " corners: (x,z)\n" + cornerData);
+                yield tooltipped("Prism shaped area", " corners: (x,z)\n" + cornerData);
             }
-            default -> message;
+            default -> Component.empty();
         };
+    }
+
+    private static Component tooltipped(String text, String tooltip) {
+        return GuidebookMessages.withHover(Component.text(text, NamedTextColor.YELLOW), tooltip);
     }
 
     // Sets the player's WorldEdit selection to the Area

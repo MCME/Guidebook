@@ -7,11 +7,13 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.util.FancyMessageUtil;
+import com.mcmiddleearth.guidebook.util.DescriptionRenderer;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.MessageType;
 import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
 /**
@@ -25,21 +27,22 @@ public final class GuidebookShow {
 
     public static void sendDescription(CommandSender recipient, InfoArea area) throws MessageParseException {
         if (area.getDescription().isEmpty()) {
-            PluginData.getMessageUtil()
-                    .sendInfoMessage(
-                            recipient,
-                            "Welcome to "
-                                    + PluginData.getMessageUtil().STRESSED + area.getTitle() + " (" + area.getName()
-                                    + ")"
-                                    + PluginData.getMessageUtil().INFO
-                                    + ". Unfortunately there is no further description for this area.");
-        } else {
-            FancyMessageUtil.send(
+            GuidebookMessages.send(
                     recipient,
-                    FancyMessageConfigUtil.addFromStringList(
+                    GuidebookMessages.info(
+                            Component.text("Welcome to "),
+                            Component.text()
+                                    .color(GuidebookMessages.STRESSED)
+                                    .append(GuidebookMessages.title(area.getTitle()))
+                                    .append(Component.text(" (" + area.getName() + ")")),
+                            Component.text(". Unfortunately there is no further description for this area.")));
+        } else {
+            GuidebookMessages.send(
+                    recipient,
+                    DescriptionRenderer.toComponent(FancyMessageConfigUtil.addFromStringList(
                                     new FancyMessage(MessageType.WHITE, PluginData.getMessageUtil()),
                                     area.getDescription())
-                            .setRunDirect());
+                            .setRunDirect()));
         }
     }
 }

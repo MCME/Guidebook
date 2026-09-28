@@ -11,13 +11,12 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.Shape;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
-import com.mcmiddleearth.guidebook.util.FancyMessageUtil;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import com.mcmiddleearth.pluginutil.message.MessageType;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
@@ -114,13 +113,14 @@ final class GuidebookSize {
     private static void sendForm(CommandSender sender, InfoArea area) {
         Form form = Form.of(area.getShape());
         String command = "/guidebook size " + area.getName() + " " + form.literal() + " ";
-        FancyMessage message = new FancyMessage(MessageType.INFO, PluginData.getMessageUtil())
-                .addSimple("Resize it with ")
-                .addFancy(
-                        PluginData.getMessageUtil().STRESSED + command + form.arguments(),
-                        command,
-                        "Click to fill in the command.");
-        FancyMessageUtil.send(sender, message);
+        GuidebookMessages.send(
+                sender,
+                GuidebookMessages.info(
+                        Component.text("Resize it with "),
+                        GuidebookMessages.suggestsCommand(
+                                GuidebookMessages.stressed(command + form.arguments()),
+                                command,
+                                "Click to fill in the command.")));
     }
 
     private static String dimensions(InfoArea area) {

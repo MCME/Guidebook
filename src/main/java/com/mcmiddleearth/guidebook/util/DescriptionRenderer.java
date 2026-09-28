@@ -9,23 +9,18 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.command.CommandSender;
 
-public final class FancyMessageUtil {
+/**
+ * Renders a Description, which PluginUtils' parser produces as a {@link FancyMessage}, as an Adventure component.
+ * {@link FancyMessage#send} writes {@code /tellraw} JSON with the {@code clickEvent}/{@code hoverEvent} keys that
+ * Minecraft 1.21.5 renamed, so its click and hover actions are silently dropped.
+ */
+public final class DescriptionRenderer {
 
-    private FancyMessageUtil() {}
-
-    /**
-     * Sends a {@link FancyMessage} as an Adventure component. {@link FancyMessage#send} writes {@code /tellraw} JSON
-     * with the {@code clickEvent}/{@code hoverEvent} keys that Minecraft 1.21.5 renamed, so its click and hover
-     * actions are silently dropped. Senders without a chat screen, such as the console, just get the text.
-     */
-    public static void send(CommandSender recipient, FancyMessage message) {
-        recipient.sendMessage(toComponent(message));
-    }
+    private DescriptionRenderer() {}
 
     // Each part of a FancyMessage is {text, click command, hover text, colour, format JSON}
-    private static Component toComponent(FancyMessage message) {
+    public static Component toComponent(FancyMessage message) {
         TextComponent.Builder line = Component.text();
         for (String[] part : message.getData()) {
             Component text = Component.text(part[0], color(part[3]));
