@@ -130,13 +130,31 @@ final class GuidebookSet {
                         new Confirmationable() {
                             @Override
                             public void confirmed(Player player) {
-                                area.setRegion(region);
-                                if (save(player, area)) {
+                                String oldWorld = area.getLocation().getWorld().getName();
+                                boolean oldFileDeleted;
+                                try {
+                                    oldFileDeleted = PluginData.moveInfoArea(area, region);
+                                } catch (IOException ex) {
+                                    Logger.getLogger(GuidebookSet.class.getName())
+                                            .log(Level.SEVERE, null, ex);
                                     PluginData.getMessageUtil()
-                                            .sendInfoMessage(
+                                            .sendErrorMessage(
                                                     player,
-                                                    "Guidebook area " + area.getName()
-                                                            + " was moved to your location and selection.");
+                                                    "There was an error. Guidebook area " + area.getName()
+                                                            + " was NOT moved.");
+                                    return;
+                                }
+                                PluginData.getMessageUtil()
+                                        .sendInfoMessage(
+                                                player,
+                                                "Guidebook area " + area.getName()
+                                                        + " was moved to your location and selection.");
+                                if (!oldFileDeleted) {
+                                    PluginData.getMessageUtil()
+                                            .sendErrorMessage(
+                                                    player,
+                                                    "The old data file " + oldWorld + "/" + area.getName()
+                                                            + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
                                 }
                             }
 

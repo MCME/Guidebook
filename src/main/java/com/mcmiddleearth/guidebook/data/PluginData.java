@@ -22,6 +22,7 @@ import com.mcmiddleearth.pluginutil.FileUtil;
 import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+import com.mcmiddleearth.pluginutil.region.Region;
 import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import java.io.File;
 import java.io.IOException;
@@ -100,6 +101,25 @@ public class PluginData {
             throw ex;
         }
         return oldDataFile.delete();
+    }
+
+    /**
+     * @return false if the Area was moved to another world but its old world's data file couldn't be deleted, so it
+     *     would load twice after a reload
+     */
+    public static boolean moveInfoArea(InfoArea area, Region region) throws IOException {
+        Region oldRegion = area.getRegion();
+        // Found before the move: the world folder comes from the region
+        File oldDataFile = getDataFile(area, area.getName());
+
+        area.setRegion(region);
+        try {
+            saveArea(area);
+        } catch (IOException ex) {
+            area.setRegion(oldRegion);
+            throw ex;
+        }
+        return oldDataFile.equals(getDataFile(area, area.getName())) || oldDataFile.delete();
     }
 
     /**
