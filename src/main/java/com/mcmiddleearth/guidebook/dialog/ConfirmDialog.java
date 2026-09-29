@@ -15,6 +15,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
 
 /**
@@ -25,22 +26,36 @@ public final class ConfirmDialog {
 
     private ConfirmDialog() {}
 
-    /** What Confirm does to the Area, with the dialog's wording for it. */
+    /**
+     * What Confirm does to the Area, with the dialog's wording and button colours for it. Deleting can't be undone, so
+     * its Confirm is red, and Cancel is left plain beside it.
+     */
     private enum Mode {
-        DELETE("Delete", "deleted", "Do you really want to delete this Guidebook area?"),
+        DELETE(
+                "Delete",
+                "deleted",
+                "Do you really want to delete this Guidebook area?",
+                NamedTextColor.RED,
+                NamedTextColor.WHITE),
         MOVE(
                 "Move",
                 "moved",
-                "This Guidebook area already exists. Do you want to move it to your location and selection?");
+                "This Guidebook area already exists. Do you want to move it to your location and selection?",
+                NamedTextColor.GREEN,
+                NamedTextColor.RED);
 
         private final String verb;
         private final String done;
         private final String question;
+        private final TextColor confirmColor;
+        private final TextColor cancelColor;
 
-        Mode(String verb, String done, String question) {
+        Mode(String verb, String done, String question, TextColor confirmColor, TextColor cancelColor) {
             this.verb = verb;
             this.done = done;
             this.question = question;
+            this.confirmColor = confirmColor;
+            this.cancelColor = cancelColor;
         }
     }
 
@@ -73,11 +88,11 @@ public final class ConfirmDialog {
 
         // Each dialog gets its own single-use callbacks, holding the Area it acts on
         ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
-        ActionButton confirm = ActionButton.builder(Component.text("✔ " + mode.verb, NamedTextColor.GREEN))
+        ActionButton confirm = ActionButton.builder(Component.text("✔ " + mode.verb, mode.confirmColor))
                 .action(DialogAction.customClick(
                         (response, audience) -> confirm(audience, area, mode, confirmed), once))
                 .build();
-        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.RED))
+        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", mode.cancelColor))
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player canceller) {
