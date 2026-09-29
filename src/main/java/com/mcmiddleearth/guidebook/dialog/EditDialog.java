@@ -177,7 +177,7 @@ public final class EditDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> save(audience, area, mode, Values.of(response)), once))
                 .build();
-        ActionButton.Builder cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.RED));
+        ActionButton.Builder cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE));
         // Esc runs Cancel's action. Editing's Cancel has none, so both just close. Creating turns Esc off, so Cancel is
         // the only way out and always says that nothing was created
         if (mode == Mode.CREATE) {

@@ -27,35 +27,27 @@ public final class ConfirmDialog {
     private ConfirmDialog() {}
 
     /**
-     * What Confirm does to the Area, with the dialog's wording and button colours for it. Deleting can't be undone, so
-     * its Confirm is red, and Cancel is left plain beside it.
+     * What Confirm does to the Area, with the dialog's wording and Confirm's colour. Deleting can't be undone, so its
+     * Confirm is red.
      */
     private enum Mode {
-        DELETE(
-                "Delete",
-                "deleted",
-                "Do you really want to delete this Guidebook area?",
-                NamedTextColor.RED,
-                NamedTextColor.WHITE),
+        DELETE("Delete", "deleted", "Do you really want to delete this Guidebook area?", NamedTextColor.RED),
         MOVE(
                 "Move",
                 "moved",
                 "This Guidebook area already exists. Do you want to move it to your location and selection?",
-                NamedTextColor.GREEN,
-                NamedTextColor.RED);
+                NamedTextColor.GREEN);
 
         private final String verb;
         private final String done;
         private final String question;
         private final TextColor confirmColor;
-        private final TextColor cancelColor;
 
-        Mode(String verb, String done, String question, TextColor confirmColor, TextColor cancelColor) {
+        Mode(String verb, String done, String question, TextColor confirmColor) {
             this.verb = verb;
             this.done = done;
             this.question = question;
             this.confirmColor = confirmColor;
-            this.cancelColor = cancelColor;
         }
     }
 
@@ -92,7 +84,7 @@ public final class ConfirmDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> confirm(audience, area, mode, confirmed), once))
                 .build();
-        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", mode.cancelColor))
+        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player canceller) {
