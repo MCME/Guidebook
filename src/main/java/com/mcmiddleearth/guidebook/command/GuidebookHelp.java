@@ -43,7 +43,11 @@ final class GuidebookHelp {
             new Entry("on", USER, "on", "Receive welcome messages when you enter a Guidebook area."),
             new Entry("off", USER, "off", "Stop receiving welcome messages when you enter a Guidebook area."),
             new Entry("help", USER, "help [command]", "List the commands you can use, or show one command in detail."),
-            new Entry("show", STAFF, "show <area>", "Show an area's description as players see it."),
+            new Entry(
+                    "show",
+                    STAFF,
+                    "show <area>",
+                    "Play an area's welcome to you as players get it, with no cooldown. The console gets the description only."),
             new Entry("details", STAFF, "details <area>", "Show an area's shape and location."),
             new Entry("warp", STAFF, "warp <area>", "Teleport to an area."),
             new Entry("enable", STAFF, "enable <area>", "Turn an area's welcome messages on."),

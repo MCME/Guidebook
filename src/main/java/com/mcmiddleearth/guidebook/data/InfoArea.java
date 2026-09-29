@@ -210,6 +210,19 @@ public abstract class InfoArea implements AreaView {
         config.set("enabled", status);
     }
 
+    /**
+     * Gives staff the Welcome now, as a player entering the Area gets it, but with no cooldown, send event or opt-out
+     * check. The Boss bar appears only if they're inside an Enabled Area, because leaving it is what removes the bar.
+     */
+    public void previewWelcome(Player player) {
+        // An Area just created doesn't know yet that the player is inside. Marking them stops their next move
+        // counting as an entry and Welcoming them again. Only Enabled Areas notice a player leaving
+        if (isEnabled() && isInside(player.getLocation())) {
+            areaPlayers.add(player.getUniqueId());
+        }
+        welcomePlayer(player);
+    }
+
     private void welcomePlayer(final Player player) {
         final InfoArea thisArea = this;
         int messageDelay = 0;

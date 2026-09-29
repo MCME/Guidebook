@@ -81,6 +81,11 @@ class GuidebookRoot {
         GuidebookMessages.startBlock(sender);
         PluginData.getMessageUtil()
                 .sendInfoMessage(sender, "Welcome message for Guidebook area " + area.getName() + ":");
+        if (sender instanceof Player player) {
+            area.previewWelcome(player);
+            return;
+        }
+        // The console can't see a Title or Boss bar, so it gets the Description only
         try {
             GuidebookShow.sendDescription(sender, area);
         } catch (MessageParseException ex) {
