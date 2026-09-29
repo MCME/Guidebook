@@ -68,13 +68,11 @@ final class GuidebookHelp {
                             "size <area> height <minY> <maxY>"),
                     "Resize an area: radius for a sphere, corners for a cuboid, height for a prism. With only"
                             + " <area>, show its size and the form that fits its shape."),
-            new Entry("title", STAFF, "title <area>", "Edit an area's title, subtitle and boss bar."),
             new Entry(
-                    "description",
+                    "edit",
                     STAFF,
-                    List.of("description <area>", "description <area> getbook", "description <area> save"),
-                    "Edit an area's description in chat, or get it as a book to edit and save the book in your"
-                            + " hand."),
+                    "edit <area>",
+                    "Edit an area's title, subtitle, boss bar, description and whether it's enabled, in a dialog."),
             new Entry("rename", STAFF, "rename <area> <new name>", "Rename an area."),
             new Entry("delete", STAFF, "delete <area>", "Delete an area after you confirm."),
             new Entry(

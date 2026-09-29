@@ -5,6 +5,7 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
@@ -174,36 +175,10 @@ class GuidebookRoot {
         GuidebookSize.height(sender, area, minY, maxY);
     }
 
-    @Executes("title")
+    @Executes("edit")
     @Permission(STAFF)
-    void title(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookTitle.start(player, area);
-    }
-
-    @Executes("description")
-    @Permission(STAFF)
-    void description(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookDescription.start(player, area);
-    }
-
-    @Executes("description")
-    @Permission(STAFF)
-    void descriptionGetBook(
-            CommandSender sender,
-            @Executor Player player,
-            @CustomArg(AreaArgument.class) InfoArea area,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("getbook") String getbook) {
-        GuidebookDescription.giveBook(player, area);
-    }
-
-    @Executes("description")
-    @Permission(STAFF)
-    void descriptionSave(
-            CommandSender sender,
-            @Executor Player player,
-            @CustomArg(AreaArgument.class) InfoArea area,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("save") String save) {
-        GuidebookDescription.saveBook(player, area);
+    void edit(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        EditDialog.open(player, area);
     }
 
     @Executes("rename")
