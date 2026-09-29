@@ -23,7 +23,7 @@ public final class DescriptionRenderer {
     public static Component toComponent(FancyMessage message) {
         TextComponent.Builder line = Component.text();
         for (String[] part : message.getData()) {
-            Component text = Component.text(part[0], color(part[3]));
+            Component text = Component.text(lineBreaks(part[0]), color(part[3]));
             for (TextDecoration decoration : TextDecoration.values()) {
                 text = text.decoration(decoration, decorationState(part[4], decoration));
             }
@@ -32,11 +32,16 @@ public final class DescriptionRenderer {
             }
             if (part[2] != null) {
                 text = text.hoverEvent(HoverEvent.showText(
-                        LegacyComponentSerializer.legacySection().deserialize(part[2])));
+                        LegacyComponentSerializer.legacySection().deserialize(lineBreaks(part[2]))));
             }
             line.append(text);
         }
         return line.build();
+    }
+
+    // FancyMessage wrote the text into /tellraw JSON unescaped, so the \n typed as a line break worked as one
+    private static String lineBreaks(String text) {
+        return text.replace(DescriptionText.LINE_BREAK, "\n");
     }
 
     private static TextColor color(String color) {
