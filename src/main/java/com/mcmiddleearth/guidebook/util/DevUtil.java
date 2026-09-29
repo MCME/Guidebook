@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -32,7 +34,6 @@ public class DevUtil {
 
     private static List<UUID> developer = new ArrayList<>();
 
-    private static final String PREFIX = "" + ChatColor.BOLD + ChatColor.GOLD;
     private static final String PLUGIN = "[ATP] ";
 
     private static boolean consoleOutput = false;
@@ -51,7 +52,7 @@ public class DevUtil {
         for (UUID uuid : developer) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
-                player.sendMessage(PREFIX + PLUGIN + message);
+                player.sendMessage(Component.text(PLUGIN + message, NamedTextColor.GOLD, TextDecoration.BOLD));
             }
         }
         if (consoleOutput) {
