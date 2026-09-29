@@ -24,6 +24,7 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
+import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.pluginutil.WEUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
@@ -45,7 +46,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 /**
- * {@code set <name> [sphere <radius>]}: creates an Area, or moves an existing one after the player confirms.
+ * {@code set <name> [sphere <radius>]}: opens the Edit dialog that creates an Area, or moves an existing one after the
+ * player confirms.
  *
  * @author Eriol_Eandur
  */
@@ -113,11 +115,8 @@ final class GuidebookSet {
             return;
         }
 
-        InfoArea area = placement.newArea().apply(name);
-        PluginData.addInfoArea(name, area);
-        if (save(player, area)) {
-            PluginData.getMessageUtil().sendInfoMessage(player, "Guidebook area '" + name + "' created.");
-        }
+        // Built from where the player is now, but only added once they press Create
+        EditDialog.openToCreate(player, placement.newArea().apply(name));
     }
 
     // The confirmation is a chat conversation. Ticket 10 replaces it with a Dialog.
@@ -165,18 +164,5 @@ final class GuidebookSet {
                                                 player, "You cancelled setting of area. No changes were made.");
                             }
                         });
-    }
-
-    private static boolean save(Player player, InfoArea area) {
-        try {
-            PluginData.saveArea(area);
-            return true;
-        } catch (IOException ex) {
-            Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player, "There was an error. Guidebook area " + area.getName() + " was NOT saved.");
-            return false;
-        }
     }
 }

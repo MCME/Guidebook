@@ -71,6 +71,12 @@ public class PluginData {
         return infoAreas.put(name, newArea);
     }
 
+    /** Writes a new Area's file, then adds it, so an Area whose file couldn't be written is never added. */
+    public static void createInfoArea(InfoArea area) throws IOException {
+        saveArea(area);
+        addInfoArea(area.getName(), area);
+    }
+
     public static boolean deleteInfoArea(InfoArea area) {
         area.clearPlayers();
         boolean result = getDataFile(area, area.getName()).delete();

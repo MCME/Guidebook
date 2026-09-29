@@ -32,7 +32,8 @@ import org.bukkit.entity.Player;
 
 /**
  * The Edit dialog: every editable field of an Area on one screen. Save checks the Description's markup and saves the
- * Area. Cancel and Esc discard the changes.
+ * Area. Cancel and Esc discard the changes. For an Area {@code set} is creating, the dialog creates it: the Area exists
+ * only once Create is pressed, and Esc is turned off so that Cancel can say nothing was created.
  */
 public final class EditDialog {
 
@@ -46,6 +47,9 @@ public final class EditDialog {
     private static final String SHOW_BOSS_BAR = "show_boss_bar";
     private static final String DESCRIPTION = "description";
     private static final String ENABLED = "enabled";
+
+    // #3 is dark aqua, and #f switches back to white for the text typed after it
+    private static final String NEW_DESCRIPTION = "#3Guide: #f";
 
     private EditDialog() {}
 
@@ -81,6 +85,15 @@ public final class EditDialog {
                     Boolean.TRUE.equals(response.getBoolean(ENABLED)));
         }
 
+        /**
+         * A new Area's dialog starts with no Title (not the stored placeholder), Show title ticked and the
+         * Description's usual opening.
+         */
+        Values forNewArea() {
+            return new Values(
+                    true, "", subtitle, showBossBar, description.isEmpty() ? NEW_DESCRIPTION : description, enabled);
+        }
+
         List<String> descriptionLines() {
             return DescriptionText.toStored(description);
         }
@@ -91,11 +104,35 @@ public final class EditDialog {
     }
 
     public static void open(Player player, InfoArea area) {
-        show(player, area, Values.of(area), null);
+        show(player, area, Mode.EDIT, Values.of(area), null);
+    }
+
+    /**
+     * Opens the dialog that creates {@code area}, which {@code set} has built but not added. Nothing is added or written
+     * until Create is pressed.
+     */
+    public static void openToCreate(Player player, InfoArea area) {
+        show(player, area, Mode.CREATE, Values.of(area).forNewArea(), null);
+    }
+
+    /** Whether the dialog changes a stored Area, or creates one that {@code set} has built. */
+    private enum Mode {
+        EDIT("Edit", "✔ Save", "saved"),
+        CREATE("Create", "✔ Create", "created");
+
+        private final String titleVerb;
+        private final String button;
+        private final String done;
+
+        Mode(String titleVerb, String button, String done) {
+            this.titleVerb = titleVerb;
+            this.button = button;
+            this.done = done;
+        }
     }
 
     /** Shows the dialog filled with {@code values}, with {@code error} at the top if it isn't null. */
-    private static void show(Player player, InfoArea area, Values values, Component error) {
+    private static void show(Player player, InfoArea area, Mode mode, Values values, Component error) {
         List<DialogBody> body = new ArrayList<>();
         if (error != null) {
             body.add(DialogBody.plainMessage(error.color(NamedTextColor.RED)));
@@ -134,33 +171,42 @@ public final class EditDialog {
                         .multiline(TextDialogInput.MultilineOptions.create(null, 150))
                         .build());
 
-        // Each dialog gets its own single-use callback, holding the Area it edits
-        ActionButton save = ActionButton.builder(Component.text("✔ Save", NamedTextColor.GREEN))
+        // Each dialog gets its own single-use callbacks, holding the Area it edits or creates
+        ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
+        ActionButton save = ActionButton.builder(Component.text(mode.button, NamedTextColor.GREEN))
                 .action(DialogAction.customClick(
-                        (response, audience) -> save(audience, area, Values.of(response)),
-                        ClickCallback.Options.builder().uses(1).build()))
+                        (response, audience) -> save(audience, area, mode, Values.of(response)), once))
                 .build();
-        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.RED))
-                .build();
+        ActionButton.Builder cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.RED));
+        // Creating has no Esc, which sends the server nothing, so Cancel can always say that nothing was created
+        if (mode == Mode.CREATE) {
+            cancel.action(DialogAction.customClick(
+                    (response, audience) -> {
+                        if (audience instanceof Player canceller) {
+                            PluginData.getMessageUtil().sendInfoMessage(canceller, "No Guidebook area was created.");
+                        }
+                    },
+                    once));
+        }
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text("Edit Guidebook area \"")
+                .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area \"")
                                 .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
                                 .append(Component.text("\"")))
-                        .canCloseWithEscape(true)
+                        .canCloseWithEscape(mode == Mode.EDIT)
                         .body(body)
                         .inputs(inputs)
                         .build())
-                .type(DialogType.confirmation(save, cancel))));
+                .type(DialogType.confirmation(save, cancel.build()))));
     }
 
-    private static void save(Audience audience, InfoArea area, Values values) {
+    private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
         if (!(audience instanceof Player player)) {
             return;
         }
         String areaName = area.getName();
         // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
-        if (PluginData.getInfoAreaExact(areaName) != area) {
+        if (mode == Mode.EDIT && PluginData.getInfoAreaExact(areaName) != area) {
             PluginData.getMessageUtil()
                     .sendErrorMessage(
                             player,
@@ -170,9 +216,19 @@ public final class EditDialog {
         }
         Optional<String> problem = problem(values);
         if (problem.isPresent()) {
-            show(player, area, values, Component.text(problem.get() + " Nothing was saved."));
+            show(player, area, mode, values, Component.text(problem.get() + " Nothing was " + mode.done + "."));
             return;
         }
+        // The name was free when set ran, but it isn't reserved while the dialog is open
+        if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player,
+                            "Guidebook area " + areaName
+                                    + " was created by someone else while you edited it. Nothing was created.");
+            return;
+        }
+
         area.setShowTitle(values.showTitle());
         area.setTitle(InputUtil.replaceAltColorCode(values.title()));
         area.setSubtitle(InputUtil.replaceAltColorCode(values.subtitle()));
@@ -184,15 +240,20 @@ public final class EditDialog {
             area.statusOff();
         }
         try {
-            PluginData.saveArea(area);
+            if (mode == Mode.CREATE) {
+                PluginData.createInfoArea(area);
+            } else {
+                PluginData.saveArea(area);
+            }
         } catch (IOException ex) {
             Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, ex);
             PluginData.getMessageUtil()
-                    .sendErrorMessage(player, "There was an error. Guidebook area " + areaName + " was NOT saved.");
+                    .sendErrorMessage(
+                            player, "There was an error. Guidebook area " + areaName + " was NOT " + mode.done + ".");
             return;
         }
         PluginData.getMessageUtil()
-                .sendInfoMessage(player, "Guidebook area " + areaName + " was saved. This is its Welcome:");
+                .sendInfoMessage(player, "Guidebook area " + areaName + " was " + mode.done + ". This is its Welcome:");
         area.previewWelcome(player);
     }
 
