@@ -12,6 +12,8 @@ import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,6 +37,10 @@ import org.bukkit.entity.Player;
 @Description("manage guidebook areas")
 class GuidebookRoot {
 
+    // Every @Permission goes on an @Executes("<command>") with a non-empty path, and never on this class. A permission
+    // lands on the node where its path ends, so an empty path would put it on the /guidebook root and lock
+    // guidebook.user players out of on, off and help. See docs/adr/0001-commands-via-strokkcommands.md
+
     // Runs for bare /guidebook and every incomplete command, such as "size" or "size <area> radius". The root needs
     // guidebook.user or guidebook.staff, and the help is filtered to what the sender may run
     @DefaultExecutes
@@ -53,14 +59,8 @@ class GuidebookRoot {
 
     @Executes("help")
     @Permission(USER)
-    void helpAll(CommandSender sender) {
-        GuidebookHelp.sendAll(sender);
-    }
-
-    @Executes("help")
-    @Permission(USER)
-    void helpOne(CommandSender sender, @GuidebookHelp.CommandSuggestions @StringArg String command) {
-        GuidebookHelp.sendOne(sender, command);
+    void help(CommandSender sender, @GuidebookHelp.CommandSuggestions Optional<String> command) {
+        command.ifPresentOrElse(c -> GuidebookHelp.sendOne(sender, c), () -> GuidebookHelp.sendAll(sender));
     }
 
     @Executes("on")
@@ -240,30 +240,19 @@ class GuidebookRoot {
         GuidebookDelete.delete(sender, area);
     }
 
+    // Declared ahead of listFiltered, so the page branch is registered ahead of the filter branch and a bare number is
+    // always a page. Out-of-range pages are clamped rather than rejected, because a rejected number would be parsed
+    // as a filter instead
     @Executes("list")
     @Permission(STAFF)
-    void list(CommandSender sender) {
-        GuidebookList.send(sender, "", 1);
-    }
-
-    // Registered ahead of the filter branch, so a bare number is always a page. Out-of-range pages are clamped rather
-    // rejected, because a rejected number would be parsed as a filter instead
-    @Executes("list")
-    @Permission(STAFF)
-    void listPage(CommandSender sender, @IntArg int page) {
-        GuidebookList.send(sender, "", page);
+    void list(CommandSender sender, OptionalInt page) {
+        GuidebookList.send(sender, "", page.orElse(1));
     }
 
     @Executes("list")
     @Permission(STAFF)
-    void listFiltered(CommandSender sender, @StringArg String filter) {
-        GuidebookList.send(sender, filter, 1);
-    }
-
-    @Executes("list")
-    @Permission(STAFF)
-    void listFilteredPage(CommandSender sender, @StringArg String filter, @IntArg int page) {
-        GuidebookList.send(sender, filter, page);
+    void listFiltered(CommandSender sender, @StringArg String filter, OptionalInt page) {
+        GuidebookList.send(sender, filter, page.orElse(1));
     }
 
     @Executes("reload")
@@ -301,21 +290,13 @@ class GuidebookRoot {
 
     @Executes("dev")
     @Permission(STAFF)
-    void devWatch(
-            CommandSender sender,
-            @Executor Player player,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("watch") String watch) {
-        DevUtil.add(player);
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devUnwatch(
-            CommandSender sender,
-            @Executor Player player,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("unwatch") String unwatch) {
-        DevUtil.remove(player);
+    void devWatchOrUnwatch(
+            CommandSender sender, @Executor Player player, @Literal({"watch", "unwatch"}) String action) {
+        if (action.equals("watch")) {
+            DevUtil.add(player);
+        } else {
+            DevUtil.remove(player);
+        }
         GuidebookDev.showState(sender);
     }
 
