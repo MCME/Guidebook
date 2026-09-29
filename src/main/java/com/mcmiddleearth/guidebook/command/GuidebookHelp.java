@@ -107,6 +107,7 @@ final class GuidebookHelp {
      * more forms links to its own help.
      */
     static void sendAll(CommandSender sender) {
+        GuidebookMessages.startBlock(sender);
         GuidebookMessages.send(
                 sender, GuidebookMessages.info(Component.text("Guidebook commands (click one to fill it in):")));
         visibleTo(sender).forEach(entry -> GuidebookMessages.send(sender, summaryLine(entry)));
@@ -137,6 +138,7 @@ final class GuidebookHelp {
             return;
         }
         Entry entry = found.get();
+        GuidebookMessages.startBlock(sender);
         GuidebookMessages.send(sender, GuidebookMessages.info(Component.text("Help for /guidebook " + entry.name())));
         for (String usage : entry.usages()) {
             GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(fillsIn(entry, usage)));

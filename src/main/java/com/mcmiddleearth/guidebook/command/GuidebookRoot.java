@@ -6,6 +6,7 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.DevUtil;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
@@ -77,6 +78,7 @@ class GuidebookRoot {
     @Executes("show")
     @Permission(STAFF)
     void show(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
+        GuidebookMessages.startBlock(sender);
         PluginData.getMessageUtil()
                 .sendInfoMessage(sender, "Welcome message for Guidebook area " + area.getName() + ":");
         try {

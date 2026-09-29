@@ -33,6 +33,7 @@ final class GuidebookSize {
 
     /** Bare {@code size <area>}: shows the Area's Shape and dimensions, and the form that resizes it. */
     static void show(CommandSender sender, InfoArea area) {
+        GuidebookMessages.startBlock(sender);
         PluginData.getMessageUtil()
                 .sendInfoMessage(sender, "Guidebook area " + area.getName() + " is a " + dimensions(area) + ".");
         sendForm(sender, area);

@@ -49,6 +49,7 @@ final class GuidebookList {
 
         int maxPage = (names.size() + PAGE_LENGTH - 1) / PAGE_LENGTH;
         int shownPage = Math.clamp(page, 1, maxPage);
+        GuidebookMessages.startBlock(sender);
         GuidebookMessages.send(
                 sender,
                 GuidebookMessages.info(Component.text(

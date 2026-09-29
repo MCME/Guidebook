@@ -44,6 +44,7 @@ public final class GuidebookDetails {
     public static void send(CommandSender sender, InfoArea area) {
         String areaName = area.getName();
 
+        GuidebookMessages.startBlock(sender);
         GuidebookMessages.send(
                 sender,
                 GuidebookMessages.info(

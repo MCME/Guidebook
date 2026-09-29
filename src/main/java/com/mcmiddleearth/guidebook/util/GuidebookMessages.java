@@ -71,6 +71,14 @@ public final class GuidebookMessages {
         return text.hoverEvent(HoverEvent.showText(Component.text(hover)));
     }
 
+    /**
+     * Sends a blank line before a multi-line block, so it stands apart from the messages above it. Wrapped lines start
+     * at the left edge, so indentation alone can't show where a block starts.
+     */
+    public static void startBlock(CommandSender recipient) {
+        send(recipient, Component.empty());
+    }
+
     /** Players get the component; senders without a chat screen, such as the console, get its plain text. */
     public static void send(CommandSender recipient, Component message) {
         if (recipient instanceof Player) {
