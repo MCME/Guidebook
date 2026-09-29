@@ -5,11 +5,9 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.conversation.ConfirmationFactory;
-import com.mcmiddleearth.guidebook.conversation.Confirmationable;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.dialog.ConfirmDialog;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -23,7 +21,7 @@ final class GuidebookDelete {
     private GuidebookDelete() {}
 
     static void delete(CommandSender sender, InfoArea area) {
-        // The confirmation is a chat conversation, which only a player can answer. Ticket 10 replaces it.
+        // The confirmation is a Dialog, which only a player can answer
         if (!(sender instanceof Player player)) {
             PluginData.getMessageUtil()
                     .sendErrorMessage(
@@ -31,30 +29,14 @@ final class GuidebookDelete {
                             "Deleting a Guidebook area needs a confirmation that only a player can give. Run delete in game.");
             return;
         }
-        new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
-                .start(
-                        player,
-                        "Do you really want to delete Guidebook area " + area.getName() + "?",
-                        new Confirmationable() {
-                            @Override
-                            public void confirmed(Player player) {
-                                if (PluginData.deleteInfoArea(area)) {
-                                    PluginData.getMessageUtil()
-                                            .sendInfoMessage(
-                                                    player, "Guidebook area " + area.getName() + " was deleted.");
-                                } else {
-                                    PluginData.getMessageUtil()
-                                            .sendErrorMessage(
-                                                    player,
-                                                    "There was an error while deleting the data file from disk.");
-                                }
-                            }
-
-                            @Override
-                            public void cancelled(Player player) {
-                                PluginData.getMessageUtil()
-                                        .sendErrorMessage(player, "You cancelled deleting of the area.");
-                            }
-                        });
+        ConfirmDialog.openToDelete(player, area, confirmer -> {
+            if (PluginData.deleteInfoArea(area)) {
+                PluginData.getMessageUtil()
+                        .sendInfoMessage(confirmer, "Guidebook area " + area.getName() + " was deleted.");
+            } else {
+                PluginData.getMessageUtil()
+                        .sendErrorMessage(confirmer, "There was an error while deleting the data file from disk.");
+            }
+        });
     }
 }

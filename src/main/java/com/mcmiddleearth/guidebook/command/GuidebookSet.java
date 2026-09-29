@@ -16,14 +16,12 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.conversation.ConfirmationFactory;
-import com.mcmiddleearth.guidebook.conversation.Confirmationable;
 import com.mcmiddleearth.guidebook.data.CuboidInfoArea;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
+import com.mcmiddleearth.guidebook.dialog.ConfirmDialog;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.pluginutil.WEUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
@@ -119,50 +117,31 @@ final class GuidebookSet {
         EditDialog.openToCreate(player, placement.newArea().apply(name));
     }
 
-    // The confirmation is a chat conversation. Ticket 10 replaces it with a Dialog.
     private static void confirmMove(Player player, InfoArea area, Region region) {
-        new ConfirmationFactory(GuidebookPlugin.getPluginInstance())
-                .start(
-                        player,
-                        "Guidebook area " + area.getName()
-                                + " already exists. Do you want to move it to your location and selection?",
-                        new Confirmationable() {
-                            @Override
-                            public void confirmed(Player player) {
-                                String oldWorld = area.getLocation().getWorld().getName();
-                                boolean oldFileDeleted;
-                                try {
-                                    oldFileDeleted = PluginData.moveInfoArea(area, region);
-                                } catch (IOException ex) {
-                                    Logger.getLogger(GuidebookSet.class.getName())
-                                            .log(Level.SEVERE, null, ex);
-                                    PluginData.getMessageUtil()
-                                            .sendErrorMessage(
-                                                    player,
-                                                    "There was an error. Guidebook area " + area.getName()
-                                                            + " was NOT moved.");
-                                    return;
-                                }
-                                PluginData.getMessageUtil()
-                                        .sendInfoMessage(
-                                                player,
-                                                "Guidebook area " + area.getName()
-                                                        + " was moved to your location and selection.");
-                                if (!oldFileDeleted) {
-                                    PluginData.getMessageUtil()
-                                            .sendErrorMessage(
-                                                    player,
-                                                    "The old data file " + oldWorld + "/" + area.getName()
-                                                            + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
-                                }
-                            }
+        ConfirmDialog.openToMove(player, area, confirmer -> move(confirmer, area, region));
+    }
 
-                            @Override
-                            public void cancelled(Player player) {
-                                PluginData.getMessageUtil()
-                                        .sendErrorMessage(
-                                                player, "You cancelled setting of area. No changes were made.");
-                            }
-                        });
+    private static void move(Player player, InfoArea area, Region region) {
+        String oldWorld = area.getLocation().getWorld().getName();
+        boolean oldFileDeleted;
+        try {
+            oldFileDeleted = PluginData.moveInfoArea(area, region);
+        } catch (IOException ex) {
+            Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player, "There was an error. Guidebook area " + area.getName() + " was NOT moved.");
+            return;
+        }
+        PluginData.getMessageUtil()
+                .sendInfoMessage(
+                        player, "Guidebook area " + area.getName() + " was moved to your location and selection.");
+        if (!oldFileDeleted) {
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player,
+                            "The old data file " + oldWorld + "/" + area.getName()
+                                    + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
+        }
     }
 }
