@@ -220,8 +220,8 @@ public abstract class InfoArea implements AreaView {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (isShowScoreboard()) {
-                    // player.setScoreboard(area.getScoreboard());
+                // Only while still inside, or a player who left during the Title would keep the bar
+                if (isShowScoreboard() && containsPlayer(player)) {
                     bossBar.addPlayer(player);
                 }
                 try {
@@ -307,6 +307,9 @@ public abstract class InfoArea implements AreaView {
 
     public void setShowScoreboard(boolean showScoreboard) {
         this.showScoreboard = showScoreboard;
+        if (!showScoreboard) {
+            bossBar.removeAll();
+        }
     }
 
     private void debugString(String string) {
