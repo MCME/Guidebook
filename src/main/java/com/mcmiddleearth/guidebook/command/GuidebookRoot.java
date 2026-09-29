@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import net.strokkur.commands.Command;
 import net.strokkur.commands.DefaultExecutes;
 import net.strokkur.commands.Executes;
@@ -173,6 +174,31 @@ class GuidebookRoot {
             @IntArg int minY,
             @IntArg int maxY) {
         GuidebookSize.height(sender, area, minY, maxY);
+    }
+
+    @Executes("edit")
+    @Permission(STAFF)
+    void editHere(CommandSender sender, @Executor Player player) {
+        List<InfoArea> here = PluginData.getInfoAreas().values().stream()
+                .filter(area -> area.isInside(player.getLocation()))
+                .toList();
+        if (here.size() == 1) {
+            EditDialog.open(player, here.getFirst());
+        } else if (here.isEmpty()) {
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player, "You aren't standing in a Guidebook area. Name one: /guidebook edit <area>");
+        } else {
+            PluginData.getMessageUtil()
+                    .sendErrorMessage(
+                            player,
+                            "You're standing in more than one Guidebook area ("
+                                    + here.stream()
+                                            .map(InfoArea::getName)
+                                            .sorted()
+                                            .collect(Collectors.joining(", "))
+                                    + "). Name one: /guidebook edit <area>");
+        }
     }
 
     @Executes("edit")

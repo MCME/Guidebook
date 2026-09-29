@@ -71,8 +71,9 @@ final class GuidebookHelp {
             new Entry(
                     "edit",
                     STAFF,
-                    "edit <area>",
-                    "Edit an area's title, subtitle, boss bar, description and whether it's enabled, in a dialog."),
+                    "edit [area]",
+                    "Edit an area's title, subtitle, boss bar, description and whether it's enabled, in a dialog."
+                            + " With no <area>, edit the one you're standing in."),
             new Entry("rename", STAFF, "rename <area> <new name>", "Rename an area."),
             new Entry("delete", STAFF, "delete <area>", "Delete an area after you confirm."),
             new Entry(
