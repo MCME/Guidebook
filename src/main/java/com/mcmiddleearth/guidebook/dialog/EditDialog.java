@@ -126,10 +126,8 @@ public final class EditDialog {
         if (error != null) {
             body.add(DialogBody.plainMessage(error.color(NamedTextColor.RED)));
         }
-        // A label can't hold a click action, so the WebUI link goes in the body, at the top of the dialog
-        body.add(DialogBody.plainMessage(webUiLink(values.description())));
 
-        // The Dialog API puts body text above every input, so the Description's hint goes in its label
+        // The Dialog API puts body text above every input, so the Description's hint and WebUI link go in its label
         List<DialogInput> inputs = List.of(
                 DialogInput.text(TITLE, Component.text("Title"))
                         .width(300)
@@ -154,8 +152,9 @@ public final class EditDialog {
                                 DESCRIPTION,
                                 Component.text("Description ")
                                         .append(Component.text(
-                                                "(MiniMessage; each line is sent as one line in chat)",
-                                                NamedTextColor.GRAY)))
+                                                "(MiniMessage; each line is sent as one line in chat) ",
+                                                NamedTextColor.GRAY))
+                                        .append(webUiLink(values.description())))
                         .width(400)
                         .initial(values.description())
                         .maxLength(DESCRIPTION_MAX)
@@ -201,9 +200,7 @@ public final class EditDialog {
                     + AreaText.DEFAULT_DESCRIPTION + ", instead.";
         }
         return GuidebookMessages.opensUrl(
-                Component.text("Preview the Description in the Adventure WebUI", GuidebookMessages.INFO),
-                link.url(),
-                hover);
+                Component.text("[Preview in the WebUI]", GuidebookMessages.INFO), link.url(), hover);
     }
 
     private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
