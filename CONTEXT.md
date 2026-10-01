@@ -20,7 +20,7 @@ The geometry of an Area: a sphere, a cuboid, or a prism (a polygon extruded betw
 _Avoid_: size (that is the command which changes a Shape's dimensions)
 
 **Title**:
-The short name of an Area, shown at the centre of the screen when a player enters it (if Show title is on).
+The short name of an Area, shown at the centre of the screen when a player enters it (if Show title is on). It is written in MiniMessage, and its length limit counts only the visible text.
 
 **Show title**:
 Whether an Area's Title and Subtitle appear on screen when a player enters it.
@@ -30,10 +30,14 @@ An optional bar at the top of the screen that shows the Area's Title for as long
 _Avoid_: scoreboard
 
 **Subtitle**:
-The line shown under the Title on entry.
+The line shown under the Title on entry. It is written in MiniMessage, and its length limit counts only the visible text.
 
 **Description**:
-The body text of an Area, sent to the player in chat when they enter it. It is written in PluginUtils message markup.
+The body text of an Area, sent to the player in chat when they enter it. It is written in MiniMessage. By convention it opens with `Guide:` in dark aqua followed by white text, and a new Area starts with that opening.
+
+**Legacy markup**:
+How Titles, Subtitles and Descriptions were written before MiniMessage: `§` colour codes (typed as `#`), `#RRGGBB` hex colours, and `[Click="…"]`/`[Hover="…"]` tags. Each Area is converted from it to MiniMessage once, keeping exactly what players saw.
+_Avoid_: old format, PluginUtils markup
 
 **Welcome**:
 What a player receives when they enter an Area: the Title, then the Description. Welcomes have a cooldown per player per Area.
