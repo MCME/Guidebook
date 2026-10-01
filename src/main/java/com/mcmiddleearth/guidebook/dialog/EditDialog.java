@@ -167,6 +167,17 @@ public final class EditDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> save(audience, area, mode, Values.of(response)), once))
                 .build();
+        // A link button can't read the inputs, so Preview sends them here to build the link from the unsaved text
+        ActionButton preview = ActionButton.builder(Component.text("Preview in WebUI", GuidebookMessages.INFO))
+                .tooltip(Component.text("Opens the Adventure WebUI with the Description as typed, saved or not."))
+                .action(DialogAction.customClick(
+                        (response, audience) -> {
+                            if (audience instanceof Player previewer) {
+                                showPreview(previewer, area, mode, Values.of(response));
+                            }
+                        },
+                        once))
+                .build();
         // Esc just closes when editing. Creating turns Esc off, so Cancel is the only way out and always says that
         // nothing was created
         ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
@@ -186,29 +197,47 @@ public final class EditDialog {
                                 .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
                                 .append(Component.text("\"")))
                         .canCloseWithEscape(mode == Mode.EDIT)
-                        // The dialog stays open after the Preview button, so that typed text isn't lost. Save and
-                        // Cancel close it themselves. Minecraft only allows that for a dialog that doesn't pause the
+                        // The dialog stays open after a button until the server replaces or closes it, so that typed
+                        // text isn't lost. Minecraft only allows that for a dialog that doesn't pause the
                         // game, and pausing only ever applies in single-player
                         .afterAction(DialogBase.DialogAfterAction.NONE)
                         .pause(false)
                         .body(body)
                         .inputs(inputs)
                         .build())
-                .type(DialogType.multiAction(List.of(save, webUiButton(values.description()), cancel), null, 3))));
+                .type(DialogType.multiAction(List.of(save, preview, cancel), null, 3))));
     }
 
-    /** Opens the Adventure WebUI with {@code description}, so staff can preview it while writing. */
-    private static ActionButton webUiButton(String description) {
-        AreaText.WebUiLink link = AreaText.webUiLink(description);
-        String hover = "Opens the Adventure WebUI to preview the Description.";
-        if (link.isDescriptionTooLong()) {
-            hover += " The Description is too long to fit in the link, so it opens with the default opening, "
-                    + AreaText.DEFAULT_DESCRIPTION + ", instead.";
-        }
-        return ActionButton.builder(Component.text("Preview in WebUI", GuidebookMessages.INFO))
-                .tooltip(Component.text(hover))
+    /**
+     * Shows a dialog that opens the Adventure WebUI with the typed Description. Back reopens the Edit dialog with
+     * {@code values}, so nothing typed is lost.
+     */
+    private static void showPreview(Player player, InfoArea area, Mode mode, Values values) {
+        AreaText.WebUiLink link = AreaText.webUiLink(values.description());
+        Component message = link.isDescriptionTooLong()
+                ? Component.text("The Description is too long to fit in a link, so the WebUI opens with the default "
+                        + "opening, " + AreaText.DEFAULT_DESCRIPTION + ", instead.")
+                : Component.text("The WebUI opens with the Description as you typed it. Copy any changes back "
+                        + "into the Edit dialog before saving.");
+        ActionButton open = ActionButton.builder(Component.text("Open the WebUI", GuidebookMessages.INFO))
                 .action(DialogAction.staticAction(ClickEvent.openUrl(link.url())))
                 .build();
+        // Esc runs Back, so it can't lose the typed text either
+        ActionButton back = ActionButton.builder(Component.text("◀ Back", NamedTextColor.WHITE))
+                .action(DialogAction.customClick(
+                        (response, audience) -> show(player, area, mode, values, null),
+                        ClickCallback.Options.builder().uses(1).build()))
+                .build();
+
+        player.showDialog(Dialog.create(builder -> builder.empty()
+                .base(DialogBase.builder(Component.text("Preview the Description of \"")
+                                .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
+                                .append(Component.text("\"")))
+                        .afterAction(DialogBase.DialogAfterAction.NONE)
+                        .pause(false)
+                        .body(List.of(DialogBody.plainMessage(message)))
+                        .build())
+                .type(DialogType.multiAction(List.of(open), back, 1))));
     }
 
     private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
