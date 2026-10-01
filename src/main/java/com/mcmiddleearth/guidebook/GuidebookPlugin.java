@@ -16,10 +16,11 @@
  */
 package com.mcmiddleearth.guidebook;
 
-import com.mcmiddleearth.guidebook.command.GuidebookCommands;
+import com.mcmiddleearth.guidebook.command.GuidebookRootBrigadier;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -44,9 +45,15 @@ public class GuidebookPlugin extends JavaPlugin {
     public void onEnable() {
         pluginInstance = this;
         PluginData.loadData();
+
         this.initializePlayerMoveRunnable();
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        GuidebookCommands.register(this);
+
+        // Register the command with the description and aliases declared as annotations
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            GuidebookRootBrigadier.register(event.registrar());
+        });
+
         getLogger().info("Enabled!");
     }
 
