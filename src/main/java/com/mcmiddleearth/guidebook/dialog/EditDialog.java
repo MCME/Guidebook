@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
@@ -127,7 +128,7 @@ public final class EditDialog {
             body.add(DialogBody.plainMessage(error.color(NamedTextColor.RED)));
         }
 
-        // The Dialog API puts body text above every input, so the Description's hint and WebUI link go in its label
+        // The Dialog API puts body text above every input, so the Description's hint goes in its label
         List<DialogInput> inputs = List.of(
                 DialogInput.text(TITLE, Component.text("Title"))
                         .width(300)
@@ -152,9 +153,8 @@ public final class EditDialog {
                                 DESCRIPTION,
                                 Component.text("Description ")
                                         .append(Component.text(
-                                                "(MiniMessage; each line is sent as one line in chat) ",
-                                                NamedTextColor.GRAY))
-                                        .append(webUiLink(values.description())))
+                                                "(MiniMessage; each line is sent as one line in chat)",
+                                                NamedTextColor.GRAY)))
                         .width(400)
                         .initial(values.description())
                         .maxLength(DESCRIPTION_MAX)
@@ -167,40 +167,46 @@ public final class EditDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> save(audience, area, mode, Values.of(response)), once))
                 .build();
-        ActionButton.Builder cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE));
-        // Esc runs Cancel's action. Editing's Cancel has none, so both just close. Creating turns Esc off, so Cancel is
-        // the only way out and always says that nothing was created
-        if (mode == Mode.CREATE) {
-            cancel.action(DialogAction.customClick(
-                    (response, audience) -> {
-                        if (audience instanceof Player canceller) {
-                            PluginData.getMessageUtil().sendInfoMessage(canceller, "No Guidebook area was created.");
-                        }
-                    },
-                    once));
-        }
+        // Esc just closes when editing. Creating turns Esc off, so Cancel is the only way out and always says that
+        // nothing was created
+        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
+                .action(DialogAction.customClick(
+                        (response, audience) -> {
+                            audience.closeDialog();
+                            if (mode == Mode.CREATE && audience instanceof Player canceller) {
+                                PluginData.getMessageUtil()
+                                        .sendInfoMessage(canceller, "No Guidebook area was created.");
+                            }
+                        },
+                        once))
+                .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area \"")
                                 .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
                                 .append(Component.text("\"")))
                         .canCloseWithEscape(mode == Mode.EDIT)
+                        // The dialog stays open after the Preview button, so that typed text isn't lost. Save and
+                        // Cancel close it themselves
+                        .afterAction(DialogBase.DialogAfterAction.NONE)
                         .body(body)
                         .inputs(inputs)
                         .build())
-                .type(DialogType.confirmation(save, cancel.build()))));
+                .type(DialogType.multiAction(List.of(save, webUiButton(values.description()), cancel), null, 3))));
     }
 
-    /** Clicking the text opens the Adventure WebUI with {@code description}, so staff can preview it while writing. */
-    private static Component webUiLink(String description) {
+    /** Opens the Adventure WebUI with {@code description}, so staff can preview it while writing. */
+    private static ActionButton webUiButton(String description) {
         AreaText.WebUiLink link = AreaText.webUiLink(description);
         String hover = "Opens the Adventure WebUI to preview the Description.";
         if (link.isDescriptionTooLong()) {
             hover += " The Description is too long to fit in the link, so it opens with the default opening, "
                     + AreaText.DEFAULT_DESCRIPTION + ", instead.";
         }
-        return GuidebookMessages.opensUrl(
-                Component.text("[Preview in the WebUI]", GuidebookMessages.INFO), link.url(), hover);
+        return ActionButton.builder(Component.text("Preview in WebUI", GuidebookMessages.INFO))
+                .tooltip(Component.text(hover))
+                .action(DialogAction.staticAction(ClickEvent.openUrl(link.url())))
+                .build();
     }
 
     private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
@@ -215,6 +221,7 @@ public final class EditDialog {
                             player,
                             "Guidebook area " + areaName
                                     + " was deleted or reloaded while you edited it. Your changes were NOT saved.");
+            player.closeDialog();
             return;
         }
         Optional<String> problem = problem(values);
@@ -222,6 +229,7 @@ public final class EditDialog {
             show(player, area, mode, values, Component.text(problem.get() + " Nothing was " + mode.done + "."));
             return;
         }
+        player.closeDialog();
         // The name was free when set ran, but it isn't reserved while the dialog is open
         if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
             PluginData.getMessageUtil()
