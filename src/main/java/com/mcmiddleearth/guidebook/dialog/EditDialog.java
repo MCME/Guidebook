@@ -187,8 +187,10 @@ public final class EditDialog {
                                 .append(Component.text("\"")))
                         .canCloseWithEscape(mode == Mode.EDIT)
                         // The dialog stays open after the Preview button, so that typed text isn't lost. Save and
-                        // Cancel close it themselves
+                        // Cancel close it themselves. Minecraft only allows that for a dialog that doesn't pause the
+                        // game, and pausing only ever applies in single-player
                         .afterAction(DialogBase.DialogAfterAction.NONE)
+                        .pause(false)
                         .body(body)
                         .inputs(inputs)
                         .build())
