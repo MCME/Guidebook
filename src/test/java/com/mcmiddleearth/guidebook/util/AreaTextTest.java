@@ -70,6 +70,18 @@ class AreaTextTest {
         assertEquals("first\nsecond".length(), AreaText.visibleLength("<red>first\n<blue>second"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  ", "<red></red>", "<gold> <bold>\n"})
+    void textWithNothingVisibleIsBlank(String miniMessage) {
+        assertTrue(AreaText.isVisiblyBlank(miniMessage));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Edoras", "<red>Edoras", "<golf>", "\\<"})
+    void textWithSomethingVisibleIsNotBlank(String miniMessage) {
+        assertFalse(AreaText.isVisiblyBlank(miniMessage));
+    }
+
     @Test
     void theWebUiLinkCarriesTheEncodedDescription() {
         AreaText.WebUiLink link = AreaText.webUiLink("<gold>Hi & bye\n#1 <white>100%");

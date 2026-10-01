@@ -269,7 +269,7 @@ public final class EditDialog {
      *     could send longer text.
      */
     private static Optional<String> problem(Values values) {
-        if (values.title().isBlank() && (values.showTitle() || values.showBossBar())) {
+        if (AreaText.isVisiblyBlank(values.title()) && (values.showTitle() || values.showBossBar())) {
             return Optional.of("Give the area a Title, or untick Show title and Show boss bar.");
         }
         int titleLength = AreaText.visibleLength(values.title());

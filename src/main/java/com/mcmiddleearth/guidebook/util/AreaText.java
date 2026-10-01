@@ -31,9 +31,16 @@ public final class AreaText {
 
     /** The number of characters a player sees, which is what the Title and Subtitle limits count. */
     public static int visibleLength(String miniMessage) {
-        return PlainTextComponentSerializer.plainText()
-                .serialize(render(miniMessage))
-                .length();
+        return visibleText(miniMessage).length();
+    }
+
+    /** Whether a player would see nothing, such as a Title that is only tags and spaces. */
+    public static boolean isVisiblyBlank(String miniMessage) {
+        return visibleText(miniMessage).isBlank();
+    }
+
+    private static String visibleText(String miniMessage) {
+        return PlainTextComponentSerializer.plainText().serialize(render(miniMessage));
     }
 
     /**
