@@ -6,11 +6,11 @@ The conversion parses the legacy text with PluginUtils' own parser and turns the
 
 ## Considered Options
 
-- **Keep legacy markup and only render it with Adventure:** no migration, but `#` can't be typed as a character, hex colours can't be entered in the dialog, and staff can't use the Adventure WebUI to preview.
+- **Keep legacy markup and only render it with Adventure:** no migration, but `#` can't be typed as a character, hex colours can't be entered in the dialog, and staff can't use the Adventure WebUI to preview. (The Edit dialog later replaced its WebUI link with an in-game Preview, because the WebUI can't render Guidebook's custom tags. Staff can still use the WebUI for standard MiniMessage.)
 - **Convert offline before deploy:** no legacy code ships, but an old file restored later would show raw `§` codes and `[Click=` tags.
 
 ## Consequences
 
 One isolated class still imports PluginUtils' message parser. PluginUtils stays a dependency for regions anyway, and the class can be deleted in a later release. Converted text keeps the old quirks: hover text keeps PluginUtils' hard line breaks, and text that the old parser misread as a hex colour stays misread. Reverting to a pre-MiniMessage build of the plugin means restoring the backup, which loses any edits made since.
 
-MiniMessage's strict mode isn't used. It rejects unclosed tags, which is how staff, the WebUI and MiniMessage's own serialiser all write text.
+MiniMessage's strict mode isn't used. It rejects unclosed tags, which is how staff and MiniMessage's own serialiser, as well as tools such as the Adventure WebUI, write text.

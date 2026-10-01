@@ -39,6 +39,9 @@ public final class EditDialog {
     private static final int SUBTITLE_MAX = 64;
     private static final int TITLE_SUBTITLE_INPUT_MAX = 256;
     private static final int DESCRIPTION_MAX = 4096;
+    // The default width of the chat box, so a Description wraps as most players see it
+    private static final int PREVIEW_WIDTH = 320;
+    private static final String WEBUI_URL = "https://webui.advntr.dev/";
 
     private static final String SHOW_TITLE = "show_title";
     private static final String TITLE = "title";
@@ -167,9 +170,9 @@ public final class EditDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> save(audience, area, mode, Values.of(response)), once))
                 .build();
-        // A link button can't read the inputs, so Preview sends them here to build the link from the unsaved text
-        ActionButton preview = ActionButton.builder(Component.text("Preview in WebUI", GuidebookMessages.INFO))
-                .tooltip(Component.text("Opens the Adventure WebUI with the Description as typed, saved or not."))
+        ActionButton preview = ActionButton.builder(Component.text("Preview", GuidebookMessages.INFO))
+                .tooltip(Component.text(
+                        "Shows the Title, Subtitle and Description as players will see them, saved or not."))
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player previewer) {
@@ -209,18 +212,19 @@ public final class EditDialog {
     }
 
     /**
-     * Shows a dialog that opens the Adventure WebUI with the typed Description. Back reopens the Edit dialog with
-     * {@code values}, so nothing typed is lost.
+     * Shows the typed Title, Subtitle and Description rendered as players see them, so staff can check their markup
+     * before saving. Back reopens the Edit dialog with {@code values}, so nothing typed is lost.
      */
     private static void showPreview(Player player, InfoArea area, Mode mode, Values values) {
-        AreaText.WebUiLink link = AreaText.webUiLink(values.description());
-        Component message = link.isDescriptionTooLong()
-                ? Component.text("The Description is too long to fit in a link, so the WebUI opens with the default "
-                        + "opening, " + AreaText.DEFAULT_DESCRIPTION + ", instead.")
-                : Component.text("The WebUI opens with the Description as you typed it. Copy any changes back "
-                        + "into the Edit dialog before saving.");
-        ActionButton open = ActionButton.builder(Component.text("Open the WebUI", GuidebookMessages.INFO))
-                .action(DialogAction.staticAction(ClickEvent.openUrl(link.url())))
+        List<DialogBody> body = new ArrayList<>();
+        addPreview(body, "Title", values.title(), values.showTitle() ? null : "not shown: Show title is off");
+        addPreview(body, "Subtitle", values.subtitle(), values.showTitle() ? null : "not shown: Show title is off");
+        addPreview(body, "Description", values.description(), null);
+        // Opened empty: filling it in is left to staff, who can paste any text they want to try out
+        ActionButton webUi = ActionButton.builder(Component.text("Open the WebUI", GuidebookMessages.INFO))
+                .tooltip(Component.text("Opens the Adventure WebUI, an external site for writing and previewing "
+                        + "MiniMessage. Guidebook's own tags show there as literal text."))
+                .action(DialogAction.staticAction(ClickEvent.openUrl(WEBUI_URL)))
                 .build();
         // Esc runs Back, so it can't lose the typed text either
         ActionButton back = ActionButton.builder(Component.text("◀ Back", NamedTextColor.WHITE))
@@ -230,14 +234,28 @@ public final class EditDialog {
                 .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text("Preview the Description of \"")
+                .base(DialogBase.builder(Component.text("Preview of Guidebook area \"")
                                 .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
                                 .append(Component.text("\"")))
                         .afterAction(DialogBase.DialogAfterAction.NONE)
                         .pause(false)
-                        .body(List.of(DialogBody.plainMessage(message)))
+                        .body(body)
                         .build())
-                .type(DialogType.multiAction(List.of(open), back, 1))));
+                .type(DialogType.multiAction(List.of(webUi), back, 1))));
+    }
+
+    /** Adds a grey label, with {@code note} if it isn't null, and then {@code text} rendered at chat width. */
+    private static void addPreview(List<DialogBody> body, String label, String text, String note) {
+        Component heading = Component.text(label, NamedTextColor.GRAY);
+        if (note != null) {
+            heading = heading.append(Component.text(" (" + note + ")", NamedTextColor.DARK_GRAY));
+        }
+        body.add(DialogBody.plainMessage(heading, PREVIEW_WIDTH));
+        body.add(DialogBody.plainMessage(
+                AreaText.isVisiblyBlank(text)
+                        ? Component.text("(empty)", NamedTextColor.DARK_GRAY)
+                        : AreaText.render(text),
+                PREVIEW_WIDTH));
     }
 
     private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
