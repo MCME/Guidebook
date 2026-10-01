@@ -26,6 +26,8 @@ dependencies {
     compileOnly(libs.strokk.commands.annotations)
     annotationProcessor(libs.strokk.commands.processor)
 
+    testImplementation(libs.paper.api)
+    testImplementation(libs.pluginutils)
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
