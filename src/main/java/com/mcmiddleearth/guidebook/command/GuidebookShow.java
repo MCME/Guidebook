@@ -6,9 +6,8 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.LegacyMarkupConverter;
+import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
-import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
@@ -21,7 +20,7 @@ public final class GuidebookShow {
 
     private GuidebookShow() {}
 
-    public static void sendDescription(CommandSender recipient, InfoArea area) throws MessageParseException {
+    public static void sendDescription(CommandSender recipient, InfoArea area) {
         if (area.getDescription().isEmpty()) {
             GuidebookMessages.send(
                     recipient,
@@ -29,11 +28,11 @@ public final class GuidebookShow {
                             Component.text("Welcome to "),
                             Component.text()
                                     .color(GuidebookMessages.STRESSED)
-                                    .append(GuidebookMessages.title(area.getTitle()))
+                                    .append(AreaText.render(area.getTitle()))
                                     .append(Component.text(" (" + area.getName() + ")")),
                             Component.text(". Unfortunately there is no further description for this area.")));
         } else {
-            GuidebookMessages.send(recipient, LegacyMarkupConverter.renderDescription(area.getDescription()));
+            GuidebookMessages.send(recipient, AreaText.render(area.getDescription()));
         }
     }
 }

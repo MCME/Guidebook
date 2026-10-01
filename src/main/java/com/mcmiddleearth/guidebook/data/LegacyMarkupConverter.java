@@ -72,10 +72,9 @@ public final class LegacyMarkupConverter {
 
     /**
      * Renders a Legacy Description as players saw it. The stored lines are joined with a space, as the old parser
-     * joined them, and the space it left at the end is trimmed. The show command uses it until Areas are stored as
-     * MiniMessage.
+     * joined them, and the space it left at the end is trimmed.
      */
-    public static Component renderDescription(List<String> lines) throws MessageParseException {
+    static Component renderDescription(List<String> lines) throws MessageParseException {
         if (lines.isEmpty()) {
             return Component.empty();
         }

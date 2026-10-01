@@ -3,6 +3,7 @@ package com.mcmiddleearth.guidebook.command;
 import com.mcmiddleearth.guidebook.data.AreaRegistry;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -55,7 +56,10 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
 
     // e.g. "Minas Tirith ⬟ prism ✖ disabled"
     private static Component tooltip(AreaRegistry.Suggestion suggestion) {
-        Component tooltip = Component.text(suggestion.title(), NamedTextColor.YELLOW)
+        Component tooltip = Component.text()
+                .color(NamedTextColor.YELLOW)
+                .append(AreaText.render(suggestion.title()))
+                .build()
                 .append(Component.text(
                         " " + suggestion.shape().symbol() + " "
                                 + suggestion.shape().displayName(),

@@ -6,7 +6,6 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -45,11 +44,6 @@ public final class GuidebookMessages {
 
     public static Component stressed(String text) {
         return Component.text(text, STRESSED);
-    }
-
-    /** A Title, whose formatting is the {@code §} colour codes stored when a {@code #} is typed into it. */
-    public static Component title(String title) {
-        return LegacyComponentSerializer.legacySection().deserialize(title);
     }
 
     /** Clicking the text fills in {@code command} in the chat box, and hovering shows {@code hover}. */

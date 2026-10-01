@@ -19,26 +19,23 @@ package com.mcmiddleearth.guidebook.data;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.command.GuidebookShow;
 import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
-import com.mcmiddleearth.guidebook.listener.PlayerListener;
+import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.pluginutil.TitleUtil;
-import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import com.mcmiddleearth.pluginutil.region.Region;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
+import net.kyori.adventure.util.Ticks;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -50,6 +47,8 @@ public abstract class InfoArea implements AreaView {
 
     private static final int NEAR_DISTANCE = 10;
     private static final Duration COOLDOWN = Duration.ofMinutes(1);
+    private static final Title.Times TITLE_TIMES =
+            Title.Times.times(Ticks.duration(25), Ticks.duration(20), Ticks.duration(10));
 
     protected Region region;
 
@@ -71,14 +70,13 @@ public abstract class InfoArea implements AreaView {
     private boolean showTitle;
     private boolean showScoreboard;
 
-    private List<String> description = new ArrayList<>();
+    private String description = "";
 
     protected InfoArea(String areaName) {
         this.areaName = areaName;
 
         // scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
-        bossBar = Bukkit.getServer().createBossBar("unnamed Guidebook area", BarColor.YELLOW, BarStyle.SOLID);
-        bossBar.setProgress(0);
+        bossBar = BossBar.bossBar(Component.empty(), 0, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
         setTitle("unnamed Guidebook area");
         subtitle = "";
         status = true;
@@ -89,16 +87,12 @@ public abstract class InfoArea implements AreaView {
 
         if (config.contains("title")) {
             setTitle((String) config.get("title"));
-            subtitle = (String) config.get("subtitle");
+            setSubtitle((String) config.get("subtitle"));
             showScoreboard = config.getBoolean("showScoreboard");
             showTitle = config.getBoolean("showTitle");
             status = config.getBoolean("enabled", true);
         }
-        if (config.isList("description")) {
-            this.description = config.getStringList("description");
-        } else {
-            this.description.add(config.getString("description"));
-        }
+        description = config.getString("description", "");
     }
 
     public Region getRegion() {
@@ -132,6 +126,8 @@ public abstract class InfoArea implements AreaView {
 
     public void statusOff() {
         status = false;
+        // A Disabled Area doesn't notice players leaving, so they'd keep the Boss bar
+        hideBossBar();
     }
 
     public boolean containsPlayer(Player player) {
@@ -170,7 +166,7 @@ public abstract class InfoArea implements AreaView {
     public final void onRegionLeave(Player player) {
         UUID playerId = player.getUniqueId();
         areaPlayers.remove(playerId);
-        bossBar.removePlayer(player);
+        player.hideBossBar(bossBar);
     }
 
     public void clearPlayer(Player player) {
@@ -201,6 +197,7 @@ public abstract class InfoArea implements AreaView {
         config.set("showScoreboard", showScoreboard);
         config.set("showTitle", showTitle);
         config.set("enabled", status);
+        config.set(LegacyMarkupConverter.MARKER, true);
     }
 
     /**
@@ -220,7 +217,7 @@ public abstract class InfoArea implements AreaView {
         final InfoArea thisArea = this;
         int messageDelay = 0;
         if (isShowTitle()) {
-            TitleUtil.showTitle(player, getTitle(), getSubtitle(), 25, 20, 10);
+            player.showTitle(Title.title(AreaText.render(getTitle()), AreaText.render(getSubtitle()), TITLE_TIMES));
             messageDelay = 50;
         }
         new BukkitRunnable() {
@@ -228,19 +225,15 @@ public abstract class InfoArea implements AreaView {
             public void run() {
                 // Only while still inside, or a player who left during the Title would keep the bar
                 if (isShowScoreboard() && containsPlayer(player)) {
-                    bossBar.addPlayer(player);
+                    player.showBossBar(bossBar);
                 }
-                try {
-                    GuidebookShow.sendDescription(player, thisArea);
-                } catch (MessageParseException ex) {
-                    Logger.getLogger(PlayerListener.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                GuidebookShow.sendDescription(player, thisArea);
             }
         }.runTaskLater(GuidebookPlugin.getPluginInstance(), messageDelay);
     }
 
-    public void setDescription(List<String> lines) {
-        description = lines;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override
@@ -256,11 +249,12 @@ public abstract class InfoArea implements AreaView {
         Objective objective = scoreboard.registerNewObjective(newTitle, "dummy");
         objective.getScore("dummy").setScore(0);
         objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);*/
-        bossBar.setTitle(newTitle);
-        title = newTitle;
+        // An older file can hold an empty Title or Subtitle as null
+        title = Objects.requireNonNullElse(newTitle, "");
+        bossBar.name(AreaText.render(title));
     }
 
-    public List<String> getDescription() {
+    public String getDescription() {
         return description;
     }
 
@@ -269,7 +263,7 @@ public abstract class InfoArea implements AreaView {
     }
 
     public void setSubtitle(String subtitle) {
-        this.subtitle = subtitle;
+        this.subtitle = Objects.requireNonNullElse(subtitle, "");
     }
 
     public boolean isShowTitle() {
@@ -287,7 +281,17 @@ public abstract class InfoArea implements AreaView {
     public void setShowScoreboard(boolean showScoreboard) {
         this.showScoreboard = showScoreboard;
         if (!showScoreboard) {
-            bossBar.removeAll();
+            hideBossBar();
+        }
+    }
+
+    // Only players inside the Area are shown the Boss bar
+    private void hideBossBar() {
+        for (UUID uuid : areaPlayers) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                player.hideBossBar(bossBar);
+            }
         }
     }
 

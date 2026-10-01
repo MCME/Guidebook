@@ -2,12 +2,8 @@ package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.util.DescriptionText;
+import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
-import com.mcmiddleearth.guidebook.util.InputUtil;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
-import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -31,8 +27,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 /**
- * The Edit dialog: every editable field of an Area on one screen. Save checks the Description's markup and saves the
- * Area. Cancel and Esc discard the changes. For an Area {@code set} is creating, the dialog creates it: the Area exists
+ * The Edit dialog: every editable field of an Area on one screen. Text is typed as MiniMessage. Save checks the
+ * lengths and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes. For an Area {@code set} is creating, the dialog creates it: the Area exists
  * only once Create is pressed, and Esc is turned off so that Cancel can say nothing was created.
  */
 public final class EditDialog {
@@ -48,15 +44,9 @@ public final class EditDialog {
     private static final String DESCRIPTION = "description";
     private static final String ENABLED = "enabled";
 
-    // #3 is dark aqua, and #f switches back to white for the text typed after it
-    private static final String NEW_DESCRIPTION = "#3Guide: #f";
-
     private EditDialog() {}
 
-    /**
-     * The dialog's fields, as typed: colour codes are written {@code #}, and the Description is one string with real
-     * line breaks.
-     */
+    /** The dialog's fields, as typed and stored: MiniMessage, with real line breaks in the Description. */
     private record Values(
             boolean showTitle,
             String title,
@@ -68,10 +58,10 @@ public final class EditDialog {
         static Values of(InfoArea area) {
             return new Values(
                     area.isShowTitle(),
-                    typed(area.getTitle()),
-                    typed(area.getSubtitle()),
+                    area.getTitle(),
+                    area.getSubtitle(),
                     area.isShowScoreboard(),
-                    DescriptionText.toTyped(area.getDescription()),
+                    area.getDescription(),
                     area.isEnabled());
         }
 
@@ -91,15 +81,12 @@ public final class EditDialog {
          */
         Values forNewArea() {
             return new Values(
-                    true, "", subtitle, showBossBar, description.isEmpty() ? NEW_DESCRIPTION : description, enabled);
-        }
-
-        List<String> descriptionLines() {
-            return DescriptionText.toStored(description);
-        }
-
-        private static String typed(String stored) {
-            return stored == null ? "" : InputUtil.replaceColorCodeWithAltCode(stored);
+                    true,
+                    "",
+                    subtitle,
+                    showBossBar,
+                    description.isEmpty() ? AreaText.DEFAULT_DESCRIPTION : description,
+                    enabled);
         }
     }
 
@@ -163,7 +150,7 @@ public final class EditDialog {
                                 DESCRIPTION,
                                 Component.text("Description ")
                                         .append(Component.text(
-                                                "(type # for a colour code; each line is sent as one line in chat)",
+                                                "(MiniMessage; each line is sent as one line in chat)",
                                                 NamedTextColor.GRAY)))
                         .width(400)
                         .initial(values.description())
@@ -231,10 +218,10 @@ public final class EditDialog {
         }
 
         area.setShowTitle(values.showTitle());
-        area.setTitle(InputUtil.replaceAltColorCode(values.title()));
-        area.setSubtitle(InputUtil.replaceAltColorCode(values.subtitle()));
+        area.setTitle(values.title());
+        area.setSubtitle(values.subtitle());
         area.setShowScoreboard(values.showBossBar());
-        area.setDescription(new ArrayList<>(values.descriptionLines()));
+        area.setDescription(values.description().stripTrailing());
         if (values.enabled()) {
             area.statusOn();
         } else {
@@ -274,12 +261,6 @@ public final class EditDialog {
         }
         if (values.description().length() > DESCRIPTION_MAX) {
             return Optional.of("The Description is longer than " + DESCRIPTION_MAX + " characters.");
-        }
-        try {
-            FancyMessageConfigUtil.addFromStringList(
-                    new FancyMessage(PluginData.getMessageUtil()), values.descriptionLines());
-        } catch (MessageParseException ex) {
-            return Optional.of("The Description has a markup error: " + ex.getMessage());
         }
         return Optional.empty();
     }

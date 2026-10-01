@@ -2,6 +2,7 @@ package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -76,7 +77,7 @@ public final class ConfirmDialog {
                         .append(
                                 title == null || title.isEmpty()
                                         ? Component.text("(none)", NamedTextColor.GRAY)
-                                        : GuidebookMessages.title(title))));
+                                        : AreaText.render(title))));
 
         // Each dialog gets its own single-use callbacks, holding the Area it acts on
         ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();

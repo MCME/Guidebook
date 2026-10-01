@@ -8,7 +8,6 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
-import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.List;
@@ -88,12 +87,7 @@ class GuidebookRoot {
             return;
         }
         // The console can't see a Title or Boss bar, so it gets the Description only
-        try {
-            GuidebookShow.sendDescription(sender, area);
-        } catch (MessageParseException ex) {
-            Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil().sendErrorMessage(sender, "There was an error while loading the message.");
-        }
+        GuidebookShow.sendDescription(sender, area);
     }
 
     @Executes("details")

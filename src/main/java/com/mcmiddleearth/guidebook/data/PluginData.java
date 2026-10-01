@@ -18,7 +18,6 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.pluginutil.FileUtil;
 import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
@@ -26,6 +25,7 @@ import com.mcmiddleearth.pluginutil.region.Region;
 import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -192,26 +191,23 @@ public class PluginData {
             area.clearPlayers();
         }
         infoAreas.clear();
-        File[] worldFolders = dataFolder.listFiles(FileUtil.getDirFilter());
-        for (File folder : worldFolders) {
-            File[] dataFiles = folder.listFiles(FileUtil.getFileExtFilter("yml"));
-            for (File dataFile : dataFiles) {
-                String areaName = FileUtil.getShortName(dataFile);
-                DevUtil.log("Load area " + areaName);
-                config = new YamlConfiguration();
-                try {
-                    config.load(dataFile);
-                    if (SphericalRegion.isValidConfig(config)) {
-                        addInfoArea(areaName, new SphericalInfoArea(areaName, config));
-                    } else if (PrismoidRegion.isValidConfig(config)) {
-                        addInfoArea(areaName, new PrismoidInfoArea(areaName, config));
-                    } else if (CuboidRegion.isValidConfig(config)
-                            || config.contains("xSize")) { // xSize is to notice old data format
-                        addInfoArea(areaName, new CuboidInfoArea(areaName, config));
-                    }
-                } catch (IOException | InvalidConfigurationException ex) {
-                    Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
-                }
+        AreaFileLoader.Outcome outcome = AreaFileLoader.load(dataFolder, LocalDateTime.now());
+        Logger logger = GuidebookPlugin.getPluginInstance().getLogger();
+        outcome.backup()
+                .ifPresent(backup -> logger.info("Backed up the Guidebook folder to " + backup
+                        + " before converting Guidebook areas from Legacy markup to MiniMessage."));
+        outcome.problems().forEach(logger::severe);
+        for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
+            String areaName = loaded.name();
+            config = loaded.config();
+            DevUtil.log("Load area " + areaName);
+            if (SphericalRegion.isValidConfig(config)) {
+                addInfoArea(areaName, new SphericalInfoArea(areaName, config));
+            } else if (PrismoidRegion.isValidConfig(config)) {
+                addInfoArea(areaName, new PrismoidInfoArea(areaName, config));
+            } else if (CuboidRegion.isValidConfig(config)
+                    || config.contains("xSize")) { // xSize is to notice old data format
+                addInfoArea(areaName, new CuboidInfoArea(areaName, config));
             }
         }
     }
