@@ -33,8 +33,10 @@ import org.bukkit.entity.Player;
  */
 public final class EditDialog {
 
+    // The Title and Subtitle limits count visible characters, so their inputs leave room for markup
     private static final int TITLE_MAX = 32;
     private static final int SUBTITLE_MAX = 64;
+    private static final int TITLE_SUBTITLE_INPUT_MAX = 256;
     private static final int DESCRIPTION_MAX = 4096;
 
     private static final String SHOW_TITLE = "show_title";
@@ -124,18 +126,20 @@ public final class EditDialog {
         if (error != null) {
             body.add(DialogBody.plainMessage(error.color(NamedTextColor.RED)));
         }
+        // A label can't hold a click action, so the WebUI link goes in the body, at the top of the dialog
+        body.add(DialogBody.plainMessage(webUiLink(values.description())));
 
         // The Dialog API puts body text above every input, so the Description's hint goes in its label
         List<DialogInput> inputs = List.of(
                 DialogInput.text(TITLE, Component.text("Title"))
                         .width(300)
                         .initial(values.title())
-                        .maxLength(TITLE_MAX)
+                        .maxLength(TITLE_SUBTITLE_INPUT_MAX)
                         .build(),
                 DialogInput.text(SUBTITLE, Component.text("Subtitle"))
                         .width(300)
                         .initial(values.subtitle())
-                        .maxLength(SUBTITLE_MAX)
+                        .maxLength(TITLE_SUBTITLE_INPUT_MAX)
                         .build(),
                 DialogInput.bool(SHOW_TITLE, Component.text("Show title"))
                         .initial(values.showTitle())
@@ -186,6 +190,20 @@ public final class EditDialog {
                         .inputs(inputs)
                         .build())
                 .type(DialogType.confirmation(save, cancel.build()))));
+    }
+
+    /** Clicking the text opens the Adventure WebUI with {@code description}, so staff can preview it while writing. */
+    private static Component webUiLink(String description) {
+        AreaText.WebUiLink link = AreaText.webUiLink(description);
+        String hover = "Opens the Adventure WebUI to preview the Description.";
+        if (link.isDescriptionTooLong()) {
+            hover += " The Description is too long to fit in the link, so it opens with the default opening, "
+                    + AreaText.DEFAULT_DESCRIPTION + ", instead.";
+        }
+        return GuidebookMessages.opensUrl(
+                Component.text("Preview the Description in the Adventure WebUI", GuidebookMessages.INFO),
+                link.url(),
+                hover);
     }
 
     private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
@@ -246,18 +264,23 @@ public final class EditDialog {
     }
 
     /**
-     * @return why the values can't be saved, or empty if they can. The dialog enforces the lengths, but a modified
-     *     client could send longer text.
+     * @return why the values can't be saved, or empty if they can. The Title and Subtitle limits count visible
+     *     characters, which the dialog can't enforce. It enforces the Description's length, but a modified client
+     *     could send longer text.
      */
     private static Optional<String> problem(Values values) {
         if (values.title().isBlank() && (values.showTitle() || values.showBossBar())) {
             return Optional.of("Give the area a Title, or untick Show title and Show boss bar.");
         }
-        if (values.title().length() > TITLE_MAX) {
-            return Optional.of("The Title is longer than " + TITLE_MAX + " characters.");
+        int titleLength = AreaText.visibleLength(values.title());
+        if (titleLength > TITLE_MAX) {
+            return Optional.of(
+                    "The Title has " + titleLength + " visible characters, more than the " + TITLE_MAX + " allowed.");
         }
-        if (values.subtitle().length() > SUBTITLE_MAX) {
-            return Optional.of("The Subtitle is longer than " + SUBTITLE_MAX + " characters.");
+        int subtitleLength = AreaText.visibleLength(values.subtitle());
+        if (subtitleLength > SUBTITLE_MAX) {
+            return Optional.of("The Subtitle has " + subtitleLength + " visible characters, more than the "
+                    + SUBTITLE_MAX + " allowed.");
         }
         if (values.description().length() > DESCRIPTION_MAX) {
             return Optional.of("The Description is longer than " + DESCRIPTION_MAX + " characters.");
