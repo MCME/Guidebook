@@ -6,12 +6,8 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.util.DescriptionRenderer;
+import com.mcmiddleearth.guidebook.data.LegacyMarkupConverter;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
-import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import com.mcmiddleearth.pluginutil.message.MessageType;
-import com.mcmiddleearth.pluginutil.message.config.FancyMessageConfigUtil;
 import com.mcmiddleearth.pluginutil.message.config.MessageParseException;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
@@ -37,12 +33,7 @@ public final class GuidebookShow {
                                     .append(Component.text(" (" + area.getName() + ")")),
                             Component.text(". Unfortunately there is no further description for this area.")));
         } else {
-            GuidebookMessages.send(
-                    recipient,
-                    DescriptionRenderer.toComponent(FancyMessageConfigUtil.addFromStringList(
-                                    new FancyMessage(MessageType.WHITE, PluginData.getMessageUtil()),
-                                    area.getDescription())
-                            .setRunDirect()));
+            GuidebookMessages.send(recipient, LegacyMarkupConverter.renderDescription(area.getDescription()));
         }
     }
 }
