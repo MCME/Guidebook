@@ -48,7 +48,7 @@ public abstract class InfoArea implements AreaView {
     private static final int NEAR_DISTANCE = 10;
     private static final Duration COOLDOWN = Duration.ofMinutes(1);
     private static final Title.Times TITLE_TIMES =
-            Title.Times.times(Ticks.duration(25), Ticks.duration(20), Ticks.duration(10));
+            Title.Times.times(Ticks.duration(15), Ticks.duration(25), Ticks.duration(10));
 
     protected Region region;
 
