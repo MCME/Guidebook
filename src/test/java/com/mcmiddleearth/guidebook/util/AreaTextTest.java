@@ -188,20 +188,30 @@ class AreaTextTest {
                 rendered.compact());
     }
 
-    @Test
-    void aWarpNameMayContainLettersDigitsAndUnderscoresHyphensAndFullStops() {
-        Component rendered = AreaText.render("<warp:Minas_Tirith-2.0>there</warp>");
+    @ParameterizedTest
+    @CsvSource(
+            delimiter = '|',
+            value = {
+                "<warp:helm's deep>|/warp helm's deep",
+                "<warp:\"Helm's Deep\">|/warp Helm's Deep",
+                "<warp:Barad-dûr>|/warp Barad-dûr",
+                "<warp:Minas_Tirith-2.0>|/warp Minas_Tirith-2.0"
+            })
+    void aWarpNameMayContainLettersDigitsSpacesApostrophesAndUnderscoresHyphensAndFullStops(
+            String tag, String command) {
+        Component rendered = AreaText.render(tag + "there</warp>");
 
-        assertEquals(
-                ClickEvent.runCommand("/warp Minas_Tirith-2.0"),
-                rendered.compact().clickEvent());
+        assertEquals(ClickEvent.runCommand(command), rendered.compact().clickEvent());
     }
 
     @ParameterizedTest
     @ValueSource(
             strings = {
-                "<warp:helms deep>there</warp>",
                 "<warp:a/b>there</warp>",
+                "<warp:' helms deep'>there</warp>",
+                "<warp:'helms deep '>there</warp>",
+                "<warp:helms  deep>there</warp>",
+                "<warp:@p>there</warp>",
                 "<warp>there</warp>",
                 "<warp:a:b>there</warp>"
             })

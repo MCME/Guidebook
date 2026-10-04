@@ -48,7 +48,8 @@ public final class AreaText {
 
     private static final String WIKI_URL = "https://tolkiengateway.net/wiki/";
 
-    private static final Pattern WARP_NAME = Pattern.compile("[A-Za-z0-9_.-]+");
+    // Words of letters, digits and ' _ - . with single spaces between them, as in "helm's deep"
+    private static final Pattern WARP_NAME = Pattern.compile("[\\p{L}\\p{N}'_.-]+( [\\p{L}\\p{N}'_.-]+)*");
 
     private AreaText() {}
 
@@ -80,7 +81,8 @@ public final class AreaText {
     private static Tag warp(ArgumentQueue arguments, Context context) {
         String name = onlyArgument(arguments, context, "A warp needs its name");
         if (!WARP_NAME.matcher(name).matches()) {
-            throw context.newException("A warp name may contain only letters, digits and _ - .", arguments);
+            throw context.newException(
+                    "A warp name may contain only letters, digits, single spaces and ' _ - .", arguments);
         }
         return Tag.styling(
                 NamedTextColor.GREEN,

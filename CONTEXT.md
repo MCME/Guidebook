@@ -48,7 +48,7 @@ MiniMessage tags of Guidebook's own, usable in a Title, Subtitle or Description 
 | `<date>…</date>`   | The text in yellow                                                                             |
 | `<term:'meaning'>` | The text in gold and underlined, with the meaning in grey on hover                             |
 | `<wiki:page>`      | The text in aqua and underlined, opening the page on Tolkien Gateway                           |
-| `<warp:name>`      | The text in green and underlined, running `/warp <name>`; the name is letters, digits, `_ - .` |
+| `<warp:name>`      | The text in green and underlined, running `/warp <name>`; the name is letters, digits, single spaces and `' _ - .` |
 | `<bullet>`         | A grey `▸ ` list marker                                                                        |
 
 **Welcome**:
