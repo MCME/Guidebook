@@ -22,8 +22,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
@@ -124,6 +126,21 @@ public final class EditDialog {
         }
     }
 
+    // A label doesn't wrap, so the tag list goes in a hover to keep the dialog centred
+    private static final Component GUIDEBOOK_TAGS = Component.text("[Guidebook tags]", NamedTextColor.AQUA)
+            .hoverEvent(HoverEvent.showText(Component.join(
+                    JoinConfiguration.newlines(),
+                    tagHint("<guide>", "Guide: in dark aqua, then white text"),
+                    tagHint("<bullet>", "a grey ▸ list marker"),
+                    tagHint("<date>…</date>", "yellow text"),
+                    tagHint("<term:'meaning'>…</term>", "gold, with the meaning on hover"),
+                    tagHint("<wiki:page>…</wiki>", "aqua, opens the Tolkien Gateway page"),
+                    tagHint("<warp:name>…</warp>", "green, runs /warp name"))));
+
+    private static Component tagHint(String tag, String rendersAs) {
+        return Component.text(tag).append(Component.text(" " + rendersAs, NamedTextColor.GRAY));
+    }
+
     /** Shows the dialog filled with {@code values}, with {@code error} at the top if it isn't null. */
     private static void show(Player player, InfoArea area, Mode mode, Values values, Component error) {
         List<DialogBody> body = new ArrayList<>();
@@ -156,10 +173,9 @@ public final class EditDialog {
                                 DESCRIPTION,
                                 Component.text("Description ")
                                         .append(Component.text(
-                                                "(MiniMessage; each line is sent as one line in chat. Guidebook"
-                                                        + " tags: <guide> <bullet> <date> <term:'meaning'>"
-                                                        + " <wiki:page> <warp:name>)",
-                                                NamedTextColor.GRAY)))
+                                                "(MiniMessage; each line is sent as one line in chat) ",
+                                                NamedTextColor.GRAY))
+                                        .append(GUIDEBOOK_TAGS))
                         .width(400)
                         .initial(values.description())
                         .maxLength(DESCRIPTION_MAX)
