@@ -69,8 +69,7 @@ final class GuidebookList {
         return GuidebookMessages.infoIndented(
                 Component.text("- "),
                 GuidebookMessages.suggestsCommand(
-                        Component.text(name, NamedTextColor.BLUE), "/guidebook details " + name, "Click for details."),
-                Component.text("."));
+                        Component.text(name, NamedTextColor.BLUE), "/guidebook details " + name, "Click for details."));
     }
 
     private static Component pageLink(String text, String filter, int page) {

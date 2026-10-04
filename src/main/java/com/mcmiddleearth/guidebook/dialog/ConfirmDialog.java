@@ -99,9 +99,9 @@ public final class ConfirmDialog {
                 .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text(mode.verb + " Guidebook area \"")
+                .base(DialogBase.builder(Component.text(mode.verb + " Guidebook area ")
                                 .append(GuidebookMessages.stressed(areaName))
-                                .append(Component.text("\"?")))
+                                .append(Component.text("?")))
                         .body(body)
                         .build())
                 .type(DialogType.confirmation(confirm, cancel))));

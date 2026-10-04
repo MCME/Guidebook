@@ -110,8 +110,8 @@ public final class EditDialog {
 
     /** Whether the dialog changes a stored Area, or creates one that {@code set} has built. */
     private enum Mode {
-        EDIT("Edit", "✔ Save", "saved"),
-        CREATE("Create", "✔ Create", "created");
+        EDIT("Editing", "✔ Save", "saved"),
+        CREATE("Creating", "✔ Create", "created");
 
         private final String titleVerb;
         private final String button;
@@ -195,9 +195,8 @@ public final class EditDialog {
                 .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area \"")
-                                .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
-                                .append(Component.text("\"")))
+                .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area ")
+                                .append(GuidebookMessages.stressed(area.getName())))
                         .canCloseWithEscape(mode == Mode.EDIT)
                         // The dialog stays open after a button until the server replaces or closes it, so that typed
                         // text isn't lost. Minecraft only allows that for a dialog that doesn't pause the
@@ -233,9 +232,8 @@ public final class EditDialog {
                 .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text("Preview of Guidebook area \"")
-                                .append(Component.text(area.getName(), GuidebookMessages.STRESSED))
-                                .append(Component.text("\"")))
+                .base(DialogBase.builder(Component.text("Preview of Guidebook area ")
+                                .append(GuidebookMessages.stressed(area.getName())))
                         .afterAction(DialogBase.DialogAfterAction.NONE)
                         .pause(false)
                         .body(body)
