@@ -43,7 +43,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 /**
  * @author Eriol_Eandur
  */
-public abstract class InfoArea implements AreaView {
+public abstract class InfoArea implements MarkableArea {
 
     private static final int NEAR_DISTANCE = 10;
     private static final Duration COOLDOWN = Duration.ofMinutes(1);
@@ -101,6 +101,11 @@ public abstract class InfoArea implements AreaView {
 
     public void setRegion(Region region) {
         this.region = region;
+    }
+
+    @Override
+    public String getWorldName() {
+        return region.getWorld().getName();
     }
 
     public Location getLocation() {
@@ -254,10 +259,12 @@ public abstract class InfoArea implements AreaView {
         bossBar.name(AreaText.render(title));
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public String getSubtitle() {
         return subtitle;
     }

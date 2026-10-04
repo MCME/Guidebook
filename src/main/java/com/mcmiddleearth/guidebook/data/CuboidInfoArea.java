@@ -59,6 +59,14 @@ public class CuboidInfoArea extends InfoArea {
         return Shape.CUBOID;
     }
 
+    @Override
+    public AreaGeometry getGeometry() {
+        Vector min = getMinPos();
+        Vector max = getMaxPos();
+        return new AreaGeometry.Cuboid(
+                min.getBlockX(), min.getBlockY(), min.getBlockZ(), max.getBlockX(), max.getBlockY(), max.getBlockZ());
+    }
+
     public void setCorners(Vector pos1, Vector pos2) {
         ((CuboidRegion) region).setCorners(pos1, pos2);
         /*sizeX = x;

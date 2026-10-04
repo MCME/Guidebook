@@ -7,6 +7,7 @@ run-paper = "3.1.0"
 spotless = "8.10.3"
 junit = "5.13.4"
 strokk-commands = "2.3.0"
+dynmap = "3.8"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -18,6 +19,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 strokk-commands-annotations = { module = "net.strokkur.commands:annotations-paper", version.ref = "strokk-commands" }
 strokk-commands-processor = { module = "net.strokkur.commands:processor-paper", version.ref = "strokk-commands" }
+dynmap-api = { module = "us.dynmap:DynmapCoreAPI", version.ref = "dynmap" }
 
 [plugins]
 run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }

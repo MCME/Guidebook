@@ -40,6 +40,12 @@ public class SphericalInfoArea extends InfoArea {
         return Shape.SPHERE;
     }
 
+    @Override
+    public AreaGeometry getGeometry() {
+        Location center = getLocation();
+        return new AreaGeometry.Sphere(center.getBlockX(), center.getBlockY(), center.getBlockZ(), getRadius());
+    }
+
     public void setRadius(int radius) {
         ((SphericalRegion) region).setRadius(radius);
     }

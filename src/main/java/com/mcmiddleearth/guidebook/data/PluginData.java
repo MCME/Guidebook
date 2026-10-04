@@ -18,6 +18,9 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.util.DevUtil;
+import com.mcmiddleearth.guidebook.webmap.MarkerLayer;
+import com.mcmiddleearth.guidebook.webmap.NoWebMap;
+import com.mcmiddleearth.guidebook.webmap.WebMap;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
@@ -47,6 +50,8 @@ public class PluginData {
     private static final Map<String, InfoArea> infoAreas = new HashMap<>();
 
     private static final AreaRegistry<InfoArea> registry = new AreaRegistry<>(infoAreas.values());
+
+    private static MarkerLayer webMapLayer = new NoWebMap().layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
 
     private static Set<UUID> excludedPlayers = new HashSet<>();
 
@@ -205,6 +210,28 @@ public class PluginData {
                     || config.contains("xSize")) { // xSize is to notice old data format
                 addInfoArea(areaName, new CuboidInfoArea(areaName, config));
             }
+        }
+        drawWebMap();
+    }
+
+    /** Draws every Area on this Web map from now on, starting with the Areas already loaded. */
+    public static void useWebMap(WebMap webMap) {
+        webMapLayer = webMap.layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
+        drawWebMap();
+    }
+
+    private static void drawWebMap() {
+        webMapLayer.clear();
+        for (InfoArea area : infoAreas.values()) {
+            // Its world isn't loaded, so there's nowhere to draw it
+            if (!area.getRegion().isValid()) {
+                GuidebookPlugin.getPluginInstance()
+                        .getLogger()
+                        .warning("Area " + area.getName()
+                                + " isn't drawn on the Web map because its world isn't loaded.");
+                continue;
+            }
+            AreaMarkers.toMarker(area).ifPresent(webMapLayer::put);
         }
     }
 

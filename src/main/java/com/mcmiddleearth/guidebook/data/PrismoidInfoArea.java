@@ -18,6 +18,7 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -40,6 +41,11 @@ public class PrismoidInfoArea extends InfoArea {
     @Override
     public Shape getShape() {
         return Shape.PRISM;
+    }
+
+    @Override
+    public AreaGeometry getGeometry() {
+        return new AreaGeometry.Prism(List.of(getXPoints()), List.of(getZPoints()), getMinY(), getMaxY());
     }
 
     public void setHeight(int minY, int maxY) {

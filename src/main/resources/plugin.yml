@@ -5,7 +5,7 @@ description: sending information about places via chat messages
 load: POSTWORLD
 # Multiverse-Core loads its worlds in its own onEnable. Saved areas look their world up by name
 # on load, so Guidebook must enable after Multiverse or those lookups return null.
-softdepend: [Multiverse-Core, WorldEdit, PluginUtils]
+softdepend: [Multiverse-Core, WorldEdit, PluginUtils, dynmap]
 api-version: '${apiVersion}'
 
 permissions:

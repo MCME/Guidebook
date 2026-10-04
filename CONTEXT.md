@@ -60,3 +60,10 @@ Whether an Area welcomes anyone. This is set by staff for each Area.
 **Opted out**:
 A player who has chosen, for themselves, not to receive any Welcomes.
 _Avoid_: excluded, off
+
+**Web map**:
+A browser map of the server's worlds (currently Dynmap). Guidebook draws every Area on it so staff can scan Areas and check their text without visiting them. It is a staff tool, not a way for players to discover Areas.
+_Avoid_: Dynmap (when you mean any web map), map (that's the in-game item)
+
+**Area marker**:
+One Area drawn on the Web map: its Shape's outline seen from above, marked as Enabled or Disabled, labelled with its Title, and showing its Title, Subtitle and Description as plain text when clicked.

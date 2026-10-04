@@ -16,6 +16,7 @@ repositories {
     maven("https://repo.mcmiddleearth.com/releases")
     maven("https://maven.enginehub.org/repo/")
     maven("https://eldonexus.de/repository/maven-public/")
+    maven("https://repo.mikeprimm.com/")
 }
 
 dependencies {
@@ -23,6 +24,7 @@ dependencies {
     compileOnly(libs.pluginutils)
     compileOnly(libs.worldedit.core)
     compileOnly(libs.worldedit.bukkit)
+    compileOnly(libs.dynmap.api)
     compileOnly(libs.strokk.commands.annotations)
     annotationProcessor(libs.strokk.commands.processor)
 

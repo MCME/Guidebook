@@ -20,6 +20,9 @@ import com.mcmiddleearth.guidebook.command.GuidebookRootBrigadier;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.listener.PlayerListener;
+import com.mcmiddleearth.guidebook.webmap.NoWebMap;
+import com.mcmiddleearth.guidebook.webmap.WebMap;
+import com.mcmiddleearth.guidebook.webmap.dynmap.DynmapWebMap;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.List;
 import org.bukkit.Bukkit;
@@ -37,6 +40,8 @@ public class GuidebookPlugin extends JavaPlugin {
 
     private static GuidebookPlugin pluginInstance;
 
+    private WebMap webMap = new NoWebMap();
+
     public static GuidebookPlugin getPluginInstance() {
         return pluginInstance;
     }
@@ -44,6 +49,8 @@ public class GuidebookPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         pluginInstance = this;
+        // Before loading, so loading draws the Areas once
+        useWebMap();
         PluginData.loadData();
 
         this.initializePlayerMoveRunnable();
@@ -60,6 +67,17 @@ public class GuidebookPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         PluginData.disable();
+        webMap.close();
+    }
+
+    private void useWebMap() {
+        if (getServer().getPluginManager().isPluginEnabled("dynmap")) {
+            webMap = DynmapWebMap.create();
+            getLogger().info("Drawing Guidebook areas on Dynmap.");
+        } else {
+            getLogger().info("Dynmap isn't running, so Guidebook areas aren't drawn on a Web map.");
+        }
+        PluginData.useWebMap(webMap);
     }
 
     public void initializePlayerMoveRunnable() {
