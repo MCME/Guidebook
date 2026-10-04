@@ -6,11 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mcmiddleearth.guidebook.util.AreaText;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -61,6 +68,12 @@ class LegacyMarkupConverterTest {
                 List.of("§3Guide: §ffirst line\\n", "\\n", "§esecond paragraph"),
                 List.of("§3Guide: §f1 < 2 and <red> is not a tag"),
                 List.of("§3Guide: §f"),
+                List.of("§3Guide: §7Ruins"),
+                List.of("§3Guide: §fThe tower.\\n", "§3Guide: §fThe hill."),
+                List.of("§3Guide: §3§lWeathertop"),
+                List.of("§lBold §3Guide: §fafter bold"),
+                List.of("[Click=\"/warp edoras\"]§bwarp[/Click]§3Guide: §fafter a click"),
+                List.of("§3Guide: §f[Click=\"/warp edoras\"]warp[/Click]§7"),
                 List.of("Welcome to ", "Edoras."));
     }
 
@@ -83,7 +96,7 @@ class LegacyMarkupConverterTest {
 
     @Test
     void hexColoursBecomeHexTags() {
-        assertEquals("<dark_aqua>Guide: </dark_aqua><#FF8800>orange", convertedDescription("§3Guide: #ff8800orange"));
+        assertEquals("<guide><#FF8800>orange", convertedDescription("§3Guide: #ff8800orange"));
     }
 
     @Test
@@ -152,6 +165,28 @@ class LegacyMarkupConverterTest {
     }
 
     @Test
+    void theGuideOpeningBecomesTheGuideTag() {
+        assertEquals("<guide>Welcome to Edoras.", convertedDescription("§3Guide: §fWelcome to Edoras."));
+    }
+
+    @Test
+    void aColourOtherThanWhiteAfterTheGuideOpeningIsKept() {
+        assertEquals("<guide><gray>Ruins of Amon Sûl", convertedDescription("§3Guide: §7Ruins of Amon Sûl"));
+    }
+
+    @Test
+    void everyGuideOpeningBecomesTheGuideTag() {
+        assertEquals(
+                "<guide>The tower.\n <guide>The hill.",
+                convertedDescription("§3Guide: §fThe tower.\\n", "§3Guide: §fThe hill."));
+    }
+
+    @Test
+    void aGuideOpeningThatTheTextAfterItContinuesInDarkAquaIsKeptAsColour() {
+        assertEquals("<dark_aqua>Guide: <bold>Weathertop", convertedDescription("§3Guide: §3§lWeathertop"));
+    }
+
+    @Test
     void titleAndSubtitleConvertFromColourCodes() {
         YamlConfiguration area = yaml("""
                 title: §6Edoras
@@ -174,7 +209,7 @@ class LegacyMarkupConverterTest {
 
         LegacyMarkupConverter.convert(area);
 
-        assertEquals("<dark_aqua>Guide: </dark_aqua><white>Welcome", area.getString("description"));
+        assertEquals("<guide>Welcome", area.getString("description"));
     }
 
     @Test
@@ -194,7 +229,7 @@ class LegacyMarkupConverterTest {
 
         assertFalse(area.contains("title"));
         assertFalse(area.contains("subtitle"));
-        assertEquals("<dark_aqua>Guide: </dark_aqua><white>Welcome", area.getString("description"));
+        assertEquals("<guide>Welcome", area.getString("description"));
     }
 
     @Test
@@ -250,10 +285,48 @@ class LegacyMarkupConverterTest {
 
     @ParameterizedTest
     @MethodSource("samples")
+    void theConvertedDescriptionShowsTheSameColoursFormatsAndActionsAsTheOldRenderer(List<String> lines)
+            throws Exception {
+        assertEquals(
+                styledCharacters(LegacyMarkupConverter.renderDescription(lines)),
+                styledCharacters(AreaText.render(convertedDescription(lines.toArray(String[]::new)))));
+    }
+
+    /** Each visible character with the colour, formats, click and hover text it's shown with in chat. */
+    private static List<String> styledCharacters(Component component) {
+        List<String> characters = new ArrayList<>();
+        addStyledCharacters(component, Style.empty(), characters);
+        return characters;
+    }
+
+    private static void addStyledCharacters(Component component, Style parent, List<String> characters) {
+        Style style = component.style().merge(parent, Style.Merge.Strategy.IF_ABSENT_ON_TARGET);
+        if (component instanceof TextComponent text) {
+            // Chat shows uncoloured text in white, and a format not set is off
+            TextColor colour = style.color() == null ? NamedTextColor.WHITE : style.color();
+            String formats = Arrays.stream(TextDecoration.values())
+                    .filter(decoration -> style.decoration(decoration) == TextDecoration.State.TRUE)
+                    .toList()
+                    .toString();
+            String hover = style.hoverEvent() == null
+                    ? null
+                    : plain((Component) style.hoverEvent().value());
+            for (char character : text.content().toCharArray()) {
+                characters.add(character + " " + colour + " " + formats + " " + style.clickEvent() + " " + hover);
+            }
+        }
+        for (Component child : component.children()) {
+            addStyledCharacters(child, style, characters);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("samples")
     void theConvertedDescriptionHasNoRedundantTags(List<String> lines) {
         String converted = convertedDescription(lines.toArray(String[]::new));
 
         assertFalse(converted.contains("<!"), converted);
-        assertFalse(converted.matches("(?s).*<(\\w+)>[^<]*<\\1>.*"), converted);
+        // <guide> isn't a colour, so it's written once per opening
+        assertFalse(converted.matches("(?s).*<(?!guide>)(\\w+)>[^<]*<\\1>.*"), converted);
     }
 }

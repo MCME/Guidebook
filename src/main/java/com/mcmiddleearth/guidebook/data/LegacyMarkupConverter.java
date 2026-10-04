@@ -32,6 +32,9 @@ public final class LegacyMarkupConverter {
     private static final String SUBTITLE = "subtitle";
     private static final String DESCRIPTION = "description";
 
+    /** Stands for the house opening, {@code Guide: } in dark aqua and then white text (ADR 0004). */
+    private static final String GUIDE_TAG = "<guide>";
+
     /** The two characters that mark a line break in a Legacy Description. */
     private static final String LINE_BREAK = "\\n";
 
@@ -89,9 +92,54 @@ public final class LegacyMarkupConverter {
         return toComponent(message);
     }
 
+    /**
+     * Each old {@code §3Guide: } opening becomes the {@code <guide>} tag, so the house opening is stored one way in
+     * every Area. The text between openings is written separately.
+     */
     private static String convertDescription(List<String> lines) throws MessageParseException {
         List<Component> parts = renderDescription(lines).children();
+        StringBuilder description = new StringBuilder();
+        List<Component> section = new ArrayList<>();
+        boolean afterGuide = false;
+        for (int i = 0; i < parts.size(); i++) {
+            Component part = parts.get(i);
+            if (isGuideOpening(parts, i)) {
+                description.append(convertParts(section)).append(GUIDE_TAG);
+                section = new ArrayList<>();
+                afterGuide = true;
+            } else {
+                // <guide> leaves white open, so white text after it needn't say so
+                section.add(afterGuide && NamedTextColor.WHITE.equals(part.color()) ? part.color(null) : part);
+            }
+        }
+        return description.append(convertParts(section)).toString();
+    }
+
+    private static String convertParts(List<Component> parts) {
         return serialize(cleanUp(groupByColour(parts))) + trailingColourTag(parts);
+    }
+
+    /**
+     * Whether {@code parts[i]} is the old opening, {@code Guide: } in dark aqua and then a colour code, where swapping
+     * it for {@code <guide>} looks the same. The tag makes the text after it white, and doesn't close a format, click
+     * or hover the serialiser leaves open before it.
+     */
+    private static boolean isGuideOpening(List<Component> parts, int i) {
+        Component part = parts.get(i);
+        boolean opening = part instanceof TextComponent text
+                && text.content().equals("Guide: ")
+                && NamedTextColor.DARK_AQUA.equals(part.color())
+                && isPlain(part);
+        boolean colourChangesAfter = i + 1 == parts.size()
+                || !NamedTextColor.DARK_AQUA.equals(parts.get(i + 1).color());
+        boolean nothingOpenBefore = i == 0 || isPlain(parts.get(i - 1));
+        return opening && colourChangesAfter && nothingOpenBefore;
+    }
+
+    private static boolean isPlain(Component part) {
+        return part.clickEvent() == null
+                && part.hoverEvent() == null
+                && part.decorations().values().stream().noneMatch(state -> state == TextDecoration.State.TRUE);
     }
 
     // Every part carries its own colour, so neighbouring parts of one colour are grouped under it to write it once

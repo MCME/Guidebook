@@ -156,7 +156,9 @@ public final class EditDialog {
                                 DESCRIPTION,
                                 Component.text("Description ")
                                         .append(Component.text(
-                                                "(MiniMessage; each line is sent as one line in chat)",
+                                                "(MiniMessage; each line is sent as one line in chat. Guidebook"
+                                                        + " tags: <guide> <bullet> <date> <term:'meaning'>"
+                                                        + " <wiki:page> <warp:name>)",
                                                 NamedTextColor.GRAY)))
                         .width(400)
                         .initial(values.description())

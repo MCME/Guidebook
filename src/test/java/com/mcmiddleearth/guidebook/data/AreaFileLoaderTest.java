@@ -81,7 +81,7 @@ class AreaFileLoaderTest {
         YamlConfiguration rewritten = YamlConfiguration.loadConfiguration(file.toFile());
         assertTrue(rewritten.getBoolean("minimessage"));
         assertEquals("<gold>Edoras", rewritten.getString("title"));
-        assertEquals("<dark_aqua>Guide: </dark_aqua><white>Welcome\n to Edoras.", rewritten.getString("description"));
+        assertEquals("<guide>Welcome\n to Edoras.", rewritten.getString("description"));
         assertEquals(
                 rewritten.getString("description"),
                 outcome.areas().getFirst().config().getString("description"));

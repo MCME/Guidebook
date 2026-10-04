@@ -33,11 +33,23 @@ _Avoid_: scoreboard
 The line shown under the Title on entry. It is written in MiniMessage, and its length limit counts only the visible text.
 
 **Description**:
-The body text of an Area, sent to the player in chat when they enter it. It is written in MiniMessage. By convention it opens with `Guide:` in dark aqua followed by white text, and a new Area starts with that opening.
+The body text of an Area, sent to the player in chat when they enter it. It is written in MiniMessage. By convention it opens with the `<guide>` tag (`Guide:` in dark aqua followed by white text), and a new Area starts with that opening.
 
 **Legacy markup**:
 How Titles, Subtitles and Descriptions were written before MiniMessage: `§` colour codes (typed as `#`), `#RRGGBB` hex colours, and `[Click="…"]`/`[Hover="…"]` tags. Each Area is converted from it to MiniMessage once, keeping exactly what players saw.
 _Avoid_: old format, PluginUtils markup
+
+**Guidebook tags**:
+MiniMessage tags of Guidebook's own, usable in a Title, Subtitle or Description alongside the standard ones. They are permanent once stored text uses them (ADR 0004).
+
+| Tag                | Renders as                                                                                     |
+|--------------------|------------------------------------------------------------------------------------------------|
+| `<guide>`          | `Guide: ` in dark aqua, then the text after it in white (the house opening)                    |
+| `<date>…</date>`   | The text in yellow                                                                             |
+| `<term:'meaning'>` | The text in gold and underlined, with the meaning in grey on hover                             |
+| `<wiki:page>`      | The text in aqua and underlined, opening the page on Tolkien Gateway                           |
+| `<warp:name>`      | The text in green and underlined, running `/warp <name>`; the name is letters, digits, `_ - .` |
+| `<bullet>`         | A grey `▸ ` list marker                                                                        |
 
 **Welcome**:
 What a player receives when they enter an Area: the Title, then the Description. Welcomes have a cooldown per player per Area.
