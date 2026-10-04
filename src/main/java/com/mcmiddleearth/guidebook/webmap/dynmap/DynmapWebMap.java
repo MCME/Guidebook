@@ -7,6 +7,7 @@ import com.mcmiddleearth.guidebook.webmap.Outline;
 import com.mcmiddleearth.guidebook.webmap.WebMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.dynmap.DynmapCommonAPI;
 import org.dynmap.DynmapCommonAPIListener;
 import org.dynmap.markers.AreaMarker;
@@ -183,14 +184,21 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
         }
     }
 
-    // Dynmap shows a description as HTML
+    // Dynmap shows a description as HTML. Each line is its own block, so a triple-click selects just that line
     private static String toHtml(String plainText) {
+        return plainText
+                .lines()
+                .map(line -> line.isEmpty() ? "<br>" : escapeHtml(line))
+                .map(line -> "<div>" + line + "</div>")
+                .collect(Collectors.joining());
+    }
+
+    private static String escapeHtml(String plainText) {
         return plainText
                 .replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
-                .replace("'", "&#39;")
-                .replace("\n", "<br>");
+                .replace("'", "&#39;");
     }
 }

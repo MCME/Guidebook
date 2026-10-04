@@ -43,20 +43,17 @@ public final class AreaMarkers {
 
     // <guide> is kept as "Guide: ", so staff can spot Descriptions missing the house opening
     private static String popup(MarkableArea area) {
-        StringBuilder popup = new StringBuilder()
-                .append(area.getName())
-                .append(" (")
-                .append(area.getShape().displayName())
-                .append(")\n");
-        // An empty Title or Subtitle would only leave a gap
-        for (String line : List.of(area.getTitle(), area.getSubtitle())) {
-            if (!AreaText.isVisiblyBlank(line)) {
-                popup.append(AreaText.plainText(line)).append('\n');
-            }
-        }
-        return popup.append('\n')
-                .append(AreaText.plainText(area.getDescription()))
-                .toString();
+        // The name is alone on its line so it can be copied straight into a command
+        return area.getName()
+                + "\nShape: " + area.getShape().displayName()
+                + "\nTitle: " + orNone(area.getTitle(), "(none)")
+                + "\nSubtitle: " + orNone(area.getSubtitle(), "(none)")
+                + "\n\n" + orNone(area.getDescription(), "(no Description)");
+    }
+
+    // Missing text is spelled out, so staff can spot it rather than an empty gap
+    private static String orNone(String miniMessage, String none) {
+        return AreaText.isVisiblyBlank(miniMessage) ? none : AreaText.plainText(miniMessage);
     }
 
     private static MarkerStyle style(MarkableArea area) {

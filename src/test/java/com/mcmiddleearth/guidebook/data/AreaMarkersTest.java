@@ -96,8 +96,8 @@ class AreaMarkersTest {
         Marker cuboid = markerOf(shaped(new AreaGeometry.Cuboid(0, 0, 0, 1, 1, 1)));
         Marker prism = markerOf(shaped(new AreaGeometry.Prism(List.of(0, 1, 1), List.of(0, 0, 1), 0, 1)));
 
-        assertEquals("minas (cuboid)", cuboid.popup().lines().findFirst().orElseThrow());
-        assertEquals("minas (prism)", prism.popup().lines().findFirst().orElseThrow());
+        assertEquals("Shape: cuboid", cuboid.popup().lines().skip(1).findFirst().orElseThrow());
+        assertEquals("Shape: prism", prism.popup().lines().skip(1).findFirst().orElseThrow());
     }
 
     private static TestArea titled(String title, boolean enabled) {
@@ -154,30 +154,38 @@ class AreaMarkersTest {
         return markerOf(area).popup();
     }
 
+    // The name is alone on its line so it can be copied straight into a command
     @Test
-    void thePopupShowsTheNameAndShapeThenTheTextAsPlainText() {
+    void thePopupShowsTheNameThenTheShapeAndTextAsPlainText() {
         String popup =
                 popupOf("<gold>Minas Tirith", "<i>The Tower of Guard", "<guide>The <term:'a city'>great city</term>");
 
-        assertEquals("world-gondor-minas (sphere)\nMinas Tirith\nThe Tower of Guard\n\nGuide: The great city", popup);
-    }
-
-    @Test
-    void anEmptySubtitleIsLeftOutOfThePopup() {
-        assertEquals("world-gondor-minas (sphere)\nMinas Tirith\n\nGuide: ", popupOf("Minas Tirith", "", "<guide>"));
-    }
-
-    @Test
-    void anEmptyTitleIsLeftOutOfThePopup() {
         assertEquals(
-                "world-gondor-minas (sphere)\nThe Tower of Guard\n\nGuide: ",
-                popupOf(" ", "The Tower of Guard", "<guide>"));
+                "world-gondor-minas\nShape: sphere\nTitle: Minas Tirith\nSubtitle: The Tower of Guard\n\n"
+                        + "Guide: The great city",
+                popup);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  ", "<gold></gold>"})
+    void aMissingTitleAndSubtitleAreShownAsNone(String missing) {
+        assertEquals(
+                "world-gondor-minas\nShape: sphere\nTitle: (none)\nSubtitle: (none)\n\nGuide: ",
+                popupOf(missing, missing, "<guide>"));
+    }
+
+    @Test
+    void aMissingDescriptionIsShownAsNone() {
+        assertEquals(
+                "world-gondor-minas\nShape: sphere\nTitle: Minas Tirith\nSubtitle: (none)\n\n(no Description)",
+                popupOf("Minas Tirith", "", " "));
     }
 
     @Test
     void theDescriptionKeepsItsLineBreaks() {
         assertEquals(
-                "world-gondor-minas (sphere)\nMinas Tirith\n\nGuide: The city\n▸ The citadel\n▸ The gate",
+                "world-gondor-minas\nShape: sphere\nTitle: Minas Tirith\nSubtitle: (none)\n\n"
+                        + "Guide: The city\n▸ The citadel\n▸ The gate",
                 popupOf("Minas Tirith", "", "<guide>The city\n<bullet>The citadel<newline><bullet>The gate"));
     }
 
@@ -185,7 +193,7 @@ class AreaMarkersTest {
     @Test
     void charactersSpecialToHtmlAreLeftAsTheyAre() {
         assertEquals(
-                "world-gondor-minas (sphere)\nFish & Chips\n\na < b > c & d",
+                "world-gondor-minas\nShape: sphere\nTitle: Fish & Chips\nSubtitle: (none)\n\na < b > c & d",
                 popupOf("Fish & Chips", "", "a < b > c & d"));
     }
 }
