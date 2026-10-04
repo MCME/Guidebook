@@ -27,6 +27,7 @@ import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 
 /**
@@ -127,15 +128,21 @@ public final class EditDialog {
     }
 
     // A label doesn't wrap, so the tag list goes in a hover to keep the dialog centred
-    private static final Component GUIDEBOOK_TAGS = Component.text("[Guidebook tags]", NamedTextColor.AQUA)
+    // Underlined with an info mark, so it reads as something to hover
+    private static final Component GUIDEBOOK_TAGS = Component.text("ⓘ ", NamedTextColor.AQUA)
+            .append(Component.text("Guidebook tags", NamedTextColor.AQUA, TextDecoration.UNDERLINED))
             .hoverEvent(HoverEvent.showText(Component.join(
                     JoinConfiguration.newlines(),
                     tagHint("<guide>", "Guide: in dark aqua, then white text"),
                     tagHint("<bullet>", "a grey ▸ list marker"),
                     tagHint("<date>…</date>", "yellow text"),
-                    tagHint("<term:'meaning'>…</term>", "gold, with the meaning on hover"),
+                    tagHint("<term:meaning>…</term>", "gold, with the meaning on hover"),
                     tagHint("<wiki:page>…</wiki>", "aqua, opens the Tolkien Gateway page"),
-                    tagHint("<warp:name>…</warp>", "green, runs /warp name"))));
+                    tagHint("<warp:name>…</warp>", "green, runs /warp name"),
+                    Component.empty(),
+                    Component.text(
+                            "Quote an argument containing : or >, e.g. <term:'Sindarin: hill'>",
+                            NamedTextColor.GRAY))));
 
     private static Component tagHint(String tag, String rendersAs) {
         return Component.text(tag).append(Component.text(" " + rendersAs, NamedTextColor.GRAY));
