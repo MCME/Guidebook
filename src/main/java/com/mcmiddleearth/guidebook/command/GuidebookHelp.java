@@ -110,15 +110,14 @@ final class GuidebookHelp {
      */
     static void sendAll(CommandSender sender) {
         GuidebookMessages.startBlock(sender);
-        GuidebookMessages.send(
-                sender, GuidebookMessages.info(Component.text("Guidebook commands (click one to fill it in):")));
+        GuidebookMessages.send(sender, GuidebookMessages.info("Guidebook commands (click one to fill it in):"));
         visibleTo(sender).forEach(entry -> GuidebookMessages.send(sender, summaryLine(entry)));
         sendManual(sender);
     }
 
     private static Component summaryLine(Entry entry) {
         Component line = GuidebookMessages.infoShortIndented(
-                fillsIn(entry, entry.usages().getFirst()), Component.text(": " + entry.description()));
+                fillsIn(entry, entry.usages().getFirst()), ": " + entry.description());
         if (entry.usages().size() == 1) {
             return line;
         }
@@ -140,11 +139,11 @@ final class GuidebookHelp {
         }
         Entry entry = found.get();
         GuidebookMessages.startBlock(sender);
-        GuidebookMessages.send(sender, GuidebookMessages.info(Component.text("Help for /guidebook " + entry.name())));
+        GuidebookMessages.send(sender, GuidebookMessages.info("Help for /guidebook " + entry.name()));
         for (String usage : entry.usages()) {
             GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(fillsIn(entry, usage)));
         }
-        GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(Component.text(entry.description())));
+        GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(entry.description()));
     }
 
     /** The usage in the stressed colour. Clicking it fills in the command, up to where its arguments start. */
@@ -162,7 +161,7 @@ final class GuidebookHelp {
         GuidebookMessages.send(
                 sender,
                 GuidebookMessages.infoShortIndented(
-                        Component.text("Manual: "),
+                        "Manual: ",
                         GuidebookMessages.opensUrl(Component.text(MANUAL), MANUAL, "Click to open the manual.")));
     }
 }

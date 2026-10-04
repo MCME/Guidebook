@@ -25,12 +25,12 @@ public final class GuidebookShow {
             GuidebookMessages.send(
                     recipient,
                     GuidebookMessages.info(
-                            Component.text("Welcome to "),
+                            "Welcome to ",
                             Component.text()
                                     .color(GuidebookMessages.STRESSED)
                                     .append(AreaText.render(area.getTitle()))
                                     .append(Component.text(" (" + area.getName() + ")")),
-                            Component.text(". Unfortunately there is no further description for this area.")));
+                            ". Unfortunately there is no further description for this area."));
         } else {
             GuidebookMessages.send(recipient, AreaText.render(area.getDescription()));
         }

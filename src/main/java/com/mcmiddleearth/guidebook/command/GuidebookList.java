@@ -51,8 +51,7 @@ final class GuidebookList {
         GuidebookMessages.startBlock(sender);
         GuidebookMessages.send(
                 sender,
-                GuidebookMessages.info(Component.text(
-                        "Guidebook areas (click for details) [page " + shownPage + "/" + maxPage + "]")));
+                GuidebookMessages.info("Guidebook areas (click for details) [page " + shownPage + "/" + maxPage + "]"));
         if (shownPage > 1) {
             GuidebookMessages.send(sender, pageLink("---^ page up ^---", filter, shownPage - 1));
         }
@@ -67,7 +66,7 @@ final class GuidebookList {
 
     private static Component areaLine(String name) {
         return GuidebookMessages.infoIndented(
-                Component.text("- "),
+                "- ",
                 GuidebookMessages.suggestsCommand(
                         Component.text(name, NamedTextColor.BLUE), "/guidebook details " + name, "Click for details."));
     }

@@ -7,7 +7,6 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
-import net.kyori.adventure.text.Component;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
@@ -33,6 +32,6 @@ final class GuidebookDev {
     }
 
     private static void sendIndented(CommandSender sender, String text) {
-        GuidebookMessages.send(sender, GuidebookMessages.infoIndented(Component.text(text)));
+        GuidebookMessages.send(sender, GuidebookMessages.infoIndented(text));
     }
 }

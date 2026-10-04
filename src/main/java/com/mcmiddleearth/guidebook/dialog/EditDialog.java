@@ -264,8 +264,8 @@ public final class EditDialog {
         if (mode == Mode.EDIT && PluginData.getInfoAreaExact(areaName) != area) {
             GuidebookMessages.sendError(
                     player,
-                    GuidebookMessages.errorArea(areaName),
-                    Component.text(" was deleted or reloaded while you edited it. Your changes were NOT saved."));
+                    GuidebookMessages.area(areaName),
+                    " was deleted or reloaded while you edited it. Your changes were NOT saved.");
             player.closeDialog();
             return;
         }
@@ -279,8 +279,8 @@ public final class EditDialog {
         if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
             GuidebookMessages.sendError(
                     player,
-                    GuidebookMessages.errorArea(areaName),
-                    Component.text(" was created by someone else while you edited it. Nothing was created."));
+                    GuidebookMessages.area(areaName),
+                    " was created by someone else while you edited it. Nothing was created.");
             return;
         }
 
@@ -302,15 +302,11 @@ public final class EditDialog {
             }
         } catch (IOException ex) {
             Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendError(
-                    player,
-                    Component.text("There was an error. "),
-                    GuidebookMessages.errorArea(areaName),
-                    Component.text(" was NOT " + mode.done + "."));
+            GuidebookMessages.sendNotDone(player, areaName, mode.done);
             return;
         }
         // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
-        GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName), Component.text(" was " + mode.done + ":"));
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName), " was " + mode.done + ":");
         area.previewWelcome(player);
     }
 

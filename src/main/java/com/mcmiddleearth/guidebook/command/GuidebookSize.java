@@ -16,7 +16,6 @@ import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
@@ -34,8 +33,7 @@ final class GuidebookSize {
     /** Bare {@code size <area>}: shows the Area's Shape and dimensions, and the form that resizes it. */
     static void show(CommandSender sender, InfoArea area) {
         GuidebookMessages.startBlock(sender);
-        GuidebookMessages.sendInfo(
-                sender, GuidebookMessages.area(area.getName()), Component.text(" is a " + dimensions(area) + "."));
+        GuidebookMessages.sendInfo(sender, GuidebookMessages.area(area.getName()), " is a " + dimensions(area) + ".");
         sendForm(sender, area);
     }
 
@@ -60,10 +58,10 @@ final class GuidebookSize {
                 && !entity.getWorld().equals(area.getLocation().getWorld())) {
             GuidebookMessages.sendError(
                     sender,
-                    Component.text("You are not in the world of "),
-                    GuidebookMessages.errorArea(area.getName()),
-                    Component.text(". Its corners were set in its own world, "
-                            + area.getLocation().getWorld().getName() + "."));
+                    "You are not in the world of ",
+                    GuidebookMessages.area(area.getName()),
+                    ". Its corners were set in its own world, "
+                            + area.getLocation().getWorld().getName() + ".");
         }
     }
 
@@ -81,22 +79,17 @@ final class GuidebookSize {
             PluginData.saveArea(area);
         } catch (IOException ex) {
             Logger.getLogger(GuidebookSize.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendError(
-                    sender,
-                    Component.text("There was an error. "),
-                    GuidebookMessages.errorArea(area.getName()),
-                    Component.text(" was NOT saved."));
+            GuidebookMessages.sendNotDone(sender, area.getName(), "saved");
             return;
         }
-        GuidebookMessages.sendInfo(
-                sender, Component.text("Size of "), GuidebookMessages.area(area.getName()), Component.text(" set."));
+        GuidebookMessages.sendInfo(sender, "Size of ", GuidebookMessages.area(area.getName()), " set.");
     }
 
     private static void sendWrongFormMessage(CommandSender sender, InfoArea area) {
         GuidebookMessages.sendError(
                 sender,
-                GuidebookMessages.errorArea(area.getName()),
-                Component.text(" is a " + area.getShape().displayName() + "."));
+                GuidebookMessages.area(area.getName()),
+                " is a " + area.getShape().displayName() + ".");
         sendForm(sender, area);
     }
 
@@ -119,7 +112,7 @@ final class GuidebookSize {
         GuidebookMessages.send(
                 sender,
                 GuidebookMessages.info(
-                        Component.text("Resize it with "),
+                        "Resize it with ",
                         GuidebookMessages.suggestsCommand(
                                 GuidebookMessages.stressed(command + form.arguments()),
                                 command,

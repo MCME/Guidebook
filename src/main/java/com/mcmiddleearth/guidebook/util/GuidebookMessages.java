@@ -1,5 +1,7 @@
 package com.mcmiddleearth.guidebook.util;
 
+import java.util.Arrays;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -31,73 +33,82 @@ public final class GuidebookMessages {
 
     private GuidebookMessages() {}
 
-    /** A line starting with the {@code [Guidebook]} prefix, in the info colour. */
-    public static Component info(ComponentLike... parts) {
-        return prefixed(INFO, parts);
+    /**
+     * A line starting with the {@code [Guidebook]} prefix, in the info colour. Each part is a {@code String} or a
+     * {@link ComponentLike}, and {@link #stressed} parts are green.
+     */
+    public static Component info(Object... parts) {
+        return prefixed(INFO, STRESSED, parts);
     }
 
-    /** A line starting with the {@code [Guidebook]} prefix, in the error colour. */
-    public static Component error(ComponentLike... parts) {
-        return prefixed(ERROR, parts);
+    /** A line starting with the {@code [Guidebook]} prefix, in the error colour, with {@link #stressed} parts in dark red. */
+    public static Component error(Object... parts) {
+        return prefixed(ERROR, ERROR_STRESSED, parts);
     }
 
-    public static void sendInfo(CommandSender recipient, String text) {
-        send(recipient, info(Component.text(text)));
-    }
-
-    public static void sendInfo(CommandSender recipient, ComponentLike... parts) {
+    public static void sendInfo(CommandSender recipient, Object... parts) {
         send(recipient, info(parts));
     }
 
-    public static void sendError(CommandSender recipient, String text) {
-        send(recipient, error(Component.text(text)));
-    }
-
-    public static void sendError(CommandSender recipient, ComponentLike... parts) {
+    public static void sendError(CommandSender recipient, Object... parts) {
         send(recipient, error(parts));
     }
 
+    /** Says that saving an Area failed, so the change to it was NOT {@code done}, e.g. "saved" or "renamed". */
+    public static void sendNotDone(CommandSender recipient, String areaName, String done) {
+        sendError(recipient, "There was an error. ", area(areaName), " was NOT " + done + ".");
+    }
+
     /** A line indented to follow an {@link #info} line, in the info colour. */
-    public static Component infoIndented(ComponentLike... parts) {
-        return line(INDENT, INFO, parts);
+    public static Component infoIndented(Object... parts) {
+        return line(INDENT, INFO, STRESSED, parts);
     }
 
     /** A line slightly indented to follow an {@link #info} line, for long lines that would wrap under the full indent. */
-    public static Component infoShortIndented(ComponentLike... parts) {
-        return line(SHORT_INDENT, INFO, parts);
+    public static Component infoShortIndented(Object... parts) {
+        return line(SHORT_INDENT, INFO, STRESSED, parts);
     }
 
-    public static Component stressed(String text) {
-        return Component.text(text, STRESSED);
+    /**
+     * Text in the stressed colour of the line it's a part of: green in an info line, dark red in an error line.
+     * Anywhere else, such as inside a clickable component or a dialog, it's green.
+     */
+    public static Stressed stressed(String text) {
+        return new Stressed("", text);
     }
 
-    public static Component errorStressed(String text) {
-        return Component.text(text, ERROR_STRESSED);
+    /** {@code Area <name>}, with the name {@link #stressed}. Names never need quotes, as they have no spaces. */
+    public static Stressed area(String name) {
+        return new Stressed("Area ", name);
     }
 
-    /** {@code Area <name>} for an {@link #info} line, with the name stressed. Names never need quotes, as they have no spaces. */
-    public static Component area(String name) {
-        return Component.text("Area ").append(stressed(name));
-    }
+    /** {@code plain}, then {@code text} in the stressed colour of the line it's a part of. */
+    public record Stressed(String plain, String text) implements ComponentLike {
 
-    /** {@code Area <name>} for an {@link #error} line, with the name stressed. */
-    public static Component errorArea(String name) {
-        return Component.text("Area ").append(errorStressed(name));
+        @Override
+        public Component asComponent() {
+            return render(STRESSED);
+        }
+
+        private Component render(TextColor color) {
+            Component stressed = Component.text(text, color);
+            return plain.isEmpty() ? stressed : Component.text(plain).append(stressed);
+        }
     }
 
     /** Clicking the text fills in {@code command} in the chat box, and hovering shows {@code hover}. */
-    public static Component suggestsCommand(Component text, String command, String hover) {
-        return withHover(text.clickEvent(ClickEvent.suggestCommand(command)), hover);
+    public static Component suggestsCommand(ComponentLike text, String command, String hover) {
+        return withHover(text.asComponent().clickEvent(ClickEvent.suggestCommand(command)), hover);
     }
 
     /** Clicking the text runs {@code command}, and hovering shows {@code hover}. */
-    public static Component runsCommand(Component text, String command, String hover) {
-        return withHover(text.clickEvent(ClickEvent.runCommand(command)), hover);
+    public static Component runsCommand(ComponentLike text, String command, String hover) {
+        return withHover(text.asComponent().clickEvent(ClickEvent.runCommand(command)), hover);
     }
 
     /** Clicking the text opens {@code url}, and hovering shows {@code hover}. */
-    public static Component opensUrl(Component text, String url, String hover) {
-        return withHover(text.clickEvent(ClickEvent.openUrl(url)), hover);
+    public static Component opensUrl(ComponentLike text, String url, String hover) {
+        return withHover(text.asComponent().clickEvent(ClickEvent.openUrl(url)), hover);
     }
 
     public static Component withHover(Component text, String hover) {
@@ -121,15 +132,32 @@ public final class GuidebookMessages {
         }
     }
 
-    private static Component prefixed(TextColor color, ComponentLike... parts) {
+    private static Component prefixed(TextColor color, TextColor stressedColor, Object... parts) {
         return Component.text()
                 .color(color)
                 .append(Component.text(PREFIX, PREFIX_COLOR))
-                .append(parts)
+                .append(components(stressedColor, parts))
                 .build();
     }
 
-    private static Component line(String start, TextColor color, ComponentLike... parts) {
-        return Component.text().content(start).color(color).append(parts).build();
+    private static Component line(String start, TextColor color, TextColor stressedColor, Object... parts) {
+        return Component.text()
+                .content(start)
+                .color(color)
+                .append(components(stressedColor, parts))
+                .build();
+    }
+
+    private static List<Component> components(TextColor stressedColor, Object... parts) {
+        return Arrays.stream(parts)
+                .map(part -> switch (part) {
+                    case String text -> Component.text(text);
+                    case Stressed stressed -> stressed.render(stressedColor);
+                    case ComponentLike component -> component.asComponent();
+                    default ->
+                        throw new IllegalArgumentException(
+                                "A message part must be a String or a ComponentLike, not " + part.getClass());
+                })
+                .toList();
     }
 }

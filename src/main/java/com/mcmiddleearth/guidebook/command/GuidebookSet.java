@@ -40,7 +40,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.kyori.adventure.text.Component;
 import net.strokkur.commands.CustomSuggestion;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -129,17 +128,11 @@ final class GuidebookSet {
             oldFileDeleted = PluginData.moveInfoArea(area, region);
         } catch (IOException ex) {
             Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendError(
-                    player,
-                    Component.text("There was an error. "),
-                    GuidebookMessages.errorArea(area.getName()),
-                    Component.text(" was NOT moved."));
+            GuidebookMessages.sendNotDone(player, area.getName(), "moved");
             return;
         }
         GuidebookMessages.sendInfo(
-                player,
-                GuidebookMessages.area(area.getName()),
-                Component.text(" was moved to your location and selection."));
+                player, GuidebookMessages.area(area.getName()), " was moved to your location and selection.");
         if (!oldFileDeleted) {
             GuidebookMessages.sendError(
                     player,

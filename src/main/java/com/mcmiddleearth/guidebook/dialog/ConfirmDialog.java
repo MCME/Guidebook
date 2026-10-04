@@ -92,7 +92,7 @@ public final class ConfirmDialog {
                                 GuidebookMessages.sendInfo(
                                         canceller,
                                         GuidebookMessages.area(area.getName()),
-                                        Component.text(" was not " + mode.done + "."));
+                                        " was not " + mode.done + ".");
                             }
                         },
                         once))
@@ -115,8 +115,8 @@ public final class ConfirmDialog {
         if (PluginData.getInfoAreaExact(area.getName()) != area) {
             GuidebookMessages.sendError(
                     player,
-                    GuidebookMessages.errorArea(area.getName()),
-                    Component.text(" was deleted or reloaded while you decided. It was NOT " + mode.done + "."));
+                    GuidebookMessages.area(area.getName()),
+                    " was deleted or reloaded while you decided. It was NOT " + mode.done + ".");
             return;
         }
         confirmed.accept(player);
