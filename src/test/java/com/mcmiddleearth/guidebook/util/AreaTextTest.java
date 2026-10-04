@@ -103,12 +103,11 @@ class AreaTextTest {
         Component rendered = AreaText.render("<guide>You stand upon Weathertop.");
 
         assertEquals(
-                Component.text()
+                StyledCharacters.of(Component.text()
                         .append(Component.text("Guide: ", NamedTextColor.DARK_AQUA))
                         .append(Component.text("You stand upon Weathertop.", NamedTextColor.WHITE))
-                        .build()
-                        .compact(),
-                rendered.compact());
+                        .build()),
+                StyledCharacters.of(rendered));
     }
 
     @Test
@@ -116,12 +115,11 @@ class AreaTextTest {
         Component rendered = AreaText.render("<guide><gray>Ruins");
 
         assertEquals(
-                Component.text()
+                StyledCharacters.of(Component.text()
                         .append(Component.text("Guide: ", NamedTextColor.DARK_AQUA))
                         .append(Component.text("Ruins", NamedTextColor.GRAY))
-                        .build()
-                        .compact(),
-                rendered.compact());
+                        .build()),
+                StyledCharacters.of(rendered));
     }
 
     @Test
@@ -136,8 +134,16 @@ class AreaTextTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"<term>Amon Sûl</term>", "<wiki>Weathertop</wiki>"})
-    void aTermOrWikiLinkWithNoArgumentStaysAsLiteralText(String miniMessage) {
+    @ValueSource(
+            strings = {
+                "<term>Amon Sûl</term>",
+                "<wiki>Weathertop</wiki>",
+                "<term:''>Amon Sûl</term>",
+                "<wiki:''>Weathertop</wiki>",
+                "<term:'Hill':'Wind'>Amon Sûl</term>",
+                "<wiki:Weathertop:Bree>Weathertop</wiki>"
+            })
+    void aTermOrWikiLinkWithAMissingOrExtraArgumentStaysAsLiteralText(String miniMessage) {
         assertEquals(miniMessage, plain(AreaText.render(miniMessage)));
     }
 
@@ -160,7 +166,9 @@ class AreaTextTest {
                 "<wiki:Minas Tirith>|https://tolkiengateway.net/wiki/Minas_Tirith",
                 "<wiki:'Minas Tirith'>|https://tolkiengateway.net/wiki/Minas_Tirith",
                 "<wiki:Barad-dûr>|https://tolkiengateway.net/wiki/Barad-d%C3%BBr",
-                "<wiki:'Bree?x=1&y'>|https://tolkiengateway.net/wiki/Bree%3Fx%3D1%26y"
+                "<wiki:'Bree?x=1&y'>|https://tolkiengateway.net/wiki/Bree%3Fx%3D1%26y",
+                "<wiki:'Category:Cities'>|https://tolkiengateway.net/wiki/Category:Cities",
+                "<wiki:'Gondor/History'>|https://tolkiengateway.net/wiki/Gondor/History"
             })
     void aWikiPageIsUrlEncodedWithSpacesAsUnderscores(String tag, String url) {
         Component rendered = AreaText.render(tag + "the page</wiki>");
@@ -190,7 +198,13 @@ class AreaTextTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"<warp:helms deep>there</warp>", "<warp:a/b>there</warp>", "<warp>there</warp>"})
+    @ValueSource(
+            strings = {
+                "<warp:helms deep>there</warp>",
+                "<warp:a/b>there</warp>",
+                "<warp>there</warp>",
+                "<warp:a:b>there</warp>"
+            })
     void aWarpWithAnInvalidOrMissingNameStaysAsLiteralText(String miniMessage) {
         assertEquals(miniMessage, plain(AreaText.render(miniMessage)));
     }
@@ -218,5 +232,19 @@ class AreaTextTest {
     @ValueSource(strings = {"guide", "date", "term", "wiki", "warp", "bullet"})
     void noGuidebookTagShadowsAStandardTag(String name) {
         assertFalse(TagResolver.standard().has(name));
+    }
+
+    @Test
+    void aClosingGuideTagEndsTheWhite() {
+        Component rendered = AreaText.render("<gray>Ruins <guide>Weathertop</guide> remain");
+
+        assertEquals(
+                StyledCharacters.of(Component.text()
+                        .append(Component.text("Ruins ", NamedTextColor.GRAY))
+                        .append(Component.text("Guide: ", NamedTextColor.DARK_AQUA))
+                        .append(Component.text("Weathertop", NamedTextColor.WHITE))
+                        .append(Component.text(" remain", NamedTextColor.GRAY))
+                        .build()),
+                StyledCharacters.of(rendered));
     }
 }

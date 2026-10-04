@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.data;
 
+import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import com.mcmiddleearth.pluginutil.message.MessageType;
 import com.mcmiddleearth.pluginutil.message.MessageUtil;
@@ -31,9 +32,6 @@ public final class LegacyMarkupConverter {
     private static final String TITLE = "title";
     private static final String SUBTITLE = "subtitle";
     private static final String DESCRIPTION = "description";
-
-    /** Stands for the house opening, {@code Guide: } in dark aqua and then white text (ADR 0004). */
-    private static final String GUIDE_TAG = "<guide>";
 
     /** The two characters that mark a line break in a Legacy Description. */
     private static final String LINE_BREAK = "\\n";
@@ -104,7 +102,7 @@ public final class LegacyMarkupConverter {
         for (int i = 0; i < parts.size(); i++) {
             Component part = parts.get(i);
             if (isGuideOpening(parts, i)) {
-                description.append(convertParts(section)).append(GUIDE_TAG);
+                description.append(convertParts(section)).append(AreaText.GUIDE_TAG);
                 section = new ArrayList<>();
                 afterGuide = true;
             } else {

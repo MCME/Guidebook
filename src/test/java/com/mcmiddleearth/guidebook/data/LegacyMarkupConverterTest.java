@@ -6,18 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mcmiddleearth.guidebook.util.AreaText;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.mcmiddleearth.guidebook.util.StyledCharacters;
 import java.util.List;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -288,36 +282,8 @@ class LegacyMarkupConverterTest {
     void theConvertedDescriptionShowsTheSameColoursFormatsAndActionsAsTheOldRenderer(List<String> lines)
             throws Exception {
         assertEquals(
-                styledCharacters(LegacyMarkupConverter.renderDescription(lines)),
-                styledCharacters(AreaText.render(convertedDescription(lines.toArray(String[]::new)))));
-    }
-
-    /** Each visible character with the colour, formats, click and hover text it's shown with in chat. */
-    private static List<String> styledCharacters(Component component) {
-        List<String> characters = new ArrayList<>();
-        addStyledCharacters(component, Style.empty(), characters);
-        return characters;
-    }
-
-    private static void addStyledCharacters(Component component, Style parent, List<String> characters) {
-        Style style = component.style().merge(parent, Style.Merge.Strategy.IF_ABSENT_ON_TARGET);
-        if (component instanceof TextComponent text) {
-            // Chat shows uncoloured text in white, and a format not set is off
-            TextColor colour = style.color() == null ? NamedTextColor.WHITE : style.color();
-            String formats = Arrays.stream(TextDecoration.values())
-                    .filter(decoration -> style.decoration(decoration) == TextDecoration.State.TRUE)
-                    .toList()
-                    .toString();
-            String hover = style.hoverEvent() == null
-                    ? null
-                    : plain((Component) style.hoverEvent().value());
-            for (char character : text.content().toCharArray()) {
-                characters.add(character + " " + colour + " " + formats + " " + style.clickEvent() + " " + hover);
-            }
-        }
-        for (Component child : component.children()) {
-            addStyledCharacters(child, style, characters);
-        }
+                StyledCharacters.of(LegacyMarkupConverter.renderDescription(lines)),
+                StyledCharacters.of(AreaText.render(convertedDescription(lines.toArray(String[]::new)))));
     }
 
     @ParameterizedTest

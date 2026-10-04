@@ -21,15 +21,23 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
  */
 public final class AreaText {
 
+    /** The house opening: {@code Guide: } in dark aqua, then the text after it in white. */
+    public static final String GUIDE_TAG = "<guide>";
+
     /** The opening a new Area's Description starts with. */
-    public static final String DEFAULT_DESCRIPTION = "<guide>";
+    public static final String DEFAULT_DESCRIPTION = GUIDE_TAG;
 
     // Guidebook's own tags, on top of the standard ones. They are permanent once stored text uses them (ADR 0004).
     private static final MiniMessage MINI_MESSAGE = MiniMessage.builder()
             .tags(TagResolver.resolver(
                     TagResolver.standard(),
-                    // The house opening. The white is left open, so it colours the rest of the text.
-                    TagResolver.resolver("guide", Tag.preProcessParsed("<dark_aqua>Guide: </dark_aqua><white>")),
+                    // The text inside the tag becomes the white part's children, up to </guide> or the end
+                    TagResolver.resolver(
+                            "guide",
+                            Tag.inserting(Component.text()
+                                    .color(NamedTextColor.WHITE)
+                                    .append(Component.text("Guide: ", NamedTextColor.DARK_AQUA))
+                                    .build())),
                     TagResolver.resolver("date", Tag.styling(NamedTextColor.YELLOW)),
                     TagResolver.resolver("term", AreaText::term),
                     TagResolver.resolver("wiki", AreaText::wiki),
@@ -46,7 +54,7 @@ public final class AreaText {
 
     // <term:'meaning'>
     private static Tag term(ArgumentQueue arguments, Context context) {
-        String meaning = arguments.popOr("A term needs its meaning").value();
+        String meaning = onlyArgument(arguments, context, "A term needs its meaning");
         return Tag.styling(
                 NamedTextColor.GOLD,
                 TextDecoration.UNDERLINED,
@@ -55,8 +63,12 @@ public final class AreaText {
 
     // <wiki:page>, where the page is the title as written on Tolkien Gateway
     private static Tag wiki(ArgumentQueue arguments, Context context) {
-        String page = arguments.popOr("A wiki link needs its page").value();
-        String url = WIKI_URL + URLEncoder.encode(page.replace(' ', '_'), StandardCharsets.UTF_8);
+        String page = onlyArgument(arguments, context, "A wiki link needs its page");
+        // Namespaced pages and subpages, like Category:Cities, keep their : and / as Tolkien Gateway writes them
+        String url = WIKI_URL
+                + URLEncoder.encode(page.replace(' ', '_'), StandardCharsets.UTF_8)
+                        .replace("%3A", ":")
+                        .replace("%2F", "/");
         return Tag.styling(
                 NamedTextColor.AQUA,
                 TextDecoration.UNDERLINED,
@@ -66,7 +78,7 @@ public final class AreaText {
 
     // <warp:name>, run as the player's own /warp command
     private static Tag warp(ArgumentQueue arguments, Context context) {
-        String name = arguments.popOr("A warp needs its name").value();
+        String name = onlyArgument(arguments, context, "A warp needs its name");
         if (!WARP_NAME.matcher(name).matches()) {
             throw context.newException("A warp name may contain only letters, digits and _ - .", arguments);
         }
@@ -75,6 +87,15 @@ public final class AreaText {
                 TextDecoration.UNDERLINED,
                 ClickEvent.runCommand("/warp " + name),
                 HoverEvent.showText(Component.text("Click to warp to " + name)));
+    }
+
+    // A missing, empty or extra argument is a typo, so the tag stays as literal text
+    private static String onlyArgument(ArgumentQueue arguments, Context context, String problem) {
+        String argument = arguments.popOr(problem).value();
+        if (argument.isEmpty() || arguments.hasNext()) {
+            throw context.newException(problem, arguments);
+        }
+        return argument;
     }
 
     public static Component render(String miniMessage) {
