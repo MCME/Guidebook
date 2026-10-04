@@ -71,10 +71,13 @@ public class PluginData {
         return infoAreas.put(name, newArea);
     }
 
-    /** Writes a new Area's file, then adds it, so an Area whose file couldn't be written is never added. */
+    /**
+     * Writes a new Area's file, then adds it and draws it, so an Area whose file couldn't be written is never added.
+     */
     public static void createInfoArea(InfoArea area) throws IOException {
-        saveArea(area);
+        writeArea(area);
         addInfoArea(area.getName(), area);
+        drawArea(area);
     }
 
     public static boolean deleteInfoArea(InfoArea area) {
@@ -82,6 +85,7 @@ public class PluginData {
         boolean result = getDataFile(area, area.getName()).delete();
         if (result) {
             infoAreas.remove(area.getName());
+            eraseArea(area.getName());
         }
         return result;
     }
@@ -99,14 +103,17 @@ public class PluginData {
         area.setName(newName);
         infoAreas.put(newName, area);
         try {
-            saveArea(area);
+            writeArea(area);
         } catch (IOException ex) {
             infoAreas.remove(newName);
             area.setName(oldName);
             infoAreas.put(oldName, area);
             throw ex;
         }
-        return oldDataFile.delete();
+        boolean oldFileDeleted = oldDataFile.delete();
+        eraseArea(oldName);
+        drawArea(area);
+        return oldFileDeleted;
     }
 
     /**
@@ -120,12 +127,15 @@ public class PluginData {
 
         area.setRegion(region);
         try {
-            saveArea(area);
+            writeArea(area);
         } catch (IOException ex) {
             area.setRegion(oldRegion);
             throw ex;
         }
-        return oldDataFile.equals(getDataFile(area, area.getName())) || oldDataFile.delete();
+        boolean oldFileGone = oldDataFile.equals(getDataFile(area, area.getName())) || oldDataFile.delete();
+        // The marker's id doesn't change, so this replaces it even in another world
+        drawArea(area);
+        return oldFileGone;
     }
 
     /**
@@ -168,7 +178,13 @@ public class PluginData {
         Logger.getGlobal().info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
 
+    /** Writes the Area's file, then redraws it on the Web map, so a failed save leaves its marker as it was. */
     public static void saveArea(InfoArea area) throws IOException {
+        writeArea(area);
+        drawArea(area);
+    }
+
+    private static void writeArea(InfoArea area) throws IOException {
         final String areaName = area.getName();
         DevUtil.log("SaveData " + areaName);
 
@@ -222,17 +238,23 @@ public class PluginData {
 
     private static void drawWebMap() {
         webMapLayer.clear();
-        for (InfoArea area : infoAreas.values()) {
-            // Its world isn't loaded, so there's nowhere to draw it
-            if (!area.getRegion().isValid()) {
-                GuidebookPlugin.getPluginInstance()
-                        .getLogger()
-                        .warning("Area " + area.getName()
-                                + " isn't drawn on the Web map because its world isn't loaded.");
-                continue;
-            }
-            webMapLayer.put(AreaMarkers.toMarker(area));
+        infoAreas.values().forEach(PluginData::drawArea);
+    }
+
+    private static void drawArea(InfoArea area) {
+        // Its world isn't loaded, so there's nowhere to draw it
+        if (!area.getRegion().isValid()) {
+            eraseArea(area.getName());
+            GuidebookPlugin.getPluginInstance()
+                    .getLogger()
+                    .warning("Area " + area.getName() + " isn't drawn on the Web map because its world isn't loaded.");
+            return;
         }
+        webMapLayer.put(AreaMarkers.toMarker(area));
+    }
+
+    private static void eraseArea(String areaName) {
+        webMapLayer.remove(AreaMarkers.id(areaName));
     }
 
     private static File getDataFile(InfoArea area, String areaName) {
