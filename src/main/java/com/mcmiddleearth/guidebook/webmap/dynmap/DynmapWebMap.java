@@ -21,8 +21,8 @@ import org.dynmap.markers.MarkerSet;
  */
 public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMap {
 
-    // Dynmap's marker heights are ignored on its flat maps, so circles sit at sea level
-    private static final double CIRCLE_Y = 64;
+    // Dynmap's marker heights are ignored on its flat maps, so every marker sits at sea level
+    private static final double FLAT_Y = 64;
 
     private final Map<String, Layer> layers = new LinkedHashMap<>();
 
@@ -139,7 +139,7 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
                             false,
                             marker.world(),
                             circle.x(),
-                            CIRCLE_Y,
+                            FLAT_Y,
                             circle.z(),
                             circle.radius(),
                             circle.radius(),
@@ -161,7 +161,9 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
                                     .mapToDouble(Outline.Point::z)
                                     .toArray(),
                             false);
-                    polygon.yRange().ifPresent(range -> drawn.setRangeY(range.maxY(), range.minY()));
+                    // A Y range would make LiveAtlas draw the polygon as a hollow 3D shape, which from above is only
+                    // an outline that can't be hovered or clicked inside, so it's drawn flat instead
+                    drawn.setRangeY(FLAT_Y, FLAT_Y);
                     drawn.setDescription(popup);
                     drawn.setLineStyle(style.lineWeight(), 1, style.lineRgb());
                     drawn.setFillStyle(style.fillOpacity(), style.fillRgb());
