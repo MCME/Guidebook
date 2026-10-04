@@ -148,6 +148,24 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
                     drawn.setLineStyle(style.lineWeight(), 1, style.lineRgb());
                     drawn.setFillStyle(style.fillOpacity(), style.fillRgb());
                 }
+                case Outline.Polygon polygon -> {
+                    AreaMarker drawn = markerSet.createAreaMarker(
+                            marker.id(),
+                            marker.label(),
+                            false,
+                            marker.world(),
+                            polygon.points().stream()
+                                    .mapToDouble(Outline.Point::x)
+                                    .toArray(),
+                            polygon.points().stream()
+                                    .mapToDouble(Outline.Point::z)
+                                    .toArray(),
+                            false);
+                    polygon.yRange().ifPresent(range -> drawn.setRangeY(range.maxY(), range.minY()));
+                    drawn.setDescription(popup);
+                    drawn.setLineStyle(style.lineWeight(), 1, style.lineRgb());
+                    drawn.setFillStyle(style.fillOpacity(), style.fillRgb());
+                }
             }
         }
 

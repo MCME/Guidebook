@@ -231,7 +231,7 @@ public class PluginData {
                                 + " isn't drawn on the Web map because its world isn't loaded.");
                 continue;
             }
-            AreaMarkers.toMarker(area).ifPresent(webMapLayer::put);
+            webMapLayer.put(AreaMarkers.toMarker(area));
         }
     }
 

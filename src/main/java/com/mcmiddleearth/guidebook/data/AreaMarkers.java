@@ -4,6 +4,7 @@ import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.webmap.Marker;
 import com.mcmiddleearth.guidebook.webmap.MarkerStyle;
 import com.mcmiddleearth.guidebook.webmap.Outline;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -22,11 +23,15 @@ public final class AreaMarkers {
 
     private AreaMarkers() {}
 
-    /** @return the Area's marker, or empty if its Shape can't be drawn yet */
-    public static Optional<Marker> toMarker(MarkableArea area) {
-        return outline(area.getGeometry())
-                .map(outline -> new Marker(
-                        id(area.getName()), area.getWorldName(), label(area), popup(area), outline, style(area)));
+    /** @return the Area's Area marker */
+    public static Marker toMarker(MarkableArea area) {
+        return new Marker(
+                id(area.getName()),
+                area.getWorldName(),
+                label(area),
+                popup(area),
+                outline(area.getGeometry()),
+                style(area));
     }
 
     private static String label(MarkableArea area) {
@@ -58,14 +63,36 @@ public final class AreaMarkers {
         return area.isEnabled() ? ENABLED_STYLE : DISABLED_STYLE;
     }
 
-    private static Optional<Outline> outline(AreaGeometry geometry) {
+    private static Outline outline(AreaGeometry geometry) {
         return switch (geometry) {
             case AreaGeometry.Sphere sphere ->
                 // Seen from above, a sphere is a circle as wide as it is
-                Optional.of(new Outline.Circle(sphere.centerX(), sphere.centerZ(), sphere.radius()));
-            case AreaGeometry.Cuboid cuboid -> Optional.empty();
-            case AreaGeometry.Prism prism -> Optional.empty();
+                new Outline.Circle(sphere.centerX(), sphere.centerZ(), sphere.radius());
+            case AreaGeometry.Cuboid cuboid -> {
+                // The max corner is a block inside the cuboid, so the outline goes on to that block's far edge
+                int farX = cuboid.maxX() + 1;
+                int farZ = cuboid.maxZ() + 1;
+                yield new Outline.Polygon(
+                        List.of(
+                                new Outline.Point(cuboid.minX(), cuboid.minZ()),
+                                new Outline.Point(farX, cuboid.minZ()),
+                                new Outline.Point(farX, farZ),
+                                new Outline.Point(cuboid.minX(), farZ)),
+                        heights(cuboid.minY(), cuboid.maxY()));
+            }
+            case AreaGeometry.Prism prism -> {
+                List<Outline.Point> points = new ArrayList<>();
+                for (int i = 0; i < prism.xs().size(); i++) {
+                    points.add(new Outline.Point(prism.xs().get(i), prism.zs().get(i)));
+                }
+                yield new Outline.Polygon(points, heights(prism.minY(), prism.maxY()));
+            }
         };
+    }
+
+    // The top layer of blocks is inside the Area, so the range goes on to its top face
+    private static Optional<Outline.YRange> heights(int minY, int maxY) {
+        return Optional.of(new Outline.YRange(minY, maxY + 1));
     }
 
     /** The id of an Area's marker. Area names are unique ignoring case, so the lowercase name is unique too. */

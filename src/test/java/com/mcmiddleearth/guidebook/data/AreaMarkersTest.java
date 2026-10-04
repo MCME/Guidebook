@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mcmiddleearth.guidebook.webmap.Marker;
 import com.mcmiddleearth.guidebook.webmap.MarkerStyle;
 import com.mcmiddleearth.guidebook.webmap.Outline;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -37,7 +39,7 @@ class AreaMarkersTest {
     }
 
     private static Marker markerOf(TestArea area) {
-        return AreaMarkers.toMarker(area).orElseThrow();
+        return AreaMarkers.toMarker(area);
     }
 
     @Test
@@ -56,6 +58,46 @@ class AreaMarkersTest {
 
         assertEquals("middle_earth", marker.world());
         assertEquals(new Outline.Circle(-120, 340, 45), marker.outline());
+    }
+
+    private static TestArea shaped(AreaGeometry geometry) {
+        return new TestArea("minas", "Minas Tirith", "", "", true, "world", geometry);
+    }
+
+    // A cuboid's max corner is a block inside it, so the outline reaches that block's far edge
+    @Test
+    void aCuboidIsARectangleCoveringAllOfItsBlocksWithItsHeights() {
+        Marker marker = markerOf(shaped(new AreaGeometry.Cuboid(-10, 40, 20, 30, 90, 50)));
+
+        assertEquals(
+                new Outline.Polygon(
+                        List.of(
+                                new Outline.Point(-10, 20),
+                                new Outline.Point(31, 20),
+                                new Outline.Point(31, 51),
+                                new Outline.Point(-10, 51)),
+                        Optional.of(new Outline.YRange(40, 91))),
+                marker.outline());
+    }
+
+    @Test
+    void aPrismIsItsPolygonWithItsHeights() {
+        Marker marker = markerOf(shaped(new AreaGeometry.Prism(List.of(0, 40, 25), List.of(-5, 10, 60), 12, 80)));
+
+        assertEquals(
+                new Outline.Polygon(
+                        List.of(new Outline.Point(0, -5), new Outline.Point(40, 10), new Outline.Point(25, 60)),
+                        Optional.of(new Outline.YRange(12, 81))),
+                marker.outline());
+    }
+
+    @Test
+    void thePopupNamesACuboidsAndAPrismsShape() {
+        Marker cuboid = markerOf(shaped(new AreaGeometry.Cuboid(0, 0, 0, 1, 1, 1)));
+        Marker prism = markerOf(shaped(new AreaGeometry.Prism(List.of(0, 1, 1), List.of(0, 0, 1), 0, 1)));
+
+        assertEquals("minas (cuboid)", cuboid.popup().lines().findFirst().orElseThrow());
+        assertEquals("minas (prism)", prism.popup().lines().findFirst().orElseThrow());
     }
 
     private static TestArea titled(String title, boolean enabled) {
