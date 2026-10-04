@@ -18,7 +18,6 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
@@ -45,8 +44,6 @@ import org.bukkit.entity.Player;
  */
 public class PluginData {
 
-    private static final MessageUtil messageUtil = new MessageUtil();
-
     private static final Map<String, InfoArea> infoAreas = new HashMap<>();
 
     private static final AreaRegistry<InfoArea> registry = new AreaRegistry<>(infoAreas.values());
@@ -59,7 +56,6 @@ public class PluginData {
         if (!GuidebookPlugin.getPluginInstance().getDataFolder().exists()) {
             GuidebookPlugin.getPluginInstance().getDataFolder().mkdirs();
         }
-        messageUtil.setPluginName("Guidebook");
     }
 
     public static boolean isExcluded(Player player) {
@@ -225,10 +221,6 @@ public class PluginData {
         for (InfoArea area : infoAreas.values()) {
             area.clearPlayers();
         }
-    }
-
-    public static MessageUtil getMessageUtil() {
-        return messageUtil;
     }
 
     public static Map<String, InfoArea> getInfoAreas() {

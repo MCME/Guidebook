@@ -188,8 +188,7 @@ public final class EditDialog {
                         (response, audience) -> {
                             audience.closeDialog();
                             if (mode == Mode.CREATE && audience instanceof Player canceller) {
-                                PluginData.getMessageUtil()
-                                        .sendInfoMessage(canceller, "No Guidebook area was created.");
+                                GuidebookMessages.sendInfo(canceller, "No Guidebook area was created.");
                             }
                         },
                         once))
@@ -265,11 +264,10 @@ public final class EditDialog {
         String areaName = area.getName();
         // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
         if (mode == Mode.EDIT && PluginData.getInfoAreaExact(areaName) != area) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player,
-                            "Guidebook area " + areaName
-                                    + " was deleted or reloaded while you edited it. Your changes were NOT saved.");
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.errorArea(areaName),
+                    Component.text(" was deleted or reloaded while you edited it. Your changes were NOT saved."));
             player.closeDialog();
             return;
         }
@@ -281,11 +279,10 @@ public final class EditDialog {
         player.closeDialog();
         // The name was free when set ran, but it isn't reserved while the dialog is open
         if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player,
-                            "Guidebook area " + areaName
-                                    + " was created by someone else while you edited it. Nothing was created.");
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.errorArea(areaName),
+                    Component.text(" was created by someone else while you edited it. Nothing was created."));
             return;
         }
 
@@ -307,13 +304,15 @@ public final class EditDialog {
             }
         } catch (IOException ex) {
             Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player, "There was an error. Guidebook area " + areaName + " was NOT " + mode.done + ".");
+            GuidebookMessages.sendError(
+                    player,
+                    Component.text("There was an error. "),
+                    GuidebookMessages.errorArea(areaName),
+                    Component.text(" was NOT " + mode.done + "."));
             return;
         }
-        PluginData.getMessageUtil()
-                .sendInfoMessage(player, "Guidebook area " + areaName + " was " + mode.done + ". This is its Welcome:");
+        // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName), Component.text(" was " + mode.done + ":"));
         area.previewWelcome(player);
     }
 

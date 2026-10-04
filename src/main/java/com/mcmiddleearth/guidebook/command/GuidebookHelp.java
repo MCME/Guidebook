@@ -1,6 +1,5 @@
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -136,8 +135,7 @@ final class GuidebookHelp {
                 .filter(entry -> entry.name().equals(name.toLowerCase(Locale.ROOT)))
                 .findFirst();
         if (found.isEmpty()) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(sender, "There is no Guidebook command '" + name + "' you can use.");
+            GuidebookMessages.sendError(sender, "There is no Guidebook command '" + name + "' you can use.");
             return;
         }
         Entry entry = found.get();

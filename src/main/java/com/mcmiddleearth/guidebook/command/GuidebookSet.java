@@ -23,6 +23,7 @@ import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
 import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
 import com.mcmiddleearth.guidebook.dialog.ConfirmDialog;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.WEUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
@@ -39,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
 import net.strokkur.commands.CustomSuggestion;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -83,10 +85,9 @@ final class GuidebookSet {
                             areaName -> new PrismoidInfoArea(areaName, location, polygon),
                             new PrismoidRegion(location, polygon)));
         } else {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player,
-                            "No cuboid or polygon WorldEdit selection found! Either make one and try again, or add sphere <radius> after the Area name.");
+            GuidebookMessages.sendError(
+                    player,
+                    "No cuboid or polygon WorldEdit selection found! Either make one and try again, or add sphere <radius> after the Area name.");
         }
     }
 
@@ -109,7 +110,7 @@ final class GuidebookSet {
 
         Optional<String> problem = PluginData.newAreaNameProblem(name);
         if (problem.isPresent()) {
-            PluginData.getMessageUtil().sendErrorMessage(player, problem.get() + ". No Area was created.");
+            GuidebookMessages.sendError(player, problem.get() + ". No Area was created.");
             return;
         }
 
@@ -128,20 +129,22 @@ final class GuidebookSet {
             oldFileDeleted = PluginData.moveInfoArea(area, region);
         } catch (IOException ex) {
             Logger.getLogger(GuidebookSet.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player, "There was an error. Guidebook area " + area.getName() + " was NOT moved.");
+            GuidebookMessages.sendError(
+                    player,
+                    Component.text("There was an error. "),
+                    GuidebookMessages.errorArea(area.getName()),
+                    Component.text(" was NOT moved."));
             return;
         }
-        PluginData.getMessageUtil()
-                .sendInfoMessage(
-                        player, "Guidebook area " + area.getName() + " was moved to your location and selection.");
+        GuidebookMessages.sendInfo(
+                player,
+                GuidebookMessages.area(area.getName()),
+                Component.text(" was moved to your location and selection."));
         if (!oldFileDeleted) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player,
-                            "The old data file " + oldWorld + "/" + area.getName()
-                                    + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
+            GuidebookMessages.sendError(
+                    player,
+                    "The old data file " + oldWorld + "/" + area.getName()
+                            + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
         }
     }
 }

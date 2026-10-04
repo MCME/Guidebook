@@ -34,8 +34,8 @@ final class GuidebookSize {
     /** Bare {@code size <area>}: shows the Area's Shape and dimensions, and the form that resizes it. */
     static void show(CommandSender sender, InfoArea area) {
         GuidebookMessages.startBlock(sender);
-        PluginData.getMessageUtil()
-                .sendInfoMessage(sender, "Guidebook area " + area.getName() + " is a " + dimensions(area) + ".");
+        GuidebookMessages.sendInfo(
+                sender, GuidebookMessages.area(area.getName()), Component.text(" is a " + dimensions(area) + "."));
         sendForm(sender, area);
     }
 
@@ -58,12 +58,12 @@ final class GuidebookSize {
         // Block positions carry no world, so corners typed from another world still land in the Area's world
         if (sender instanceof Entity entity
                 && !entity.getWorld().equals(area.getLocation().getWorld())) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            sender,
-                            "You are not in the world of Guidebook area " + area.getName()
-                                    + ". Its corners were set in its own world, "
-                                    + area.getLocation().getWorld().getName() + ".");
+            GuidebookMessages.sendError(
+                    sender,
+                    Component.text("You are not in the world of "),
+                    GuidebookMessages.errorArea(area.getName()),
+                    Component.text(". Its corners were set in its own world, "
+                            + area.getLocation().getWorld().getName() + "."));
         }
     }
 
@@ -81,20 +81,22 @@ final class GuidebookSize {
             PluginData.saveArea(area);
         } catch (IOException ex) {
             Logger.getLogger(GuidebookSize.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            sender, "There was an error. Guidebook area " + area.getName() + " was NOT saved.");
+            GuidebookMessages.sendError(
+                    sender,
+                    Component.text("There was an error. "),
+                    GuidebookMessages.errorArea(area.getName()),
+                    Component.text(" was NOT saved."));
             return;
         }
-        PluginData.getMessageUtil().sendInfoMessage(sender, "Size of Guidebook area " + area.getName() + " set.");
+        GuidebookMessages.sendInfo(
+                sender, Component.text("Size of "), GuidebookMessages.area(area.getName()), Component.text(" set."));
     }
 
     private static void sendWrongFormMessage(CommandSender sender, InfoArea area) {
-        PluginData.getMessageUtil()
-                .sendErrorMessage(
-                        sender,
-                        "Guidebook area " + area.getName() + " is a "
-                                + area.getShape().displayName() + ".");
+        GuidebookMessages.sendError(
+                sender,
+                GuidebookMessages.errorArea(area.getName()),
+                Component.text(" is a " + area.getShape().displayName() + "."));
         sendForm(sender, area);
     }
 

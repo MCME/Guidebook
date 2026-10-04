@@ -38,12 +38,11 @@ final class GuidebookList {
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .toList();
         if (names.isEmpty()) {
-            PluginData.getMessageUtil()
-                    .sendInfoMessage(
-                            sender,
-                            filter.isEmpty()
-                                    ? "There are no Guidebook areas."
-                                    : "No Guidebook area names contain '" + filter + "'.");
+            GuidebookMessages.sendInfo(
+                    sender,
+                    filter.isEmpty()
+                            ? "There are no Guidebook areas."
+                            : "No Guidebook area names contain '" + filter + "'.");
             return;
         }
 

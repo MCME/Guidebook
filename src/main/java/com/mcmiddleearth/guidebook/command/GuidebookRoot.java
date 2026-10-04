@@ -15,7 +15,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.strokkur.commands.Command;
 import net.strokkur.commands.DefaultExecutes;
 import net.strokkur.commands.Executes;
@@ -66,22 +67,22 @@ class GuidebookRoot {
     @Permission(USER)
     void on(CommandSender sender, @Executor Player player) {
         PluginData.include(player);
-        PluginData.getMessageUtil().sendInfoMessage(sender, "You will now receive info messages from Guidebook.");
+        GuidebookMessages.sendInfo(sender, "You will now receive info messages from Guidebook.");
     }
 
     @Executes("off")
     @Permission(USER)
     void off(CommandSender sender, @Executor Player player) {
         PluginData.exclude(player);
-        PluginData.getMessageUtil().sendInfoMessage(sender, "You will no longer receive info messages from Guidebook.");
+        GuidebookMessages.sendInfo(sender, "You will no longer receive info messages from Guidebook.");
     }
 
     @Executes("show")
     @Permission(STAFF)
     void show(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
         GuidebookMessages.startBlock(sender);
-        PluginData.getMessageUtil()
-                .sendInfoMessage(sender, "Welcome message for Guidebook area " + area.getName() + ":");
+        GuidebookMessages.sendInfo(
+                sender, Component.text("Welcome for "), GuidebookMessages.area(area.getName()), Component.text(":"));
         if (sender instanceof Player player) {
             area.previewWelcome(player);
             return;
@@ -100,7 +101,8 @@ class GuidebookRoot {
     @Permission(STAFF)
     void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
         player.teleport(area.getLocation());
-        PluginData.getMessageUtil().sendInfoMessage(sender, "You are now at Guidebook area " + area.getName() + ".");
+        GuidebookMessages.sendInfo(
+                sender, Component.text("You are now at "), GuidebookMessages.area(area.getName()), Component.text("."));
     }
 
     @Executes("enable")
@@ -179,19 +181,20 @@ class GuidebookRoot {
         if (here.size() == 1) {
             EditDialog.open(player, here.getFirst());
         } else if (here.isEmpty()) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player, "You aren't standing in a Guidebook area. Name one: /guidebook edit <area>");
+            GuidebookMessages.sendError(
+                    player, "You aren't standing in a Guidebook area. Name one: /guidebook edit <area>");
         } else {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player,
-                            "You're standing in more than one Guidebook area ("
-                                    + here.stream()
-                                            .map(InfoArea::getName)
-                                            .sorted()
-                                            .collect(Collectors.joining(", "))
-                                    + "). Name one: /guidebook edit <area>");
+            GuidebookMessages.sendError(
+                    player,
+                    Component.text("You're standing in more than one Guidebook area ("),
+                    Component.join(
+                            JoinConfiguration.separator(Component.text(", ")),
+                            here.stream()
+                                    .map(InfoArea::getName)
+                                    .sorted()
+                                    .map(GuidebookMessages::errorStressed)
+                                    .toList()),
+                    Component.text("). Name one: /guidebook edit <area>"));
         }
     }
 
@@ -213,18 +216,24 @@ class GuidebookRoot {
             oldFileDeleted = PluginData.renameInfoArea(area, newName);
         } catch (IOException ex) {
             Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(sender, "There was an error. Guidebook area " + oldName + " was NOT renamed.");
+            GuidebookMessages.sendError(
+                    sender,
+                    Component.text("There was an error. "),
+                    GuidebookMessages.errorArea(oldName),
+                    Component.text(" was NOT renamed."));
             return;
         }
-        PluginData.getMessageUtil()
-                .sendInfoMessage(sender, "Guidebook area " + oldName + " has been renamed to " + newName + ".");
+        GuidebookMessages.sendInfo(
+                sender,
+                GuidebookMessages.area(oldName),
+                Component.text(" has been renamed to "),
+                GuidebookMessages.stressed(newName),
+                Component.text("."));
         if (!oldFileDeleted) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            sender,
-                            "The old data file " + oldName
-                                    + ".yml couldn't be deleted. Delete it before reloading, or the Area will load under both names.");
+            GuidebookMessages.sendError(
+                    sender,
+                    "The old data file " + oldName
+                            + ".yml couldn't be deleted. Delete it before reloading, or the Area will load under both names.");
         }
     }
 
@@ -253,7 +262,7 @@ class GuidebookRoot {
     @Permission(STAFF)
     void reload(CommandSender sender) {
         PluginData.loadData();
-        PluginData.getMessageUtil().sendInfoMessage(sender, "All Guidebook areas reloaded from file.");
+        GuidebookMessages.sendInfo(sender, "All Guidebook areas reloaded from file.");
     }
 
     @Executes("dev")
@@ -304,12 +313,16 @@ class GuidebookRoot {
             PluginData.saveArea(area);
         } catch (IOException ex) {
             Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            sender, "There was an error. Guidebook area " + area.getName() + " was NOT saved.");
+            GuidebookMessages.sendError(
+                    sender,
+                    Component.text("There was an error. "),
+                    GuidebookMessages.errorArea(area.getName()),
+                    Component.text(" was NOT saved."));
             return;
         }
-        PluginData.getMessageUtil()
-                .sendInfoMessage(sender, "Guidebook area " + area.getName() + (enabled ? " Enabled" : " Disabled"));
+        GuidebookMessages.sendInfo(
+                sender,
+                GuidebookMessages.area(area.getName()),
+                Component.text(enabled ? " was enabled." : " was disabled."));
     }
 }

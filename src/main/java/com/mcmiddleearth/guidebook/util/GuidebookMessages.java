@@ -11,17 +11,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Builds Guidebook's chat messages as Adventure components, with the same prefix and colours as PluginUtils'
- * {@code MessageUtil}. Text passed in is never parsed as markup. Plain one-line messages still use {@code MessageUtil}.
+ * Builds and sends every Guidebook chat message as Adventure components. Text passed in is never parsed as markup.
+ * Each line starts with the {@code [Guidebook]} prefix in its own colour, and the body colour shows whether it's info
+ * or an error.
  */
 public final class GuidebookMessages {
 
+    private static final TextColor PREFIX_COLOR = NamedTextColor.DARK_AQUA;
     public static final TextColor INFO = NamedTextColor.AQUA;
     public static final TextColor STRESSED = NamedTextColor.GREEN;
+    private static final TextColor ERROR = NamedTextColor.RED;
+    private static final TextColor ERROR_STRESSED = NamedTextColor.DARK_RED;
 
     private static final String PLUGIN_NAME = "Guidebook";
     private static final String PREFIX = "[" + PLUGIN_NAME + "] ";
-    // MessageUtil indents by the width of the prefix's name and brackets
+    // Indented lines line up after the prefix's name and brackets
     private static final String INDENT = " ".repeat(PLUGIN_NAME.length() + 2);
     private static final String SHORT_INDENT = "  ";
 
@@ -29,7 +33,28 @@ public final class GuidebookMessages {
 
     /** A line starting with the {@code [Guidebook]} prefix, in the info colour. */
     public static Component info(ComponentLike... parts) {
-        return line(PREFIX, INFO, parts);
+        return prefixed(INFO, parts);
+    }
+
+    /** A line starting with the {@code [Guidebook]} prefix, in the error colour. */
+    public static Component error(ComponentLike... parts) {
+        return prefixed(ERROR, parts);
+    }
+
+    public static void sendInfo(CommandSender recipient, String text) {
+        send(recipient, info(Component.text(text)));
+    }
+
+    public static void sendInfo(CommandSender recipient, ComponentLike... parts) {
+        send(recipient, info(parts));
+    }
+
+    public static void sendError(CommandSender recipient, String text) {
+        send(recipient, error(Component.text(text)));
+    }
+
+    public static void sendError(CommandSender recipient, ComponentLike... parts) {
+        send(recipient, error(parts));
     }
 
     /** A line indented to follow an {@link #info} line, in the info colour. */
@@ -44,6 +69,20 @@ public final class GuidebookMessages {
 
     public static Component stressed(String text) {
         return Component.text(text, STRESSED);
+    }
+
+    public static Component errorStressed(String text) {
+        return Component.text(text, ERROR_STRESSED);
+    }
+
+    /** {@code Area <name>} for an {@link #info} line, with the name stressed. Names never need quotes, as they have no spaces. */
+    public static Component area(String name) {
+        return Component.text("Area ").append(stressed(name));
+    }
+
+    /** {@code Area <name>} for an {@link #error} line, with the name stressed. */
+    public static Component errorArea(String name) {
+        return Component.text("Area ").append(errorStressed(name));
     }
 
     /** Clicking the text fills in {@code command} in the chat box, and hovering shows {@code hover}. */
@@ -80,6 +119,14 @@ public final class GuidebookMessages {
         } else {
             recipient.sendMessage(PlainTextComponentSerializer.plainText().serialize(message));
         }
+    }
+
+    private static Component prefixed(TextColor color, ComponentLike... parts) {
+        return Component.text()
+                .color(color)
+                .append(Component.text(PREFIX, PREFIX_COLOR))
+                .append(parts)
+                .build();
     }
 
     private static Component line(String start, TextColor color, ComponentLike... parts) {

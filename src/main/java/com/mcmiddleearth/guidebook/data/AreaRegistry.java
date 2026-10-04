@@ -46,7 +46,7 @@ public class AreaRegistry<A extends AreaView> {
         return areas.stream()
                 .filter(area -> area.getName().equalsIgnoreCase(name))
                 .findFirst()
-                .map(area -> "Guidebook area '" + area.getName() + "' already has that name");
+                .map(area -> "Area " + area.getName() + " already has that name");
     }
 
     /**

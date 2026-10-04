@@ -48,10 +48,9 @@ public final class GuidebookDetails {
         GuidebookMessages.send(
                 sender,
                 GuidebookMessages.info(
-                        Component.text("Details for Guidebook area "),
+                        Component.text("Details for "),
                         GuidebookMessages.suggestsCommand(
-                                GuidebookMessages.stressed(areaName)
-                                        .append(Component.text(".", GuidebookMessages.INFO)),
+                                GuidebookMessages.area(areaName).append(Component.text(".", GuidebookMessages.INFO)),
                                 "/guidebook show " + areaName,
                                 "Click for welcome message.")));
 

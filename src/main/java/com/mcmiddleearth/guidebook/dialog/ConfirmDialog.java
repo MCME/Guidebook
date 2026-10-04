@@ -89,10 +89,10 @@ public final class ConfirmDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player canceller) {
-                                PluginData.getMessageUtil()
-                                        .sendInfoMessage(
-                                                canceller,
-                                                "Guidebook area " + area.getName() + " was not " + mode.done + ".");
+                                GuidebookMessages.sendInfo(
+                                        canceller,
+                                        GuidebookMessages.area(area.getName()),
+                                        Component.text(" was not " + mode.done + "."));
                             }
                         },
                         once))
@@ -113,11 +113,10 @@ public final class ConfirmDialog {
         }
         // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
         if (PluginData.getInfoAreaExact(area.getName()) != area) {
-            PluginData.getMessageUtil()
-                    .sendErrorMessage(
-                            player,
-                            "Guidebook area " + area.getName()
-                                    + " was deleted or reloaded while you decided. It was NOT " + mode.done + ".");
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.errorArea(area.getName()),
+                    Component.text(" was deleted or reloaded while you decided. It was NOT " + mode.done + "."));
             return;
         }
         confirmed.accept(player);

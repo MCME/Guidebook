@@ -95,7 +95,7 @@ class AreaRegistryTest {
     @Test
     void aNewNameInUseIgnoringCaseIsRefusedNamingTheAreaThatHasIt() {
         assertEquals(
-                Optional.of("Guidebook area 'minas' already has that name"),
+                Optional.of("Area minas already has that name"),
                 registryOf(area("minas")).newNameProblem("MINAS"));
     }
 
