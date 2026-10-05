@@ -11,6 +11,7 @@ import io.papermc.paper.registry.data.dialog.DialogBase;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.input.DialogInput;
+import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput;
 import io.papermc.paper.registry.data.dialog.input.TextDialogInput;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
 import java.io.IOException;
@@ -51,7 +52,9 @@ public final class EditDialog {
     private static final String SUBTITLE = "subtitle";
     private static final String SHOW_BOSS_BAR = "show_boss_bar";
     private static final String DESCRIPTION = "description";
+    private static final String STATUS = "status";
     private static final String ENABLED = "enabled";
+    private static final String DISABLED = "disabled";
 
     private EditDialog() {}
 
@@ -81,7 +84,7 @@ public final class EditDialog {
                     Objects.requireNonNullElse(response.getText(SUBTITLE), ""),
                     Boolean.TRUE.equals(response.getBoolean(SHOW_BOSS_BAR)),
                     Objects.requireNonNullElse(response.getText(DESCRIPTION), ""),
-                    Boolean.TRUE.equals(response.getBoolean(ENABLED)));
+                    ENABLED.equals(response.getText(STATUS)));
         }
 
         /**
@@ -136,13 +139,22 @@ public final class EditDialog {
                     tagHint("<guide>", "Guide: in dark aqua, then white text"),
                     tagHint("<bullet>", "a grey ▸ list marker"),
                     tagHint("<date>…</date>", "yellow text"),
-                    tagHint("<term:meaning>…</term>", "gold, with the meaning on hover"),
-                    tagHint("<wiki:page>…</wiki>", "aqua, opens the Tolkien Gateway page"),
+                    tagHint("<term:meaning>…</term>", "gold, with meaning on hover"),
+                    tagHint("<wiki:page>…</wiki>", "aqua, opens Tolkien Gateway page"),
                     tagHint("<warp:name>…</warp>", "green, runs /warp name"),
                     Component.empty(),
                     Component.text(
-                            "Quote an argument containing : or >, e.g. <term:'Sindarin: hill'>",
-                            NamedTextColor.GRAY))));
+                            "A wiki page is its name, not its URL, e.g. <wiki:Minas Tirith>", NamedTextColor.GRAY),
+                    Component.empty(),
+                    Component.text("Use quotes if you need special characters like : or >", NamedTextColor.GRAY),
+                    Component.text("e.g. <term:'Sindarin: hill'>", NamedTextColor.GRAY))));
+
+    private static final Component BOSS_BAR_HELP = Component.text("Show boss bar ")
+            .append(Component.text("ⓘ", NamedTextColor.AQUA)
+                    .hoverEvent(HoverEvent.showText(Component.join(
+                            JoinConfiguration.newlines(),
+                            Component.text("Shows the Title in a bar at the top of the screen"),
+                            Component.text("the whole time a player is in the Area")))));
 
     private static Component tagHint(String tag, String rendersAs) {
         return Component.text(tag).append(Component.text(" " + rendersAs, NamedTextColor.GRAY));
@@ -157,6 +169,27 @@ public final class EditDialog {
 
         // The Dialog API puts body text above every input, so the Description's hint goes in its label
         List<DialogInput> inputs = List.of(
+                // Named options rather than a checkbox, so Disabled says what it means
+                DialogInput.singleOption(
+                                STATUS,
+                                Component.text("Status"),
+                                List.of(
+                                        SingleOptionDialogInput.OptionEntry.create(
+                                                ENABLED,
+                                                Component.text("Enabled", NamedTextColor.GREEN)
+                                                        .append(Component.text(
+                                                                " – players entering are welcomed",
+                                                                NamedTextColor.WHITE)),
+                                                values.enabled()),
+                                        SingleOptionDialogInput.OptionEntry.create(
+                                                DISABLED,
+                                                Component.text("Disabled", NamedTextColor.RED)
+                                                        .append(Component.text(
+                                                                " – players entering see nothing",
+                                                                NamedTextColor.WHITE)),
+                                                !values.enabled())))
+                        .width(300)
+                        .build(),
                 DialogInput.text(TITLE, Component.text("Title"))
                         .width(300)
                         .initial(values.title())
@@ -170,18 +203,14 @@ public final class EditDialog {
                 DialogInput.bool(SHOW_TITLE, Component.text("Show title"))
                         .initial(values.showTitle())
                         .build(),
-                DialogInput.bool(SHOW_BOSS_BAR, Component.text("Show boss bar"))
+                DialogInput.bool(SHOW_BOSS_BAR, BOSS_BAR_HELP)
                         .initial(values.showBossBar())
-                        .build(),
-                DialogInput.bool(ENABLED, Component.text("Enabled"))
-                        .initial(values.enabled())
                         .build(),
                 DialogInput.text(
                                 DESCRIPTION,
                                 Component.text("Description ")
                                         .append(Component.text(
-                                                "(MiniMessage; each line is sent as one line in chat) ",
-                                                NamedTextColor.GRAY))
+                                                "(MiniMessage; line wraps will be indented) ", NamedTextColor.GRAY))
                                         .append(GUIDEBOOK_TAGS))
                         .width(400)
                         .initial(values.description())
