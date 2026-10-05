@@ -116,14 +116,13 @@ class GuidebookRoot {
 
     @Executes("set")
     @Permission(STAFF)
-    void set(CommandSender sender, @Executor Player player, @GuidebookSet.AreaNameSuggestions @StringArg String name) {
+    void set(@Executor Player player, @GuidebookSet.AreaNameSuggestions @StringArg String name) {
         GuidebookSet.fromSelection(player, name);
     }
 
     @Executes("set")
     @Permission(STAFF)
     void setSphere(
-            CommandSender sender,
             @Executor Player player,
             @GuidebookSet.AreaNameSuggestions @StringArg String name,
             @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("sphere") String sphere,
@@ -171,7 +170,7 @@ class GuidebookRoot {
 
     @Executes("edit")
     @Permission(STAFF)
-    void editHere(CommandSender sender, @Executor Player player) {
+    void editHere(@Executor Player player) {
         List<InfoArea> here = PluginData.getInfoAreas().values().stream()
                 .filter(area -> area.isInside(player.getLocation()))
                 .toList();
@@ -196,7 +195,7 @@ class GuidebookRoot {
 
     @Executes("edit")
     @Permission(STAFF)
-    void edit(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void edit(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
         EditDialog.open(player, area);
     }
 
