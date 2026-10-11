@@ -79,13 +79,13 @@ final class GuidebookList {
                 "▸ ",
                 nameText,
                 "  ",
-                button("✎", NamedTextColor.WHITE, "edit", name, "Edit this Area"),
+                button("✎", NamedTextColor.WHITE, "edit", name, "Edit this area"),
                 " ",
-                button("W", NamedTextColor.GREEN, "warp", name, "Warp to this Area"),
+                button("W", NamedTextColor.GREEN, "warp", name, "Warp to this area"),
                 " ",
-                button("⬚", NamedTextColor.AQUA, "select", name, "Set your WorldEdit selection to this Area"),
+                button("⬚", NamedTextColor.AQUA, "select", name, "Set your WorldEdit selection to this area"),
                 " ",
-                button("🗑", NamedTextColor.RED, "delete", name, "Delete this Area (asks to confirm)"));
+                button("🗑", NamedTextColor.RED, "delete", name, "Delete this area (asks to confirm)"));
     }
 
     // Clicking runs the command straight away; delete asks to confirm by itself

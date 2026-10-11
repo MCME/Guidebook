@@ -42,7 +42,7 @@ final class GuidebookHelp {
             new Entry("on", USER, "on", "Receive welcome messages when you enter a Guidebook area."),
             new Entry("off", USER, "off", "Stop receiving welcome messages when you enter a Guidebook area."),
             new Entry("help", USER, "help [command]", "List the commands you can use, or show one command in detail."),
-            new Entry("select", STAFF, "select <area>", "Replace your WorldEdit selection with an Area's Shape."),
+            new Entry("select", STAFF, "select <area>", "Replace your WorldEdit selection with an area's shape."),
             new Entry("warp", STAFF, "warp <area>", "Teleport to an area."),
             new Entry(
                     "create",

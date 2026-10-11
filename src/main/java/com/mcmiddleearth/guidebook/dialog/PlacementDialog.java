@@ -187,7 +187,7 @@ public final class PlacementDialog {
                 GuidebookMessages.sendError(
                         player,
                         "The old data file " + oldWorld + "/" + area.getName()
-                                + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
+                                + ".yml couldn't be deleted. Delete it before reloading, or the area will load twice.");
             }
         }
     }
@@ -272,7 +272,7 @@ public final class PlacementDialog {
             PlacementCheck.Proposal fromSelection = proposal.get();
             buttons.add(ActionButton.builder(Component.text("✔ " + purpose.useSelection(), NamedTextColor.GREEN))
                     .tooltip(Component.text(
-                            "Places the Area in your WorldEdit selection, with its Warp point where you stand."))
+                            "Places the area in your WorldEdit selection, with its Warp point where you stand."))
                     .action(DialogAction.customClick(
                             (response, audience) -> {
                                 if (audience instanceof Player placer) {
@@ -283,7 +283,7 @@ public final class PlacementDialog {
                     .build());
         }
         buttons.add(ActionButton.builder(Component.text("● " + purpose.sphereAroundMe(), NamedTextColor.GREEN))
-                .tooltip(Component.text("Places the Area as a sphere centred on you, with the radius above."))
+                .tooltip(Component.text("Places the area as a sphere centred on you, with the radius above."))
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player placer) {

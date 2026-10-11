@@ -155,7 +155,7 @@ public final class EditDialog {
                     .hoverEvent(HoverEvent.showText(Component.join(
                             JoinConfiguration.newlines(),
                             Component.text("Shows the Title in a bar at the top of the screen"),
-                            Component.text("the whole time a player is in the Area")))));
+                            Component.text("the whole time a player is in the area")))));
 
     private static Component tagHint(String tag, String rendersAs) {
         return Component.text(tag).append(Component.text(" " + rendersAs, NamedTextColor.GRAY));
