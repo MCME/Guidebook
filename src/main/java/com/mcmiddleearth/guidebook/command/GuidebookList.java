@@ -5,12 +5,10 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.AreaGeometry;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -110,29 +108,9 @@ final class GuidebookList {
                 .build();
     }
 
-    // Sides are block-inclusive and given as X × Y × Z
+    // Such as "■ Cuboid, 21 × 10 × 30 blocks (x × y × z)"
     private static String shapeText(InfoArea area) {
-        String shape =
-                area.getShape().symbol() + " " + capitalised(area.getShape().displayName());
-        return switch (area.getGeometry()) {
-            case AreaGeometry.Sphere sphere -> shape + ", radius " + sphere.radius();
-            case AreaGeometry.Cuboid cuboid ->
-                shape + ", "
-                        + sides(
-                                cuboid.maxX() - cuboid.minX() + 1,
-                                cuboid.maxY() - cuboid.minY() + 1,
-                                cuboid.maxZ() - cuboid.minZ() + 1);
-            case AreaGeometry.Prism prism ->
-                shape + " with " + prism.xs().size() + " corners, "
-                        + sides(
-                                Collections.max(prism.xs()) - Collections.min(prism.xs()) + 1,
-                                prism.maxY() - prism.minY() + 1,
-                                Collections.max(prism.zs()) - Collections.min(prism.zs()) + 1);
-        };
-    }
-
-    private static String sides(int x, int y, int z) {
-        return x + " × " + y + " × " + z + " blocks";
+        return area.getShape().symbol() + " " + capitalised(area.getGeometry().describe());
     }
 
     private static String capitalised(String text) {

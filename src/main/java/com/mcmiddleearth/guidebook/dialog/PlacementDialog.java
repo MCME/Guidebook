@@ -156,7 +156,8 @@ public final class PlacementDialog {
         @Override
         public Optional<Component> currentPlacement() {
             return Optional.of(Component.text("Now: ", NamedTextColor.GRAY)
-                    .append(Component.text(area.getWorldName() + ", " + describe(area.getGeometry()))));
+                    .append(Component.text(
+                            area.getWorldName() + ", " + area.getGeometry().describe())));
         }
 
         @Override
@@ -229,7 +230,7 @@ public final class PlacementDialog {
         purpose.currentPlacement().ifPresent(current -> body.add(DialogBody.plainMessage(current)));
         warnedSphere.ifPresent(sphere -> {
             body.add(DialogBody.plainMessage(Component.text("Sphere around you: ", NamedTextColor.GRAY)
-                    .append(Component.text(describe(sphere.geometry())))));
+                    .append(Component.text(sphere.geometry().describe()))));
             check(player, purpose, sphere).forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
         });
         body.add(DialogBody.plainMessage(selectionLine(selection)));
@@ -372,7 +373,8 @@ public final class PlacementDialog {
     private static Component selectionLine(WorldEditSelections.Selection selection) {
         Component label = Component.text("Your WorldEdit selection: ", NamedTextColor.GRAY);
         return switch (selection) {
-            case WorldEditSelections.Usable usable -> label.append(Component.text(describe(usable.geometry())));
+            case WorldEditSelections.Usable usable ->
+                label.append(Component.text(usable.geometry().describe()));
             case WorldEditSelections.NoSelection none ->
                 label.append(Component.text(
                         "none. Select a cuboid or polygon with WorldEdit to use it.", NamedTextColor.GOLD));
@@ -388,17 +390,6 @@ public final class PlacementDialog {
         };
     }
 
-    /** A Shape and its block-inclusive dimensions, such as "cuboid, 21 × 10 × 30 blocks (x × y × z)". */
-    static String describe(AreaGeometry geometry) {
-        AreaGeometry.Sides sides = geometry.sides();
-        String dimensions = sides.x() + " × " + sides.y() + " × " + sides.z() + " blocks (x × y × z)";
-        return switch (geometry) {
-            case AreaGeometry.Sphere sphere -> "sphere, radius " + sphere.radius();
-            case AreaGeometry.Cuboid cuboid -> "cuboid, " + dimensions;
-            case AreaGeometry.Prism prism -> "prism with " + prism.xs().size() + " corners, " + dimensions;
-        };
-    }
-
     /** The axes along which a test holds, such as "x and z". */
     private static String axes(AreaGeometry.Sides sides, IntPredicate test) {
         List<String> axes = new ArrayList<>();
@@ -411,9 +402,7 @@ public final class PlacementDialog {
         if (test.test(sides.z())) {
             axes.add("z");
         }
-        return axes.size() == 1
-                ? axes.getFirst()
-                : String.join(", ", axes.subList(0, axes.size() - 1)) + " and " + axes.getLast();
+        return joinWithAnd(axes);
     }
 
     /** One finding on its own line: blocking ones in red, warnings marked ⚠. */

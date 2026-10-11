@@ -192,10 +192,10 @@ final class AreaOverlap {
             inside = new PrismInside(prism);
             minY = prism.minY();
             maxY = prism.maxY();
-            minX = prism.xs().stream().mapToInt(Integer::intValue).min().orElse(0);
-            maxX = prism.xs().stream().mapToInt(Integer::intValue).max().orElse(-1);
-            minZ = prism.zs().stream().mapToInt(Integer::intValue).min().orElse(0);
-            maxZ = prism.zs().stream().mapToInt(Integer::intValue).max().orElse(-1);
+            minX = prism.minX();
+            maxX = prism.maxX();
+            minZ = prism.minZ();
+            maxZ = prism.maxZ();
         }
 
         @Override

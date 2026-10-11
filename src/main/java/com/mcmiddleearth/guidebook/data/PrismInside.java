@@ -47,10 +47,10 @@ final class PrismInside {
         for (int i = 0; i < n; i++) {
             gradients.add((zs.get((i + 1) % n) - zs.get(i)) / (1.0 * xs.get((i + 1) % n) - xs.get(i)));
         }
-        this.minX = xs.stream().mapToInt(Integer::intValue).min().orElse(0);
-        this.maxX = xs.stream().mapToInt(Integer::intValue).max().orElse(0);
-        this.minZ = zs.stream().mapToInt(Integer::intValue).min().orElse(0);
-        this.maxZ = zs.stream().mapToInt(Integer::intValue).max().orElse(0);
+        this.minX = prism.minX();
+        this.maxX = prism.maxX();
+        this.minZ = prism.minZ();
+        this.maxZ = prism.maxZ();
         this.minY = prism.minY();
         this.maxY = prism.maxY();
     }
