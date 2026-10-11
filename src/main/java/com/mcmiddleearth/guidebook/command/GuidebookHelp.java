@@ -47,7 +47,7 @@ final class GuidebookHelp {
                     STAFF,
                     "show <area>",
                     "Play an area's welcome to you as players get it, with no cooldown. The console gets the description only."),
-            new Entry("details", STAFF, "details <area>", "Show an area's shape and location."),
+            new Entry("select", STAFF, "select <area>", "Replace your WorldEdit selection with an Area's Shape."),
             new Entry("warp", STAFF, "warp <area>", "Teleport to an area."),
             new Entry("enable", STAFF, "enable <area>", "Turn an area's welcome messages on."),
             new Entry("disable", STAFF, "disable <area>", "Turn an area's welcome messages off."),
