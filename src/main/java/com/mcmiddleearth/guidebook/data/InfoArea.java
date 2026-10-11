@@ -59,6 +59,9 @@ public abstract class InfoArea implements MarkableArea {
 
     private String areaName;
 
+    /** The world named in the Area's file, kept for when that world isn't loaded and the region has none. */
+    private String loadedWorldName;
+
     private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
     /**
      * All players currently within the InfoArea
@@ -98,6 +101,8 @@ public abstract class InfoArea implements MarkableArea {
             status = config.getBoolean("enabled", true);
         }
         description = config.getString("description", "");
+        // An old cuboid file keeps its world under its center
+        loadedWorldName = config.getString("world", config.getString("center.world"));
     }
 
     public Region getRegion() {
@@ -166,9 +171,10 @@ public abstract class InfoArea implements MarkableArea {
         };
     }
 
+    /** The name of the Area's world, even when that world isn't loaded. */
     @Override
     public String getWorldName() {
-        return region.getWorld().getName();
+        return region.isValid() ? region.getWorld().getName() : loadedWorldName;
     }
 
     public Location getLocation() {

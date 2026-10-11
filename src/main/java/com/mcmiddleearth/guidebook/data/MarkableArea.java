@@ -7,7 +7,7 @@ public interface MarkableArea extends AreaView {
 
     String getDescription();
 
-    /** The name of the Area's world, which must be loaded. */
+    /** The name of the Area's world. */
     String getWorldName();
 
     AreaGeometry getGeometry();

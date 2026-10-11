@@ -81,12 +81,14 @@ class GuidebookRoot {
     @Executes("select")
     @Permission(STAFF)
     void select(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
-        World world = area.getRegion().getWorld();
-        if (!player.getWorld().equals(world)) {
+        // By name, as the Area's world may not be loaded
+        String worldName = area.getWorldName();
+        World world = player.getWorld();
+        if (!world.getName().equals(worldName)) {
             GuidebookMessages.sendError(
                     player,
                     GuidebookMessages.area(area.getName()),
-                    " is in " + world.getName() + ". Go to that world to select it.");
+                    " is in " + worldName + ". Go to that world to select it.");
             return;
         }
         WorldEditSelections.select(player, world, area.getGeometry());

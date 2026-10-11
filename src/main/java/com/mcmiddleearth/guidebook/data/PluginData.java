@@ -262,7 +262,7 @@ public class PluginData {
     }
 
     private static File getDataFile(InfoArea area, String areaName) {
-        return new File(new File(dataFolder, area.getLocation().getWorld().getName()), areaName + ".yml");
+        return new File(new File(dataFolder, area.getWorldName()), areaName + ".yml");
     }
 
     public static void disable() {
