@@ -38,15 +38,6 @@ class PlacementCheckOverlapTest {
         public boolean isEnabled() {
             return true;
         }
-
-        @Override
-        public Shape getShape() {
-            return switch (getGeometry) {
-                case AreaGeometry.Sphere sphere -> Shape.SPHERE;
-                case AreaGeometry.Cuboid cuboid -> Shape.CUBOID;
-                case AreaGeometry.Prism prism -> Shape.PRISM;
-            };
-        }
     }
 
     private static TestArea area(String name, AreaGeometry geometry) {

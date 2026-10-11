@@ -135,16 +135,6 @@ public abstract class InfoArea implements MarkableArea {
         };
     }
 
-    // The Shape follows the region rather than the class, since a move can give an Area another Shape
-    @Override
-    public Shape getShape() {
-        return switch (getGeometry()) {
-            case AreaGeometry.Sphere ignored -> Shape.SPHERE;
-            case AreaGeometry.Cuboid ignored -> Shape.CUBOID;
-            case AreaGeometry.Prism ignored -> Shape.PRISM;
-        };
-    }
-
     @Override
     public AreaGeometry getGeometry() {
         return switch (region) {

@@ -11,4 +11,10 @@ public interface MarkableArea extends AreaView {
     String getWorldName();
 
     AreaGeometry getGeometry();
+
+    // The Shape follows the geometry, since a move can give an Area another Shape
+    @Override
+    default Shape getShape() {
+        return getGeometry().shape();
+    }
 }

@@ -21,17 +21,7 @@ class AreaMarkersTest {
             boolean isEnabled,
             String getWorldName,
             AreaGeometry getGeometry)
-            implements MarkableArea {
-
-        @Override
-        public Shape getShape() {
-            return switch (getGeometry) {
-                case AreaGeometry.Sphere sphere -> Shape.SPHERE;
-                case AreaGeometry.Cuboid cuboid -> Shape.CUBOID;
-                case AreaGeometry.Prism prism -> Shape.PRISM;
-            };
-        }
-    }
+            implements MarkableArea {}
 
     private static TestArea sphere(String name) {
         return new TestArea(

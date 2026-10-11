@@ -40,14 +40,24 @@ public sealed interface AreaGeometry {
         };
     }
 
+    /** Which kind of Shape this is. */
+    default Shape shape() {
+        return switch (this) {
+            case Sphere ignored -> Shape.SPHERE;
+            case Cuboid ignored -> Shape.CUBOID;
+            case Prism ignored -> Shape.PRISM;
+        };
+    }
+
     /** The Shape and its block-inclusive dimensions, such as "cuboid, 21 × 10 × 30 blocks (x × y × z)". */
     default String describe() {
         Sides sides = sides();
         String dimensions = sides.x() + " × " + sides.y() + " × " + sides.z() + " blocks (x × y × z)";
+        String shape = shape().displayName();
         return switch (this) {
-            case Sphere sphere -> "sphere, radius " + sphere.radius();
-            case Cuboid cuboid -> "cuboid, " + dimensions;
-            case Prism prism -> "prism with " + prism.xs().size() + " corners, " + dimensions;
+            case Sphere sphere -> shape + ", radius " + sphere.radius();
+            case Cuboid cuboid -> shape + ", " + dimensions;
+            case Prism prism -> shape + " with " + prism.xs().size() + " corners, " + dimensions;
         };
     }
 
