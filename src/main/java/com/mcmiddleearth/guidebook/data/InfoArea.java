@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
@@ -40,22 +41,26 @@ import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 /**
+ * An Area, made with {@link #create} or read from its file with {@link #load}. Its Shape is whichever region it holds,
+ * which a move can change.
+ *
  * @author Eriol_Eandur
  */
-public abstract class InfoArea implements MarkableArea {
+public final class InfoArea implements MarkableArea {
 
     private static final int NEAR_DISTANCE = 10;
     private static final Duration COOLDOWN = Duration.ofMinutes(1);
     private static final Title.Times TITLE_TIMES =
             Title.Times.times(Ticks.duration(15), Ticks.duration(25), Ticks.duration(10));
 
-    protected Region region;
+    private Region region;
 
     private String areaName;
 
@@ -80,7 +85,7 @@ public abstract class InfoArea implements MarkableArea {
 
     private String description = "";
 
-    protected InfoArea(String areaName) {
+    private InfoArea(String areaName) {
         this.areaName = areaName;
 
         // scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
@@ -90,7 +95,7 @@ public abstract class InfoArea implements MarkableArea {
         status = true;
     }
 
-    public InfoArea(String areaName, ConfigurationSection config) {
+    private InfoArea(String areaName, ConfigurationSection config) {
         this(areaName);
 
         if (config.contains("title")) {
@@ -103,6 +108,65 @@ public abstract class InfoArea implements MarkableArea {
         description = config.getString("description", "");
         // An old cuboid file keeps its world under its center
         loadedWorldName = config.getString("world", config.getString("center.world"));
+    }
+
+    /** A new Area filling {@code geometry}, with its Warp point at {@code warpPoint}. */
+    public static InfoArea create(String areaName, Location warpPoint, AreaGeometry geometry) {
+        InfoArea area = new InfoArea(areaName);
+        area.region = regionOf(geometry, warpPoint);
+        return area;
+    }
+
+    /**
+     * Reads the Area {@code areaName} from its file's contents.
+     *
+     * @return the Area, or empty if the file holds no Shape Guidebook knows
+     */
+    public static Optional<InfoArea> load(String areaName, ConfigurationSection config) {
+        Region region;
+        if (SphericalRegion.isValidConfig(config)) {
+            region = SphericalRegion.load(config);
+        } else if (PrismoidRegion.isValidConfig(config)) {
+            DevUtil.log("loadPrism " + config);
+            region = PrismoidRegion.load(config);
+        } else if (CuboidRegion.isValidConfig(config) || config.contains("xSize")) { // xSize is the old cuboid format
+            region = loadCuboid(config);
+        } else {
+            return Optional.empty();
+        }
+        InfoArea area = new InfoArea(areaName, config);
+        area.region = region;
+        return Optional.of(area);
+    }
+
+    private static CuboidRegion loadCuboid(ConfigurationSection config) {
+        if (!config.contains("center")) {
+            DevUtil.log("loadCuboid " + config);
+            return CuboidRegion.load(config);
+        }
+        // The old format: a centre and the sizes along each axis
+        Location center = deserializeLocation(config.getConfigurationSection("center"));
+        int sizeX = config.getInt("xSize");
+        int sizeY = config.getInt("ySize");
+        int sizeZ = config.getInt("zSize");
+        Vector minPos = new Vector(
+                center.getBlockX() - sizeX / 2, center.getBlockY() - sizeY / 2, center.getBlockZ() - sizeZ / 2);
+        Vector maxPos = new Vector(
+                center.getBlockX() + sizeX / 2, center.getBlockY() + sizeY / 2, center.getBlockZ() + sizeZ / 2);
+        DevUtil.log("CreateCuboid " + center + "     " + minPos + "    " + maxPos);
+        return new CuboidRegion(center, minPos, maxPos);
+    }
+
+    private static Location deserializeLocation(ConfigurationSection data) {
+        if (data == null) {
+            return null;
+        }
+        World world = Bukkit.getWorld(data.getString("world"));
+        if (world == null) {
+            return null;
+        } else {
+            return new Location(world, (Double) data.get("x"), (Double) data.get("y"), (Double) data.get("z"));
+        }
     }
 
     public Region getRegion() {

@@ -1,13 +1,10 @@
 package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.data.AreaGeometry;
-import com.mcmiddleearth.guidebook.data.CuboidInfoArea;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PlacementCheck;
 import com.mcmiddleearth.guidebook.data.PlacementFinding;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
-import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.dialog.Dialog;
@@ -106,13 +103,7 @@ public final class PlacementDialog {
         // Built from where the player is now, but only added once they press Create in the Edit dialog
         @Override
         public void place(Player player, AreaGeometry geometry, Location warpPoint) {
-            InfoArea area =
-                    switch (geometry) {
-                        case AreaGeometry.Sphere sphere -> new SphericalInfoArea(areaName, warpPoint, sphere.radius());
-                        case AreaGeometry.Cuboid cuboid -> new CuboidInfoArea(areaName, warpPoint, cuboid);
-                        case AreaGeometry.Prism prism -> new PrismoidInfoArea(areaName, warpPoint, prism);
-                    };
-            EditDialog.openToCreate(player, area);
+            EditDialog.openToCreate(player, InfoArea.create(areaName, warpPoint, geometry));
         }
     }
 

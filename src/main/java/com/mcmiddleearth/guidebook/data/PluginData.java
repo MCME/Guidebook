@@ -21,10 +21,7 @@ import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.webmap.MarkerLayer;
 import com.mcmiddleearth.guidebook.webmap.NoWebMap;
 import com.mcmiddleearth.guidebook.webmap.WebMap;
-import com.mcmiddleearth.pluginutil.region.CuboidRegion;
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
-import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -222,14 +219,7 @@ public class PluginData {
             String areaName = loaded.name();
             config = loaded.config();
             DevUtil.log("Load area " + areaName);
-            if (SphericalRegion.isValidConfig(config)) {
-                addInfoArea(areaName, new SphericalInfoArea(areaName, config));
-            } else if (PrismoidRegion.isValidConfig(config)) {
-                addInfoArea(areaName, new PrismoidInfoArea(areaName, config));
-            } else if (CuboidRegion.isValidConfig(config)
-                    || config.contains("xSize")) { // xSize is to notice old data format
-                addInfoArea(areaName, new CuboidInfoArea(areaName, config));
-            }
+            InfoArea.load(areaName, config).ifPresent(area -> addInfoArea(areaName, area));
         }
         drawWebMap();
     }
