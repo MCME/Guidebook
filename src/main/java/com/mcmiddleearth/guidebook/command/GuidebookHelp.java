@@ -51,20 +51,12 @@ final class GuidebookHelp {
                     "Create an area from your WorldEdit selection, or as a sphere around you, in a dialog that"
                             + " checks the placement first."),
             new Entry(
-                    "set",
+                    "move",
                     STAFF,
-                    List.of("set <area>", "set <area> sphere <radius>"),
-                    "Move an area to your WorldEdit selection, or to a sphere around you, after you confirm."),
-            new Entry(
-                    "size",
-                    STAFF,
-                    List.of(
-                            "size <area>",
-                            "size <area> radius <radius>",
-                            "size <area> corners <pos1> <pos2>",
-                            "size <area> height <minY> <maxY>"),
-                    "Resize an area: radius for a sphere, corners for a cuboid, height for a prism. With only"
-                            + " <area>, show its size and the form that fits its shape."),
+                    "move <area>",
+                    "Move an area to your WorldEdit selection, or to a sphere around you, in a dialog that shows"
+                            + " where it is now and checks the new placement. To reshape an area, select it, adjust"
+                            + " the selection in WorldEdit, then move it."),
             new Entry(
                     "edit",
                     STAFF,

@@ -20,7 +20,7 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
 
 /**
- * A confirmation dialog for an action on one Area, such as deleting or moving it. It shows the question, the Area's
+ * A confirmation dialog for an action on one Area, such as deleting it. It shows the question, the Area's
  * name and its Title. Esc runs the Cancel button's action, so closing the dialog counts as Cancel.
  */
 public final class ConfirmDialog {
@@ -32,12 +32,7 @@ public final class ConfirmDialog {
      * Confirm is red.
      */
     private enum Mode {
-        DELETE("Delete", "deleted", "Do you really want to delete this Guidebook area?", NamedTextColor.RED),
-        MOVE(
-                "Move",
-                "moved",
-                "This Guidebook area already exists. Do you want to move it to your location and selection?",
-                NamedTextColor.GREEN);
+        DELETE("Delete", "deleted", "Do you really want to delete this Guidebook area?", NamedTextColor.RED);
 
         private final String verb;
         private final String done;
@@ -65,11 +60,6 @@ public final class ConfirmDialog {
      */
     public static void openToDelete(Player player, InfoArea area, Consumer<Player> cancelled) {
         open(player, area, Mode.DELETE, confirmer -> delete(confirmer, area), cancelled);
-    }
-
-    /** Asks {@code player} to confirm moving {@code area} to their location and selection. {@code move} runs on Confirm. */
-    public static void openToMove(Player player, InfoArea area, Consumer<Player> move) {
-        open(player, area, Mode.MOVE, move, canceller -> sendNotDone(canceller, area, Mode.MOVE));
     }
 
     private static void delete(Player player, InfoArea area) {

@@ -24,18 +24,13 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 
-/**
- * @author Eriol_Eandur
- */
+/** An Area loaded or created as a cuboid. A move can give it another Shape, which {@link InfoArea} follows. */
 public class CuboidInfoArea extends InfoArea {
 
     /** A new Area filling {@code cuboid}, with its Warp point at {@code warpPoint}. */
     public CuboidInfoArea(String areaName, Location warpPoint, AreaGeometry.Cuboid cuboid) {
         super(areaName);
-        region = new CuboidRegion(
-                warpPoint,
-                new Vector(cuboid.minX(), cuboid.minY(), cuboid.minZ()),
-                new Vector(cuboid.maxX(), cuboid.maxY(), cuboid.maxZ()));
+        region = regionOf(cuboid, warpPoint);
     }
 
     public CuboidInfoArea(String areaName, ConfigurationSection config) {
@@ -56,34 +51,6 @@ public class CuboidInfoArea extends InfoArea {
             DevUtil.log("loadCuboid " + config);
             region = CuboidRegion.load(config);
         }
-    }
-
-    @Override
-    public Shape getShape() {
-        return Shape.CUBOID;
-    }
-
-    @Override
-    public AreaGeometry getGeometry() {
-        Vector min = getMinPos();
-        Vector max = getMaxPos();
-        return new AreaGeometry.Cuboid(
-                min.getBlockX(), min.getBlockY(), min.getBlockZ(), max.getBlockX(), max.getBlockY(), max.getBlockZ());
-    }
-
-    public void setCorners(Vector pos1, Vector pos2) {
-        ((CuboidRegion) region).setCorners(pos1, pos2);
-        /*sizeX = x;
-        sizeY = y;
-        sizeZ = z;*/
-    }
-
-    public Vector getMinPos() {
-        return ((CuboidRegion) region).getMinCorner();
-    }
-
-    public Vector getMaxPos() {
-        return ((CuboidRegion) region).getMaxCorner();
     }
 
     private static Location deserializeLocation(ConfigurationSection data) {

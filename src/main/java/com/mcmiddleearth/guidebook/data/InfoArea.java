@@ -21,12 +21,16 @@ import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.pluginutil.region.CuboidRegion;
+import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
+import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +43,7 @@ import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 /**
  * @author Eriol_Eandur
@@ -101,6 +106,64 @@ public abstract class InfoArea implements MarkableArea {
 
     public void setRegion(Region region) {
         this.region = region;
+    }
+
+    /**
+     * The region filling {@code geometry}, with its Warp point at {@code warpPoint}. A sphere is centred on its Warp
+     * point, so its own centre is ignored.
+     */
+    static Region regionOf(AreaGeometry geometry, Location warpPoint) {
+        return switch (geometry) {
+            case AreaGeometry.Sphere sphere -> new SphericalRegion(warpPoint, sphere.radius());
+            case AreaGeometry.Cuboid cuboid ->
+                new CuboidRegion(
+                        warpPoint,
+                        new Vector(cuboid.minX(), cuboid.minY(), cuboid.minZ()),
+                        new Vector(cuboid.maxX(), cuboid.maxY(), cuboid.maxZ()));
+            case AreaGeometry.Prism prism ->
+                new PrismoidRegion(
+                        warpPoint,
+                        new ArrayList<>(prism.xs()),
+                        new ArrayList<>(prism.zs()),
+                        prism.minY(),
+                        prism.maxY());
+        };
+    }
+
+    // The Shape follows the region rather than the class, since a move can give an Area another Shape
+    @Override
+    public Shape getShape() {
+        return switch (getGeometry()) {
+            case AreaGeometry.Sphere ignored -> Shape.SPHERE;
+            case AreaGeometry.Cuboid ignored -> Shape.CUBOID;
+            case AreaGeometry.Prism ignored -> Shape.PRISM;
+        };
+    }
+
+    @Override
+    public AreaGeometry getGeometry() {
+        return switch (region) {
+            case SphericalRegion sphere -> {
+                Location center = sphere.getLocation();
+                yield new AreaGeometry.Sphere(
+                        center.getBlockX(), center.getBlockY(), center.getBlockZ(), sphere.getRadius());
+            }
+            case CuboidRegion cuboid -> {
+                Vector min = cuboid.getMinCorner();
+                Vector max = cuboid.getMaxCorner();
+                yield new AreaGeometry.Cuboid(
+                        min.getBlockX(),
+                        min.getBlockY(),
+                        min.getBlockZ(),
+                        max.getBlockX(),
+                        max.getBlockY(),
+                        max.getBlockZ());
+            }
+            case PrismoidRegion prism ->
+                new AreaGeometry.Prism(
+                        List.of(prism.getXPoints()), List.of(prism.getZPoints()), prism.getMinY(), prism.getMaxY());
+            default -> throw new IllegalStateException("Unsupported region " + region);
+        };
     }
 
     @Override

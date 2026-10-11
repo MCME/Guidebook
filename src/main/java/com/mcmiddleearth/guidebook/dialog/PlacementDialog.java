@@ -18,10 +18,13 @@ import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.input.DialogInput;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.IntPredicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -31,7 +34,9 @@ import org.bukkit.entity.Player;
 /**
  * The Placement dialog: where an Area will go, checked before anything is written. It shows the staff member's
  * WorldEdit selection and the {@link PlacementCheck}'s findings, and offers to place the Area from the selection or as
- * a sphere around them. Every button runs the check again, since other staff may have changed Areas meanwhile.
+ * a sphere around them. For {@code create} it continues into the Edit dialog; for {@code move} it also shows where the
+ * Area is now, and its Move buttons are the confirmation. Every button runs the check again, since other staff may
+ * have changed Areas meanwhile.
  *
  * <p>There is no Refresh button: the selection can't change while the dialog is open, so staff cancel, fix it and run
  * the command again.
@@ -57,7 +62,18 @@ public final class PlacementDialog {
 
         String sphereAroundMe();
 
-        String cancelled();
+        /** Tells the player that Cancel changed nothing. */
+        void sendCancelled(Player player);
+
+        /** For a move, the Area being moved, which the overlap check skips. */
+        default Optional<String> movedAreaName() {
+            return Optional.empty();
+        }
+
+        /** For a move, where the Area is now, shown above the new placement. */
+        default Optional<Component> currentPlacement() {
+            return Optional.empty();
+        }
 
         /** Places the Area, once the check has found nothing blocking. */
         void place(Player player, AreaGeometry geometry, Location warpPoint);
@@ -82,8 +98,8 @@ public final class PlacementDialog {
         }
 
         @Override
-        public String cancelled() {
-            return "No Guidebook area was created.";
+        public void sendCancelled(Player player) {
+            GuidebookMessages.sendInfo(player, "No Guidebook area was created.");
         }
 
         // Built from where the player is now, but only added once they press Create in the Edit dialog
@@ -99,9 +115,90 @@ public final class PlacementDialog {
         }
     }
 
+    /**
+     * Moving {@code area}. Pressing a Move button is the confirmation: the Area takes the new Shape, and its Warp point
+     * becomes where the player stands.
+     */
+    private record Move(InfoArea area) implements Purpose {
+
+        // Read when needed, so a rename while the dialog is open is followed
+        @Override
+        public String areaName() {
+            return area.getName();
+        }
+
+        @Override
+        public String title() {
+            return "Moving Guidebook area ";
+        }
+
+        @Override
+        public String useSelection() {
+            return "Move to selection";
+        }
+
+        @Override
+        public String sphereAroundMe() {
+            return "Move to sphere around me";
+        }
+
+        @Override
+        public void sendCancelled(Player player) {
+            GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName()), " was not moved.");
+        }
+
+        @Override
+        public Optional<String> movedAreaName() {
+            return Optional.of(areaName());
+        }
+
+        @Override
+        public Optional<Component> currentPlacement() {
+            return Optional.of(Component.text("Now: ", NamedTextColor.GRAY)
+                    .append(Component.text(area.getWorldName() + ", " + describe(area.getGeometry()))));
+        }
+
+        @Override
+        public void place(Player player, AreaGeometry geometry, Location warpPoint) {
+            // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
+            if (PluginData.getInfoAreaExact(area.getName()) != area) {
+                player.closeDialog();
+                GuidebookMessages.sendError(
+                        player,
+                        GuidebookMessages.area(area.getName()),
+                        " was deleted or reloaded while you decided. It was NOT moved.");
+                return;
+            }
+            String oldWorld = area.getWorldName();
+            boolean oldFileDeleted;
+            try {
+                oldFileDeleted = PluginData.moveInfoArea(area, geometry, warpPoint);
+            } catch (IOException ex) {
+                Logger.getLogger(PlacementDialog.class.getName()).log(Level.SEVERE, null, ex);
+                player.closeDialog();
+                GuidebookMessages.sendNotDone(player, area.getName(), "moved");
+                return;
+            }
+            player.closeDialog();
+            GuidebookMessages.sendInfo(
+                    player, GuidebookMessages.area(area.getName()), " was moved to your location and selection.");
+            if (!oldFileDeleted) {
+                GuidebookMessages.sendError(
+                        player,
+                        "The old data file " + oldWorld + "/" + area.getName()
+                                + ".yml couldn't be deleted. Delete it before reloading, or the Area will load twice.");
+            }
+        }
+    }
+
     /** Opens the dialog that places the new Area {@code name}. The name was free when the command ran. */
     public static void openToCreate(Player player, String name) {
         show(player, new Create(name), List.of());
+    }
+
+    /** Opens the dialog that moves {@code area}, showing where it is now above the new placement. */
+    public static void openToMove(Player player, InfoArea area) {
+        show(player, new Move(area), List.of());
     }
 
     /**
@@ -114,13 +211,15 @@ public final class PlacementDialog {
         Optional<PlacementCheck.Proposal> proposal = selection instanceof WorldEditSelections.Usable usable
                 ? Optional.of(new PlacementCheck.Proposal(usable.world(), usable.geometry()))
                 : Optional.empty();
-        List<PlacementFinding> findings = proposal.map(p -> check(player, p)).orElse(List.of());
+        List<PlacementFinding> findings =
+                proposal.map(p -> check(player, purpose, p)).orElse(List.of());
 
         List<DialogBody> body = new ArrayList<>();
         if (!refused.isEmpty()) {
             body.add(DialogBody.plainMessage(Component.text("Nothing was placed:", NamedTextColor.RED)));
             refused.forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
         }
+        purpose.currentPlacement().ifPresent(current -> body.add(DialogBody.plainMessage(current)));
         body.add(DialogBody.plainMessage(selectionLine(selection)));
         // A refused finding that still applies is already shown above
         findings.stream()
@@ -169,7 +268,7 @@ public final class PlacementDialog {
                         (response, audience) -> {
                             audience.closeDialog();
                             if (audience instanceof Player canceller) {
-                                GuidebookMessages.sendInfo(canceller, purpose.cancelled());
+                                purpose.sendCancelled(canceller);
                             }
                         },
                         once))
@@ -191,7 +290,7 @@ public final class PlacementDialog {
 
     /** Checks the proposal again against the current Areas, and places it unless something now blocks it. */
     private static void place(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
-        List<PlacementFinding> blocking = check(player, proposal).stream()
+        List<PlacementFinding> blocking = check(player, purpose, proposal).stream()
                 .filter(finding -> finding.severity() == PlacementFinding.Severity.BLOCKING)
                 .toList();
         if (!blocking.isEmpty()) {
@@ -201,9 +300,9 @@ public final class PlacementDialog {
         purpose.place(player, proposal.geometry(), player.getLocation().clone());
     }
 
-    private static List<PlacementFinding> check(Player player, PlacementCheck.Proposal proposal) {
+    private static List<PlacementFinding> check(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
         return PlacementCheck.check(
-                proposal, positionOf(player), PluginData.getInfoAreas().values());
+                proposal, positionOf(player), PluginData.getInfoAreas().values(), purpose.movedAreaName());
     }
 
     private static boolean hasBlocking(List<PlacementFinding> findings) {

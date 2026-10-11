@@ -18,21 +18,16 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import java.util.ArrayList;
-import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
-/**
- * @author Eriol_Eandur
- */
+/** An Area loaded or created as a prism. A move can give it another Shape, which {@link InfoArea} follows. */
 public class PrismoidInfoArea extends InfoArea {
 
     /** A new Area filling {@code prism}, with its Warp point at {@code warpPoint}. */
     public PrismoidInfoArea(String areaName, Location warpPoint, AreaGeometry.Prism prism) {
         super(areaName);
-        region = new PrismoidRegion(
-                warpPoint, new ArrayList<>(prism.xs()), new ArrayList<>(prism.zs()), prism.minY(), prism.maxY());
+        region = regionOf(prism, warpPoint);
     }
 
     public PrismoidInfoArea(String areaName, ConfigurationSection config) {
@@ -40,69 +35,4 @@ public class PrismoidInfoArea extends InfoArea {
         DevUtil.log("LoadCuboid " + config);
         region = PrismoidRegion.load(config);
     }
-
-    @Override
-    public Shape getShape() {
-        return Shape.PRISM;
-    }
-
-    @Override
-    public AreaGeometry getGeometry() {
-        return new AreaGeometry.Prism(List.of(getXPoints()), List.of(getZPoints()), getMinY(), getMaxY());
-    }
-
-    public void setHeight(int minY, int maxY) {
-        ((PrismoidRegion) region).setMinY(Math.min(minY, maxY));
-        ((PrismoidRegion) region).setMaxY(Math.max(minY, maxY));
-    }
-
-    public int getMinY() {
-        return ((PrismoidRegion) region).getMinY();
-    }
-
-    public int getMaxY() {
-        return ((PrismoidRegion) region).getMaxY();
-    }
-
-    public Integer[] getXPoints() {
-        return ((PrismoidRegion) region).getXPoints();
-    }
-
-    public Integer[] getZPoints() {
-        return ((PrismoidRegion) region).getZPoints();
-    }
-
-    /*@Override
-    public boolean isInside(Location loc) {
-        return region.isInside(loc);
-                /*getCenter().getWorld().equals(loc.getWorld())
-            && loc.getBlockX() >= getCenter().getBlockX()-sizeX/2
-            && loc.getBlockX() <= getCenter().getBlockX()+sizeX/2
-            && loc.getBlockY() >= getCenter().getBlockY()-sizeY/2
-            && loc.getBlockY() <= getCenter().getBlockY()+sizeY/2
-            && loc.getBlockZ() >= getCenter().getBlockZ()-sizeZ/2
-            && loc.getBlockZ() <= getCenter().getBlockZ()+sizeZ/2;*/
-    /*}
-
-        @Override
-        public boolean isNear(Location loc) {
-    //Logger.getGlobal().info("cuboid isNear "+getPreloadDistance());
-            return region.isNear(loc, getPreloadDistance());
-                    /*getCenter().getWorld().equals(loc.getWorld())
-                && loc.getBlockX() >= getCenter().getBlockX()-(sizeX+getPreloadDistance())/2
-                && loc.getBlockX() <= getCenter().getBlockX()+(sizeX+getPreloadDistance())/2
-                && loc.getBlockY() >= getCenter().getBlockY()-(sizeY+getPreloadDistance())/2
-                && loc.getBlockY() <= getCenter().getBlockY()+(sizeY+getPreloadDistance())/2
-                && loc.getBlockZ() >= getCenter().getBlockZ()-(sizeZ+getPreloadDistance())/2
-                && loc.getBlockZ() <= getCenter().getBlockZ()+(sizeZ+getPreloadDistance())/2;*/
-    // }
-
-    /*@Override
-    public Map<String,Object> serialize() {
-        Map<String,Object> result = super.serialize();
-        result.put("xSize", sizeX);
-        result.put("ySize", sizeY);
-        result.put("zSize", sizeZ);
-        return result;
-    }*/
 }

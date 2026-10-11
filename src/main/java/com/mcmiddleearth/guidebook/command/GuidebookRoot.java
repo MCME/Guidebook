@@ -10,7 +10,6 @@ import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
-import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +42,7 @@ class GuidebookRoot {
     // lands on the node where its path ends, so an empty path would put it on the /guidebook root and lock
     // guidebook.user players out of on, off and help. See docs/adr/0001-commands-via-strokkcommands.md
 
-    // Runs for bare /guidebook and every incomplete command, such as "size" or "size <area> radius". The root needs
+    // Runs for bare /guidebook and every incomplete command, such as "move" or "dev level". The root needs
     // guidebook.user or guidebook.staff, and the help is filtered to what the sender may run
     @DefaultExecutes
     void help(CommandSender sender, List<String> args) {
@@ -113,58 +112,10 @@ class GuidebookRoot {
         PlacementDialog.openToCreate(player, name);
     }
 
-    @Executes("set")
+    @Executes("move")
     @Permission(STAFF)
-    void set(@Executor Player player, @GuidebookSet.AreaNameSuggestions @StringArg String name) {
-        GuidebookSet.fromSelection(player, name);
-    }
-
-    @Executes("set")
-    @Permission(STAFF)
-    void setSphere(
-            @Executor Player player,
-            @GuidebookSet.AreaNameSuggestions @StringArg String name,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("sphere") String sphere,
-            @IntArg(min = 1) int radius) {
-        GuidebookSet.sphere(player, name, radius);
-    }
-
-    @Executes("size")
-    @Permission(STAFF)
-    void size(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookSize.show(sender, area);
-    }
-
-    @Executes("size")
-    @Permission(STAFF)
-    void sizeRadius(
-            CommandSender sender,
-            @CustomArg(AreaArgument.class) InfoArea area,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("radius") String radiusForm,
-            @IntArg(min = 1) int radius) {
-        GuidebookSize.radius(sender, area, radius);
-    }
-
-    @Executes("size")
-    @Permission(STAFF)
-    void sizeCorners(
-            CommandSender sender,
-            @CustomArg(AreaArgument.class) InfoArea area,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("corners") String cornersForm,
-            BlockPosition pos1,
-            BlockPosition pos2) {
-        GuidebookSize.corners(sender, area, pos1, pos2);
-    }
-
-    @Executes("size")
-    @Permission(STAFF)
-    void sizeHeight(
-            CommandSender sender,
-            @CustomArg(AreaArgument.class) InfoArea area,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("height") String heightForm,
-            @IntArg int minY,
-            @IntArg int maxY) {
-        GuidebookSize.height(sender, area, minY, maxY);
+    void move(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        PlacementDialog.openToMove(player, area);
     }
 
     @Executes("edit")

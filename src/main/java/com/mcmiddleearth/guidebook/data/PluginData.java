@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -117,10 +118,13 @@ public class PluginData {
     }
 
     /**
+     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}.
+     *
      * @return false if the Area was moved to another world but its old world's data file couldn't be deleted, so it
      *     would load twice after a reload
      */
-    public static boolean moveInfoArea(InfoArea area, Region region) throws IOException {
+    public static boolean moveInfoArea(InfoArea area, AreaGeometry geometry, Location warpPoint) throws IOException {
+        Region region = InfoArea.regionOf(geometry, warpPoint);
         Region oldRegion = area.getRegion();
         // Found before the move: the world folder comes from the region
         File oldDataFile = getDataFile(area, area.getName());

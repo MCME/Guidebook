@@ -20,9 +20,7 @@ import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
-/**
- * @author Eriol_Eandur
- */
+/** An Area loaded or created as a sphere. A move can give it another Shape, which {@link InfoArea} follows. */
 public class SphericalInfoArea extends InfoArea {
 
     public SphericalInfoArea(String areaName, Location center, int radius) {
@@ -34,47 +32,4 @@ public class SphericalInfoArea extends InfoArea {
         super(areaName, config);
         region = SphericalRegion.load(config);
     }
-
-    @Override
-    public Shape getShape() {
-        return Shape.SPHERE;
-    }
-
-    @Override
-    public AreaGeometry getGeometry() {
-        Location center = getLocation();
-        return new AreaGeometry.Sphere(center.getBlockX(), center.getBlockY(), center.getBlockZ(), getRadius());
-    }
-
-    public void setRadius(int radius) {
-        ((SphericalRegion) region).setRadius(radius);
-    }
-
-    public int getRadius() {
-        return ((SphericalRegion) region).getRadius();
-    }
-
-    /*@Override
-    public boolean isInside(Location loc) {
-        return region.isInside(loc);
-        /*return getCenter().getWorld().equals(loc.getWorld())
-            && getCenter().distance(loc) <= radius;*/
-    /*}
-
-        @Override
-        public boolean isNear(Location loc) {
-    //Logger.getGlobal().info("spherical isNear "+getPreloadDistance());
-            /*return getCenter().getWorld().equals(loc.getWorld())
-                && getCenter().distance(loc) <= radius+getPreloadDistance();*/
-    /*    return region.isNear(loc, getPreloadDistance());
-    }
-
-
-    /*
-    @Override
-    public Map<String,Object> serialize() {
-        Map<String,Object> result = super.serialize();
-        result.put("radius", radius);
-        return result;
-    }*/
 }
