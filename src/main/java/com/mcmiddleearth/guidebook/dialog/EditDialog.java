@@ -33,7 +33,8 @@ import org.bukkit.entity.Player;
 
 /**
  * The Edit dialog: every editable field of an Area on one screen. Text is typed as MiniMessage. Save checks the
- * lengths and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes. For an Area {@code set} is creating, the dialog creates it: the Area exists
+ * lengths and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes. Delete asks to confirm, and backing out of that returns to the
+ * dialog with the changes kept. For an Area {@code set} is creating, the dialog creates it: the Area exists
  * only once Create is pressed, and Esc is turned off so that Cancel can say nothing was created.
  */
 public final class EditDialog {
@@ -248,6 +249,24 @@ public final class EditDialog {
                         once))
                 .build();
 
+        List<ActionButton> buttons = new ArrayList<>(List.of(save, preview, cancel));
+        // Only a stored Area can be deleted. With three columns it gets a row of its own, apart from Save
+        if (mode == Mode.EDIT) {
+            buttons.add(ActionButton.builder(Component.text("🗑 Delete", NamedTextColor.RED))
+                    .tooltip(Component.text("Deletes this Guidebook area. Asks you to confirm first."))
+                    .action(DialogAction.customClick(
+                            (response, audience) -> {
+                                if (audience instanceof Player deleter) {
+                                    Values typed = Values.of(response);
+                                    // Cancel comes back here with what was typed, so backing out loses nothing
+                                    ConfirmDialog.openToDelete(
+                                            deleter, area, canceller -> show(canceller, area, mode, typed, null));
+                                }
+                            },
+                            once))
+                    .build());
+        }
+
         player.showDialog(Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area ")
                                 .append(GuidebookMessages.stressed(area.getName())))
@@ -260,7 +279,7 @@ public final class EditDialog {
                         .body(body)
                         .inputs(inputs)
                         .build())
-                .type(DialogType.multiAction(List.of(save, preview, cancel), null, 3))));
+                .type(DialogType.multiAction(buttons, null, 3))));
     }
 
     /**
