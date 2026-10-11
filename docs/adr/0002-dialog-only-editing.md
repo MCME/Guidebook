@@ -4,4 +4,6 @@ Paper 26.2 deprecates the Conversation API for removal. Editing an Area (Title, 
 
 ## Consequences
 
+ADR 0006 extends this: the commands that repeated a dialog are removed, and creating or moving an Area also goes through a dialog.
+
 A staff member on an older client can still run every command, but cannot edit an Area's text or confirm a delete or move.
