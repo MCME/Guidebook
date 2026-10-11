@@ -11,6 +11,12 @@ import java.util.Optional;
  */
 public final class PlacementCheck {
 
+    /** A side under this many blocks is too small. */
+    public static final int MIN_SIDE = 3;
+
+    /** A side over this many blocks is too large. */
+    public static final int MAX_SIDE = 1000;
+
     private PlacementCheck() {}
 
     /** A Shape proposed for an Area, in the world it would be in. */
@@ -46,6 +52,23 @@ public final class PlacementCheck {
         List<PlacementFinding> findings = new ArrayList<>();
         if (!proposal.world().equals(staff.world())) {
             findings.add(new PlacementFinding.AnotherWorld(proposal.world(), staff.world()));
+        }
+        findings.addAll(shapeFindings(proposal.geometry()));
+        return findings;
+    }
+
+    /** What is wrong with the Shape on its own: a flat polygon, or a side too small or too large. */
+    private static List<PlacementFinding> shapeFindings(AreaGeometry geometry) {
+        List<PlacementFinding> findings = new ArrayList<>();
+        if (geometry instanceof AreaGeometry.Prism prism && prism.minY() == prism.maxY()) {
+            findings.add(new PlacementFinding.FlatPolygon());
+        }
+        AreaGeometry.Sides sides = geometry.sides();
+        if (sides.smallest() < MIN_SIDE) {
+            findings.add(new PlacementFinding.TooSmall(sides));
+        }
+        if (sides.largest() > MAX_SIDE) {
+            findings.add(new PlacementFinding.TooLarge(sides));
         }
         return findings;
     }

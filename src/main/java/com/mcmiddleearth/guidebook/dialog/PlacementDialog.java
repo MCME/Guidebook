@@ -21,6 +21,7 @@ import io.papermc.paper.registry.data.dialog.type.DialogType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntPredicate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -245,28 +246,30 @@ public final class PlacementDialog {
 
     /** A Shape and its block-inclusive dimensions, such as "cuboid, 21 × 10 × 30 blocks (x × y × z)". */
     static String describe(AreaGeometry geometry) {
+        AreaGeometry.Sides sides = geometry.sides();
+        String dimensions = sides.x() + " × " + sides.y() + " × " + sides.z() + " blocks (x × y × z)";
         return switch (geometry) {
             case AreaGeometry.Sphere sphere -> "sphere, radius " + sphere.radius();
-            case AreaGeometry.Cuboid cuboid ->
-                "cuboid, "
-                        + dimensions(
-                                cuboid.maxX() - cuboid.minX() + 1,
-                                cuboid.maxY() - cuboid.minY() + 1,
-                                cuboid.maxZ() - cuboid.minZ() + 1);
-            case AreaGeometry.Prism prism ->
-                "prism with " + prism.xs().size() + " corners, "
-                        + dimensions(extent(prism.xs()), prism.maxY() - prism.minY() + 1, extent(prism.zs()));
+            case AreaGeometry.Cuboid cuboid -> "cuboid, " + dimensions;
+            case AreaGeometry.Prism prism -> "prism with " + prism.xs().size() + " corners, " + dimensions;
         };
     }
 
-    private static String dimensions(int x, int y, int z) {
-        return x + " × " + y + " × " + z + " blocks (x × y × z)";
-    }
-
-    private static int extent(List<Integer> coordinates) {
-        int min = coordinates.stream().mapToInt(Integer::intValue).min().orElse(0);
-        int max = coordinates.stream().mapToInt(Integer::intValue).max().orElse(0);
-        return max - min + 1;
+    /** The axes along which a test holds, such as "x and z". */
+    private static String axes(AreaGeometry.Sides sides, IntPredicate test) {
+        List<String> axes = new ArrayList<>();
+        if (test.test(sides.x())) {
+            axes.add("x");
+        }
+        if (test.test(sides.y())) {
+            axes.add("y");
+        }
+        if (test.test(sides.z())) {
+            axes.add("z");
+        }
+        return axes.size() == 1
+                ? axes.getFirst()
+                : String.join(", ", axes.subList(0, axes.size() - 1)) + " and " + axes.getLast();
     }
 
     /** One finding on its own line: blocking ones in red, warnings marked ⚠. */
@@ -278,6 +281,21 @@ public final class PlacementDialog {
                                 + anotherWorld.staffWorld() + ". Go to " + anotherWorld.selectionWorld()
                                 + ", or make a selection here.",
                         NamedTextColor.RED);
+            case PlacementFinding.FlatPolygon flat ->
+                warning("Your polygon is only one block tall. Set its height with //expand <blocks> up, or"
+                        + " //expand vert for the full height of the world.");
+            case PlacementFinding.TooSmall tooSmall ->
+                warning("It's under " + PlacementCheck.MIN_SIDE + " blocks along "
+                        + axes(tooSmall.sides(), side -> side < PlacementCheck.MIN_SIDE)
+                        + ", so players can cross it without being welcomed. Make it bigger.");
+            case PlacementFinding.TooLarge tooLarge ->
+                warning("It's over " + PlacementCheck.MAX_SIDE + " blocks along "
+                        + axes(tooLarge.sides(), side -> side > PlacementCheck.MAX_SIDE)
+                        + ". Check your selection is what you meant.");
         };
+    }
+
+    private static Component warning(String text) {
+        return Component.text("⚠ " + text, NamedTextColor.GOLD);
     }
 }

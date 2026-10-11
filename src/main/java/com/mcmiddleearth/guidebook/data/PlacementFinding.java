@@ -23,4 +23,31 @@ public sealed interface PlacementFinding {
             return Severity.BLOCKING;
         }
     }
+
+    /** A prism whose minimum and maximum Y are equal, so it is one block tall. */
+    record FlatPolygon() implements PlacementFinding {
+
+        @Override
+        public Severity severity() {
+            return Severity.WARNING;
+        }
+    }
+
+    /** A side of the Shape is under {@link PlacementCheck#MIN_SIDE} blocks. */
+    record TooSmall(AreaGeometry.Sides sides) implements PlacementFinding {
+
+        @Override
+        public Severity severity() {
+            return Severity.WARNING;
+        }
+    }
+
+    /** A side of the Shape is over {@link PlacementCheck#MAX_SIDE} blocks. */
+    record TooLarge(AreaGeometry.Sides sides) implements PlacementFinding {
+
+        @Override
+        public Severity severity() {
+            return Severity.WARNING;
+        }
+    }
 }
