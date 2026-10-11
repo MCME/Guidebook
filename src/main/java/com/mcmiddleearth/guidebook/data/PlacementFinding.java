@@ -50,4 +50,17 @@ public sealed interface PlacementFinding {
             return Severity.WARNING;
         }
     }
+
+    /**
+     * The staff member is standing outside the Shape, so the Warp point will be too.
+     *
+     * @param distance the distance in blocks to the Shape's nearest block, at least 1
+     */
+    record Outside(int distance) implements PlacementFinding {
+
+        @Override
+        public Severity severity() {
+            return Severity.INFORMATION;
+        }
+    }
 }

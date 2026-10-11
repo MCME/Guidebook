@@ -54,6 +54,7 @@ public final class PlacementCheck {
             findings.add(new PlacementFinding.AnotherWorld(proposal.world(), staff.world()));
         }
         findings.addAll(shapeFindings(proposal.geometry()));
+        outside(proposal, staff).ifPresent(findings::add);
         return findings;
     }
 
@@ -71,5 +72,45 @@ public final class PlacementCheck {
             findings.add(new PlacementFinding.TooLarge(sides));
         }
         return findings;
+    }
+
+    /**
+     * Whether the staff member, whose position becomes the Warp point, stands outside the Shape. A sphere is centred on
+     * them, and in another world there is no distance to give.
+     */
+    private static Optional<PlacementFinding> outside(Proposal proposal, StaffPosition staff) {
+        if (!proposal.world().equals(staff.world())) {
+            return Optional.empty();
+        }
+        return switch (proposal.geometry()) {
+            case AreaGeometry.Sphere sphere -> Optional.empty();
+            case AreaGeometry.Cuboid cuboid -> {
+                int dx = gap(staff.x(), cuboid.minX(), cuboid.maxX());
+                int dy = gap(staff.y(), cuboid.minY(), cuboid.maxY());
+                int dz = gap(staff.z(), cuboid.minZ(), cuboid.maxZ());
+                yield dx == 0 && dy == 0 && dz == 0
+                        ? Optional.empty()
+                        : Optional.of(outsideBy(Math.sqrt((double) dx * dx + (double) dy * dy + (double) dz * dz)));
+            }
+            case AreaGeometry.Prism prism -> {
+                PrismInside inside = new PrismInside(prism);
+                if (inside.contains(staff.x(), staff.y(), staff.z())) {
+                    yield Optional.empty();
+                }
+                double horizontal = inside.horizontalDistance(staff.x(), staff.z());
+                int dy = gap(staff.y(), prism.minY(), prism.maxY());
+                yield Optional.of(outsideBy(Math.hypot(horizontal, dy)));
+            }
+        };
+    }
+
+    /** How far {@code value} lies outside {@code min} to {@code max}, or 0 within it. */
+    private static int gap(int value, int min, int max) {
+        return Math.max(0, Math.max(min - value, value - max));
+    }
+
+    // Standing outside is always at least a block away, even where rounding says less
+    private static PlacementFinding.Outside outsideBy(double distance) {
+        return new PlacementFinding.Outside((int) Math.max(1, Math.round(distance)));
     }
 }

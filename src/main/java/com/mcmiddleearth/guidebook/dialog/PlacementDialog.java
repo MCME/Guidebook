@@ -292,6 +292,12 @@ public final class PlacementDialog {
                 warning("It's over " + PlacementCheck.MAX_SIDE + " blocks along "
                         + axes(tooLarge.sides(), side -> side > PlacementCheck.MAX_SIDE)
                         + ". Check your selection is what you meant.");
+            case PlacementFinding.Outside outside ->
+                Component.text(
+                        "You're standing " + outside.distance() + (outside.distance() == 1 ? " block" : " blocks")
+                                + " outside it, and the Warp point will be where you stand. Move inside it first if"
+                                + " the Warp point should be.",
+                        NamedTextColor.GRAY);
         };
     }
 

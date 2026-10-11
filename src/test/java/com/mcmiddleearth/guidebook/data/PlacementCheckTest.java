@@ -4,7 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.junit.jupiter.api.Test;
 
 class PlacementCheckTest {
@@ -177,5 +182,133 @@ class PlacementCheckTest {
         AreaGeometry.Sides sides = new AreaGeometry.Sides(2, 2, 2);
         assertEquals(PlacementFinding.Severity.WARNING, new PlacementFinding.TooSmall(sides).severity());
         assertEquals(PlacementFinding.Severity.WARNING, new PlacementFinding.TooLarge(sides).severity());
+    }
+
+    private static List<PlacementFinding> outsideFindings(AreaGeometry geometry, int x, int y, int z) {
+        return checkHere(geometry, new PlacementCheck.StaffPosition("middle_earth", x, y, z)).stream()
+                .filter(finding -> finding instanceof PlacementFinding.Outside)
+                .toList();
+    }
+
+    @Test
+    void standingInsideACuboidIsNotOutside() {
+        assertEquals(List.of(), outsideFindings(CUBOID, 10, 70, 10));
+    }
+
+    // The cuboid's own blocks are inside it, up to and including its corners
+    @Test
+    void standingOnACuboidsCornerIsNotOutside() {
+        assertEquals(List.of(), outsideFindings(CUBOID, 20, 80, 20));
+    }
+
+    @Test
+    void standingBesideACuboidGivesTheDistanceToItsNearestBlock() {
+        assertEquals(List.of(new PlacementFinding.Outside(5)), outsideFindings(CUBOID, 25, 70, 10));
+    }
+
+    // 3 blocks past the edge in x and 4 above the top: the nearest block is 5 away
+    @Test
+    void standingDiagonallyOffACuboidGivesTheStraightLineDistance() {
+        assertEquals(List.of(new PlacementFinding.Outside(5)), outsideFindings(CUBOID, 23, 84, 10));
+    }
+
+    @Test
+    void standingNextToACuboidIsOneBlockOutside() {
+        assertEquals(List.of(new PlacementFinding.Outside(1)), outsideFindings(CUBOID, 21, 81, 10));
+    }
+
+    @Test
+    void outsideIsInformation() {
+        assertEquals(PlacementFinding.Severity.INFORMATION, new PlacementFinding.Outside(5).severity());
+    }
+
+    // An L, with its notch at x 10 to 20, z 10 to 20
+    private static final AreaGeometry.Prism L_SHAPE =
+            new AreaGeometry.Prism(List.of(0, 20, 20, 10, 10, 0), List.of(0, 0, 10, 10, 20, 20), 60, 70);
+
+    @Test
+    void standingInsideAConcavePrismIsNotOutside() {
+        assertEquals(List.of(), outsideFindings(L_SHAPE, 5, 65, 15));
+    }
+
+    // The nearest block is on the notch's edge at z 10
+    @Test
+    void standingInAConcavePrismsNotchGivesTheDistanceToItsNearestBlock() {
+        assertEquals(List.of(new PlacementFinding.Outside(4)), outsideFindings(L_SHAPE, 16, 65, 14));
+    }
+
+    @Test
+    void standingAboveAPrismGivesTheDistanceDownToIt() {
+        assertEquals(List.of(new PlacementFinding.Outside(7)), outsideFindings(L_SHAPE, 5, 77, 5));
+    }
+
+    // 3 blocks west of the L and 4 below it
+    @Test
+    void standingDiagonallyOffAPrismGivesTheStraightLineDistance() {
+        assertEquals(List.of(new PlacementFinding.Outside(5)), outsideFindings(L_SHAPE, -3, 56, 5));
+    }
+
+    /**
+     * Outside must agree with the inside rule that decides who gets a Welcome, PluginUtils' {@link PrismoidRegion},
+     * for every block in and around the polygon, including its slanted and concave edges.
+     */
+    @Test
+    void outsideAPrismAgreesWithWhoGetsAWelcome() {
+        List<AreaGeometry.Prism> prisms = List.of(
+                L_SHAPE,
+                // A slanted, concave arrowhead, drawn clockwise
+                new AreaGeometry.Prism(List.of(0, 7, 15, 7, 2), List.of(0, 13, 1, 5, 9), 60, 62),
+                // A triangle drawn the other way round
+                new AreaGeometry.Prism(List.of(0, 3, 17), List.of(0, 11, 4), 60, 62));
+        World world = world("middle_earth");
+        for (AreaGeometry.Prism prism : prisms) {
+            PrismoidRegion region = new PrismoidRegion(
+                    new Location(world, 0, 61, 0),
+                    new ArrayList<>(prism.xs()),
+                    new ArrayList<>(prism.zs()),
+                    prism.minY(),
+                    prism.maxY());
+            for (int x = -3; x <= 23; x++) {
+                for (int y = 58; y <= 64; y++) {
+                    for (int z = -3; z <= 23; z++) {
+                        boolean welcomed = region.isInside(new Location(world, x + 0.5, y, z + 0.5));
+                        boolean outside = !outsideFindings(prism, x, y, z).isEmpty();
+                        assertEquals(
+                                !welcomed,
+                                outside,
+                                "block " + x + " " + y + " " + z + " of " + prism.xs() + " " + prism.zs());
+                    }
+                }
+            }
+        }
+    }
+
+    // A world that only has a name, enough for a region to compare Locations
+    private static World world(String name) {
+        return (World) Proxy.newProxyInstance(
+                World.class.getClassLoader(),
+                new Class<?>[] {World.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getName" -> name;
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "toString" -> "World " + name;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+    }
+
+    @Test
+    void standingAnywhereIsNeverOutsideASphere() {
+        assertEquals(List.of(), outsideFindings(new AreaGeometry.Sphere(0, 64, 0, 20), 100, 64, 100));
+    }
+
+    @Test
+    void aSelectionInAnotherWorldIsNotAlsoOutside() {
+        List<PlacementFinding> findings = PlacementCheck.check(
+                new PlacementCheck.Proposal("moria", CUBOID),
+                new PlacementCheck.StaffPosition("middle_earth", 500, 70, 500),
+                List.of());
+
+        assertEquals(List.of(new PlacementFinding.AnotherWorld("moria", "middle_earth")), findings);
     }
 }
