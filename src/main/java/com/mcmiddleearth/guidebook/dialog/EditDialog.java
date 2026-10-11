@@ -33,7 +33,7 @@ import org.bukkit.entity.Player;
 
 /**
  * The Edit dialog: every editable field of an Area on one screen. Text is typed as MiniMessage. Save checks the
- * lengths and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes. For an Area {@code set} is creating, the dialog creates it: the Area exists
+ * lengths and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes. For an Area {@code create} is placing, the dialog creates it: the Area exists
  * only once Create is pressed, and Esc is turned off so that Cancel can say nothing was created.
  */
 public final class EditDialog {
@@ -107,14 +107,14 @@ public final class EditDialog {
     }
 
     /**
-     * Opens the dialog that creates {@code area}, which {@code set} has built but not added. Nothing is added or written
+     * Opens the dialog that creates {@code area}, which the Placement dialog has built but not added. Nothing is added or written
      * until Create is pressed.
      */
     public static void openToCreate(Player player, InfoArea area) {
         show(player, area, Mode.CREATE, Values.of(area).forNewArea(), null);
     }
 
-    /** Whether the dialog changes a stored Area, or creates one that {@code set} has built. */
+    /** Whether the dialog changes a stored Area, or creates one that the Placement dialog has built. */
     private enum Mode {
         EDIT("Editing", "✔ Save", "saved"),
         CREATE("Creating", "✔ Create", "created");
@@ -329,7 +329,7 @@ public final class EditDialog {
             return;
         }
         player.closeDialog();
-        // The name was free when set ran, but it isn't reserved while the dialog is open
+        // The name was free when create ran, but it isn't reserved while the dialog is open
         if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
             GuidebookMessages.sendError(
                     player,

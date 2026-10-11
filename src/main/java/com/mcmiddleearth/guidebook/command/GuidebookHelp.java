@@ -52,11 +52,16 @@ final class GuidebookHelp {
             new Entry("enable", STAFF, "enable <area>", "Turn an area's welcome messages on."),
             new Entry("disable", STAFF, "disable <area>", "Turn an area's welcome messages off."),
             new Entry(
+                    "create",
+                    STAFF,
+                    "create <name>",
+                    "Create an area from your WorldEdit selection, or as a sphere around you, in a dialog that"
+                            + " checks the placement first."),
+            new Entry(
                     "set",
                     STAFF,
                     List.of("set <area>", "set <area> sphere <radius>"),
-                    "Create an area from your WorldEdit selection, or as a sphere around you. If the area exists,"
-                            + " move it there after you confirm."),
+                    "Move an area to your WorldEdit selection, or to a sphere around you, after you confirm."),
             new Entry(
                     "size",
                     STAFF,

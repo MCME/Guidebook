@@ -16,13 +16,9 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.CuboidInfoArea;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.data.PrismoidInfoArea;
-import com.mcmiddleearth.guidebook.data.SphericalInfoArea;
 import com.mcmiddleearth.guidebook.dialog.ConfirmDialog;
-import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.WEUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
@@ -35,9 +31,7 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.strokkur.commands.CustomSuggestion;
@@ -45,8 +39,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 /**
- * {@code set <name> [sphere <radius>]}: opens the Edit dialog that creates an Area, or moves an existing one after the
- * player confirms.
+ * {@code set <name> [sphere <radius>]}: moves an existing Area after the player confirms. New Areas are made with
+ * {@code create}.
  *
  * @author Eriol_Eandur
  */
@@ -63,26 +57,13 @@ final class GuidebookSet {
         return AreaArgument.suggestAreaNames(builder);
     }
 
-    /** Where the Area goes: the new Area to create, or the Region to move an existing one to. */
-    private record Placement(Function<String, InfoArea> newArea, Region region) {}
-
     static void fromSelection(Player player, String name) {
         Location location = player.getLocation().clone();
         com.sk89q.worldedit.regions.Region selection = WEUtil.getSelection(player);
         if (selection instanceof CuboidRegion cuboid) {
-            set(
-                    player,
-                    name,
-                    new Placement(
-                            areaName -> new CuboidInfoArea(areaName, location, cuboid),
-                            new com.mcmiddleearth.pluginutil.region.CuboidRegion(location, cuboid)));
+            set(player, name, new com.mcmiddleearth.pluginutil.region.CuboidRegion(location, cuboid));
         } else if (selection instanceof Polygonal2DRegion polygon) {
-            set(
-                    player,
-                    name,
-                    new Placement(
-                            areaName -> new PrismoidInfoArea(areaName, location, polygon),
-                            new PrismoidRegion(location, polygon)));
+            set(player, name, new PrismoidRegion(location, polygon));
         } else {
             GuidebookMessages.sendError(
                     player,
@@ -91,30 +72,20 @@ final class GuidebookSet {
     }
 
     static void sphere(Player player, String name, int radius) {
-        Location location = player.getLocation().clone();
-        set(
-                player,
-                name,
-                new Placement(
-                        areaName -> new SphericalInfoArea(areaName, location, radius),
-                        new SphericalRegion(location, radius)));
+        set(player, name, new SphericalRegion(player.getLocation().clone(), radius));
     }
 
-    private static void set(Player player, String name, Placement placement) {
+    private static void set(Player player, String name, Region region) {
         InfoArea existing = PluginData.getInfoAreaExact(name);
-        if (existing != null) {
-            confirmMove(player, existing, placement.region());
+        if (existing == null) {
+            // Creating moved to create, so a typo here can't start a new Area
+            GuidebookMessages.sendError(
+                    player,
+                    "There is no Guidebook area " + name + " to move. To create one, use /guidebook create " + name
+                            + ".");
             return;
         }
-
-        Optional<String> problem = PluginData.newAreaNameProblem(name);
-        if (problem.isPresent()) {
-            GuidebookMessages.sendError(player, problem.get() + ". No Area was created.");
-            return;
-        }
-
-        // Built from where the player is now, but only added once they press Create
-        EditDialog.openToCreate(player, placement.newArea().apply(name));
+        confirmMove(player, existing, region);
     }
 
     private static void confirmMove(Player player, InfoArea area, Region region) {

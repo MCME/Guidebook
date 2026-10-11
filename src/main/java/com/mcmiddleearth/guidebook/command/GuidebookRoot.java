@@ -6,6 +6,7 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
+import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import io.papermc.paper.math.BlockPosition;
@@ -112,6 +113,14 @@ class GuidebookRoot {
     @Permission(STAFF)
     void disable(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
         setEnabled(sender, area, false);
+    }
+
+    @Executes("create")
+    @Permission(STAFF)
+    void create(
+            @Executor Player player,
+            @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String name) {
+        PlacementDialog.openToCreate(player, name);
     }
 
     @Executes("set")

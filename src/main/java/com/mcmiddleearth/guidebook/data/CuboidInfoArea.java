@@ -29,9 +29,13 @@ import org.bukkit.util.Vector;
  */
 public class CuboidInfoArea extends InfoArea {
 
-    public CuboidInfoArea(String areaName, Location center, com.sk89q.worldedit.regions.CuboidRegion weRegion) {
+    /** A new Area filling {@code cuboid}, with its Warp point at {@code warpPoint}. */
+    public CuboidInfoArea(String areaName, Location warpPoint, AreaGeometry.Cuboid cuboid) {
         super(areaName);
-        region = new CuboidRegion(center, weRegion);
+        region = new CuboidRegion(
+                warpPoint,
+                new Vector(cuboid.minX(), cuboid.minY(), cuboid.minZ()),
+                new Vector(cuboid.maxX(), cuboid.maxY(), cuboid.maxZ()));
     }
 
     public CuboidInfoArea(String areaName, ConfigurationSection config) {

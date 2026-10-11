@@ -18,6 +18,7 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -27,9 +28,11 @@ import org.bukkit.configuration.ConfigurationSection;
  */
 public class PrismoidInfoArea extends InfoArea {
 
-    public PrismoidInfoArea(String areaName, Location center, com.sk89q.worldedit.regions.Polygonal2DRegion weRegion) {
+    /** A new Area filling {@code prism}, with its Warp point at {@code warpPoint}. */
+    public PrismoidInfoArea(String areaName, Location warpPoint, AreaGeometry.Prism prism) {
         super(areaName);
-        region = new PrismoidRegion(center, weRegion);
+        region = new PrismoidRegion(
+                warpPoint, new ArrayList<>(prism.xs()), new ArrayList<>(prism.zs()), prism.minY(), prism.maxY());
     }
 
     public PrismoidInfoArea(String areaName, ConfigurationSection config) {
