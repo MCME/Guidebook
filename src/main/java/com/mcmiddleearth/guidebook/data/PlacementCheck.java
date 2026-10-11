@@ -55,6 +55,7 @@ public final class PlacementCheck {
         }
         findings.addAll(shapeFindings(proposal.geometry()));
         outside(proposal, staff).ifPresent(findings::add);
+        AreaOverlap.overlapping(proposal, areas, movedAreaName).ifPresent(findings::add);
         return findings;
     }
 

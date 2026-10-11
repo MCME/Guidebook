@@ -1,5 +1,7 @@
 package com.mcmiddleearth.guidebook.data;
 
+import java.util.List;
+
 /**
  * Something the {@link PlacementCheck} found about a proposed placement, carrying what the Placement dialog needs to
  * word it. Each kind is its own record, so a dialog switching over them must word every kind.
@@ -61,6 +63,19 @@ public sealed interface PlacementFinding {
         @Override
         public Severity severity() {
             return Severity.INFORMATION;
+        }
+    }
+
+    /** The placement shares at least one block with each of these existing Areas, named in sorted order. */
+    record Overlap(List<String> areaNames) implements PlacementFinding {
+
+        public Overlap {
+            areaNames = List.copyOf(areaNames);
+        }
+
+        @Override
+        public Severity severity() {
+            return Severity.WARNING;
         }
     }
 }

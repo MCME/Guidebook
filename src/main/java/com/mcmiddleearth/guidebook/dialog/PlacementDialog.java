@@ -298,10 +298,30 @@ public final class PlacementDialog {
                                 + " outside it, and the Warp point will be where you stand. Move inside it first if"
                                 + " the Warp point should be.",
                         NamedTextColor.GRAY);
+            case PlacementFinding.Overlap overlap ->
+                warning("This overlaps " + namesUpToFive(overlap.areaNames())
+                        + ". Players standing in both get both Welcomes.");
         };
     }
 
     private static Component warning(String text) {
         return Component.text("⚠ " + text, NamedTextColor.GOLD);
+    }
+
+    /** Up to five names, then "and N more" for the rest. */
+    private static String namesUpToFive(List<String> names) {
+        if (names.size() <= 5) {
+            return joinWithAnd(names);
+        }
+        List<String> shown = new ArrayList<>(names.subList(0, 5));
+        shown.add((names.size() - 5) + " more");
+        return joinWithAnd(shown);
+    }
+
+    private static String joinWithAnd(List<String> parts) {
+        if (parts.size() == 1) {
+            return parts.getFirst();
+        }
+        return String.join(", ", parts.subList(0, parts.size() - 1)) + " and " + parts.getLast();
     }
 }
