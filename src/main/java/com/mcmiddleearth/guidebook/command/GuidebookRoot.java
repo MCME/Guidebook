@@ -9,6 +9,7 @@ import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import net.strokkur.commands.paper.Description;
 import net.strokkur.commands.paper.Executor;
 import net.strokkur.commands.paper.arguments.CustomArg;
 import net.strokkur.commands.permission.Permission;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -77,23 +79,23 @@ class GuidebookRoot {
         GuidebookMessages.sendInfo(sender, "You will no longer receive info messages from Guidebook.");
     }
 
-    @Executes("show")
+    @Executes("select")
     @Permission(STAFF)
-    void show(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookMessages.startBlock(sender);
-        GuidebookMessages.sendInfo(sender, "Welcome for ", GuidebookMessages.area(area.getName()), ":");
-        if (sender instanceof Player player) {
-            area.previewWelcome(player);
+    void select(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        World world = area.getRegion().getWorld();
+        if (!player.getWorld().equals(world)) {
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.area(area.getName()),
+                    " is in " + world.getName() + ". Go to that world to select it.");
             return;
         }
-        // The console can't see a Title or Boss bar, so it gets the Description only
-        GuidebookShow.sendDescription(sender, area);
-    }
-
-    @Executes("details")
-    @Permission(STAFF)
-    void details(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookDetails.send(sender, area);
+        WorldEditSelections.select(player, world, area.getGeometry());
+        GuidebookMessages.sendInfo(
+                player,
+                "Your WorldEdit selection is now ",
+                GuidebookMessages.area(area.getName()),
+                " (" + area.getShape().displayName() + ").");
     }
 
     @Executes("warp")
@@ -101,18 +103,6 @@ class GuidebookRoot {
     void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
         player.teleport(area.getLocation());
         GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
-    }
-
-    @Executes("enable")
-    @Permission(STAFF)
-    void enable(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        setEnabled(sender, area, true);
-    }
-
-    @Executes("disable")
-    @Permission(STAFF)
-    void disable(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        setEnabled(sender, area, false);
     }
 
     @Executes("create")
@@ -301,22 +291,5 @@ class GuidebookRoot {
             DevUtil.remove(player);
         }
         GuidebookDev.showState(sender);
-    }
-
-    private static void setEnabled(CommandSender sender, InfoArea area, boolean enabled) {
-        if (enabled) {
-            area.statusOn();
-        } else {
-            area.statusOff();
-        }
-        try {
-            PluginData.saveArea(area);
-        } catch (IOException ex) {
-            Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendNotDone(sender, area.getName(), "saved");
-            return;
-        }
-        GuidebookMessages.sendInfo(
-                sender, GuidebookMessages.area(area.getName()), enabled ? " was enabled." : " was disabled.");
     }
 }

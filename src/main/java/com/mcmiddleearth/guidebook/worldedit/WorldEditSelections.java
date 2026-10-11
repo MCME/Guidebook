@@ -11,13 +11,17 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionSelector;
+import com.sk89q.worldedit.regions.selector.CuboidRegionSelector;
+import com.sk89q.worldedit.regions.selector.Polygonal2DRegionSelector;
+import com.sk89q.worldedit.regions.selector.SphereRegionSelector;
 import com.sk89q.worldedit.world.World;
+import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.entity.Player;
 
 /**
- * Guidebook's view of staff members' WorldEdit selections. It reads the session directly, so an incomplete selection
- * is an ordinary result rather than a logged stack trace.
+ * Guidebook's view of a staff member's WorldEdit selection. Untested: it needs a running WorldEdit. It reads the
+ * session directly, so an incomplete selection is an ordinary result rather than a logged stack trace.
  */
 public final class WorldEditSelections {
 
@@ -38,6 +42,7 @@ public final class WorldEditSelections {
     /** A selection of a type Guidebook can't make an Area from, such as a sphere, ellipsoid or cylinder. */
     public record Unsupported(String typeName) implements Selection {}
 
+    /** Reads the player's WorldEdit selection, in whichever world it was made. */
     public static Selection read(Player player) {
         LocalSession session = WorldEdit.getInstance().getSessionManager().getIfPresent(BukkitAdapter.adapt(player));
         if (session == null) {
@@ -87,5 +92,38 @@ public final class WorldEditSelections {
                 points.stream().map(BlockVector2::z).toList(),
                 polygon.getMinimumY(),
                 polygon.getMaximumY());
+    }
+
+    /**
+     * Replaces the player's WorldEdit selection, and its selection mode, with {@code geometry} in {@code world}: a
+     * cuboid, a polygon with the prism's heights, or a sphere.
+     */
+    public static void select(Player player, org.bukkit.World world, AreaGeometry geometry) {
+        World weWorld = BukkitAdapter.adapt(world);
+        RegionSelector selector =
+                switch (geometry) {
+                    case AreaGeometry.Sphere sphere ->
+                        new SphereRegionSelector(
+                                weWorld,
+                                BlockVector3.at(sphere.centerX(), sphere.centerY(), sphere.centerZ()),
+                                sphere.radius());
+                    case AreaGeometry.Cuboid cuboid ->
+                        new CuboidRegionSelector(
+                                weWorld,
+                                BlockVector3.at(cuboid.minX(), cuboid.minY(), cuboid.minZ()),
+                                BlockVector3.at(cuboid.maxX(), cuboid.maxY(), cuboid.maxZ()));
+                    case AreaGeometry.Prism prism -> {
+                        List<BlockVector2> points = new ArrayList<>();
+                        for (int i = 0; i < prism.xs().size(); i++) {
+                            points.add(BlockVector2.at(
+                                    prism.xs().get(i), prism.zs().get(i)));
+                        }
+                        yield new Polygonal2DRegionSelector(weWorld, points, prism.minY(), prism.maxY());
+                    }
+                };
+        WorldEdit.getInstance()
+                .getSessionManager()
+                .get(BukkitAdapter.adapt(player))
+                .setRegionSelector(weWorld, selector);
     }
 }

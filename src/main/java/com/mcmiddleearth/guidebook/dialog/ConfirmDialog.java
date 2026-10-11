@@ -52,22 +52,46 @@ public final class ConfirmDialog {
         }
     }
 
-    /** Asks {@code player} to confirm deleting {@code area}. {@code delete} runs on Confirm. */
-    public static void openToDelete(Player player, InfoArea area, Consumer<Player> delete) {
-        open(player, area, Mode.DELETE, delete);
+    /**
+     * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and Cancel says it was not deleted.
+     */
+    public static void openToDelete(Player player, InfoArea area) {
+        openToDelete(player, area, canceller -> sendNotDone(canceller, area, Mode.DELETE));
+    }
+
+    /**
+     * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and {@code cancelled} runs on Cancel
+     * or Esc, so a dialog that opened the confirmation can reopen itself.
+     */
+    public static void openToDelete(Player player, InfoArea area, Consumer<Player> cancelled) {
+        open(player, area, Mode.DELETE, confirmer -> delete(confirmer, area), cancelled);
     }
 
     /** Asks {@code player} to confirm moving {@code area} to their location and selection. {@code move} runs on Confirm. */
     public static void openToMove(Player player, InfoArea area, Consumer<Player> move) {
-        open(player, area, Mode.MOVE, move);
+        open(player, area, Mode.MOVE, move, canceller -> sendNotDone(canceller, area, Mode.MOVE));
+    }
+
+    private static void delete(Player player, InfoArea area) {
+        if (PluginData.deleteInfoArea(area)) {
+            GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was deleted.");
+        } else {
+            GuidebookMessages.sendError(player, "There was an error while deleting the data file from disk.");
+        }
+    }
+
+    private static void sendNotDone(Player player, InfoArea area, Mode mode) {
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was not " + mode.done + ".");
     }
 
     /**
      * Each dialog holds its own Area and actions, so two players confirming at once can't act on each other's Area.
      *
      * @param confirmed runs on Confirm, if {@code area} is still the Area registered under its name
+     * @param cancelled runs on Cancel or Esc
      */
-    private static void open(Player player, InfoArea area, Mode mode, Consumer<Player> confirmed) {
+    private static void open(
+            Player player, InfoArea area, Mode mode, Consumer<Player> confirmed, Consumer<Player> cancelled) {
         String areaName = area.getName();
         String title = area.getTitle();
         List<DialogBody> body = List.of(
@@ -89,10 +113,7 @@ public final class ConfirmDialog {
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player canceller) {
-                                GuidebookMessages.sendInfo(
-                                        canceller,
-                                        GuidebookMessages.area(area.getName()),
-                                        " was not " + mode.done + ".");
+                                cancelled.accept(canceller);
                             }
                         },
                         once))

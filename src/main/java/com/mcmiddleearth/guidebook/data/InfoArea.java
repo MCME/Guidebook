@@ -17,10 +17,10 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.command.GuidebookShow;
 import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.DevUtil;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.pluginutil.region.Region;
 import java.time.Duration;
 import java.time.Instant;
@@ -219,7 +219,6 @@ public abstract class InfoArea implements MarkableArea {
     }
 
     private void welcomePlayer(final Player player) {
-        final InfoArea thisArea = this;
         int messageDelay = 0;
         if (isShowTitle()) {
             player.showTitle(Title.title(AreaText.render(getTitle()), AreaText.render(getSubtitle()), TITLE_TIMES));
@@ -232,9 +231,25 @@ public abstract class InfoArea implements MarkableArea {
                 if (isShowScoreboard() && containsPlayer(player)) {
                     player.showBossBar(bossBar);
                 }
-                GuidebookShow.sendDescription(player, thisArea);
+                sendDescription(player);
             }
         }.runTaskLater(GuidebookPlugin.getPluginInstance(), messageDelay);
+    }
+
+    private void sendDescription(Player player) {
+        if (getDescription().isEmpty()) {
+            GuidebookMessages.send(
+                    player,
+                    GuidebookMessages.info(
+                            "Welcome to ",
+                            Component.text()
+                                    .color(GuidebookMessages.STRESSED)
+                                    .append(AreaText.render(getTitle()))
+                                    .append(Component.text(" (" + getName() + ")")),
+                            ". Unfortunately there is no further description for this area."));
+        } else {
+            GuidebookMessages.send(player, AreaText.render(getDescription()));
+        }
     }
 
     public void setDescription(String description) {
