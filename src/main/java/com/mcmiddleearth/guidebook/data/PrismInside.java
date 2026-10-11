@@ -25,7 +25,9 @@ final class PrismInside {
         List<Integer> xs = prism.xs();
         List<Integer> zs = prism.zs();
         int n = xs.size();
-        // PrismoidRegion walks the polygon one way round, reversing it when its turns add up negative
+        // PrismoidRegion walks the polygon one way round, reversing it when its turns add up negative. Its turn is
+        // asin(edge1 × edge2 / (|edge1| |edge2|)), but Bukkit's crossProduct overwrites edge1 before |edge1| is read,
+        // so each term is really asin(cross / (|cross| |edge2|)), and NaN, which never reverses, when cross is 0
         double angle = 0;
         for (int i = 0; i < n; i++) {
             int edge1X = xs.get((i + 1) % n) - xs.get(i);
@@ -33,7 +35,8 @@ final class PrismInside {
             int edge2X = xs.get((i + 2) % n) - xs.get((i + 1) % n);
             int edge2Z = zs.get((i + 2) % n) - zs.get((i + 1) % n);
             double cross = (double) edge1Z * edge2X - (double) edge1X * edge2Z;
-            angle += Math.asin(cross * (1 / (Math.hypot(edge1X, edge1Z) * Math.hypot(edge2X, edge2Z))));
+            double edge2Length = Math.sqrt((double) edge2X * edge2X + (double) edge2Z * edge2Z);
+            angle += Math.asin(cross * (1 / (Math.sqrt(cross * cross) * edge2Length)));
         }
         if (angle < 0) {
             xs = xs.reversed();
