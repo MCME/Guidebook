@@ -36,7 +36,8 @@ import org.bukkit.entity.Player;
  * WorldEdit selection and the {@link PlacementCheck}'s findings, and offers to place the Area from the selection or as
  * a sphere around them. For {@code create} it continues into the Edit dialog; for {@code move} it also shows where the
  * Area is now, and its Move buttons are the confirmation. Every button runs the check again, since other staff may
- * have changed Areas meanwhile.
+ * have changed Areas meanwhile. A sphere's findings can't be shown before it is pressed, so a sphere with warnings
+ * shows the dialog again with them, and a button to continue with that sphere anyway.
  *
  * <p>There is no Refresh button: the selection can't change while the dialog is open, so staff cancel, fix it and run
  * the command again.
@@ -193,20 +194,26 @@ public final class PlacementDialog {
 
     /** Opens the dialog that places the new Area {@code name}. The name was free when the command ran. */
     public static void openToCreate(Player player, String name) {
-        show(player, new Create(name), List.of());
+        show(player, new Create(name), List.of(), Optional.empty());
     }
 
     /** Opens the dialog that moves {@code area}, showing where it is now above the new placement. */
     public static void openToMove(Player player, InfoArea area) {
-        show(player, new Move(area), List.of());
+        show(player, new Move(area), List.of(), Optional.empty());
     }
 
     /**
      * Shows the dialog for the player's current selection.
      *
      * @param refused blocking findings that stopped a button press, shown at the top
+     * @param warnedSphere a pressed Sphere around me that has warnings, shown with them and a button to continue with
+     *     it anyway
      */
-    private static void show(Player player, Purpose purpose, List<PlacementFinding> refused) {
+    private static void show(
+            Player player,
+            Purpose purpose,
+            List<PlacementFinding> refused,
+            Optional<PlacementCheck.Proposal> warnedSphere) {
         WorldEditSelections.Selection selection = WorldEditSelections.read(player);
         Optional<PlacementCheck.Proposal> proposal = selection instanceof WorldEditSelections.Usable usable
                 ? Optional.of(new PlacementCheck.Proposal(usable.world(), usable.geometry()))
@@ -220,22 +227,47 @@ public final class PlacementDialog {
             refused.forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
         }
         purpose.currentPlacement().ifPresent(current -> body.add(DialogBody.plainMessage(current)));
+        warnedSphere.ifPresent(sphere -> {
+            body.add(DialogBody.plainMessage(Component.text("Sphere around you: ", NamedTextColor.GRAY)
+                    .append(Component.text(describe(sphere.geometry())))));
+            check(player, purpose, sphere).forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
+        });
         body.add(DialogBody.plainMessage(selectionLine(selection)));
         // A refused finding that still applies is already shown above
         findings.stream()
                 .filter(finding -> !refused.contains(finding))
                 .forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
 
+        Optional<Integer> warnedRadius = warnedSphere.map(sphere -> ((AreaGeometry.Sphere) sphere.geometry()).radius());
+        // A sphere being reviewed keeps its radius on the slider
+        int initialRadius = warnedRadius.orElse(RADIUS_DEFAULT);
         List<DialogInput> inputs =
                 List.of(DialogInput.numberRange(RADIUS, Component.text("Sphere radius"), RADIUS_MIN, RADIUS_MAX)
                         .step(1f)
-                        .initial((float) RADIUS_DEFAULT)
+                        .initial((float) initialRadius)
                         .width(300)
                         .build());
 
         // Each dialog gets its own single-use callbacks, holding what it places
         ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
         List<ActionButton> buttons = new ArrayList<>();
+        warnedRadius.ifPresent(keptRadius -> {
+            buttons.add(ActionButton.builder(Component.text("● Continue with this sphere anyway", NamedTextColor.GOLD))
+                    .tooltip(Component.text("Places the area as the sphere of radius " + keptRadius
+                            + " shown above, centred on you, despite its warnings."))
+                    .action(DialogAction.customClick(
+                            (response, audience) -> {
+                                if (audience instanceof Player placer) {
+                                    place(
+                                            placer,
+                                            purpose,
+                                            PlacementCheck.Proposal.sphereAround(positionOf(placer), keptRadius),
+                                            false);
+                                }
+                            },
+                            once))
+                    .build());
+        });
         if (proposal.isPresent() && !hasBlocking(findings)) {
             PlacementCheck.Proposal fromSelection = proposal.get();
             buttons.add(ActionButton.builder(Component.text("✔ " + purpose.useSelection(), NamedTextColor.GREEN))
@@ -244,7 +276,7 @@ public final class PlacementDialog {
                     .action(DialogAction.customClick(
                             (response, audience) -> {
                                 if (audience instanceof Player placer) {
-                                    place(placer, purpose, fromSelection);
+                                    place(placer, purpose, fromSelection, false);
                                 }
                             },
                             once))
@@ -258,7 +290,8 @@ public final class PlacementDialog {
                                 place(
                                         placer,
                                         purpose,
-                                        PlacementCheck.Proposal.sphereAround(positionOf(placer), radius(response)));
+                                        PlacementCheck.Proposal.sphereAround(positionOf(placer), radius(response)),
+                                        true);
                             }
                         },
                         once))
@@ -288,13 +321,25 @@ public final class PlacementDialog {
                 .type(DialogType.multiAction(buttons, null, 1))));
     }
 
-    /** Checks the proposal again against the current Areas, and places it unless something now blocks it. */
-    private static void place(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
-        List<PlacementFinding> blocking = check(player, purpose, proposal).stream()
+    /**
+     * Checks the proposal again against the current Areas, and places it unless something now blocks it.
+     *
+     * @param reviewWarnings whether warnings stop the placement and show it again first, for a sphere whose findings
+     *     the staff member hasn't seen yet
+     */
+    private static void place(
+            Player player, Purpose purpose, PlacementCheck.Proposal proposal, boolean reviewWarnings) {
+        List<PlacementFinding> findings = check(player, purpose, proposal);
+        List<PlacementFinding> blocking = findings.stream()
                 .filter(finding -> finding.severity() == PlacementFinding.Severity.BLOCKING)
                 .toList();
         if (!blocking.isEmpty()) {
-            show(player, purpose, blocking);
+            show(player, purpose, blocking, Optional.empty());
+            return;
+        }
+        if (reviewWarnings
+                && findings.stream().anyMatch(finding -> finding.severity() == PlacementFinding.Severity.WARNING)) {
+            show(player, purpose, List.of(), Optional.of(proposal));
             return;
         }
         purpose.place(player, proposal.geometry(), player.getLocation().clone());
