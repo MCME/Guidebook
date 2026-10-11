@@ -76,19 +76,6 @@ class GuidebookRoot {
         GuidebookMessages.sendInfo(sender, "You will no longer receive info messages from Guidebook.");
     }
 
-    @Executes("show")
-    @Permission(STAFF)
-    void show(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookMessages.startBlock(sender);
-        GuidebookMessages.sendInfo(sender, "Welcome for ", GuidebookMessages.area(area.getName()), ":");
-        if (sender instanceof Player player) {
-            area.previewWelcome(player);
-            return;
-        }
-        // The console can't see a Title or Boss bar, so it gets the Description only
-        GuidebookShow.sendDescription(sender, area);
-    }
-
     @Executes("details")
     @Permission(STAFF)
     void details(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
@@ -100,18 +87,6 @@ class GuidebookRoot {
     void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
         player.teleport(area.getLocation());
         GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
-    }
-
-    @Executes("enable")
-    @Permission(STAFF)
-    void enable(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        setEnabled(sender, area, true);
-    }
-
-    @Executes("disable")
-    @Permission(STAFF)
-    void disable(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        setEnabled(sender, area, false);
     }
 
     @Executes("set")
@@ -292,22 +267,5 @@ class GuidebookRoot {
             DevUtil.remove(player);
         }
         GuidebookDev.showState(sender);
-    }
-
-    private static void setEnabled(CommandSender sender, InfoArea area, boolean enabled) {
-        if (enabled) {
-            area.statusOn();
-        } else {
-            area.statusOff();
-        }
-        try {
-            PluginData.saveArea(area);
-        } catch (IOException ex) {
-            Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendNotDone(sender, area.getName(), "saved");
-            return;
-        }
-        GuidebookMessages.sendInfo(
-                sender, GuidebookMessages.area(area.getName()), enabled ? " was enabled." : " was disabled.");
     }
 }

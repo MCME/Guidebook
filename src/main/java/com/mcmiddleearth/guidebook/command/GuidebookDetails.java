@@ -53,8 +53,8 @@ public final class GuidebookDetails {
                                 GuidebookMessages.area(areaName)
                                         .asComponent()
                                         .append(Component.text(".", GuidebookMessages.INFO)),
-                                "/guidebook show " + areaName,
-                                "Click for welcome message.")));
+                                "/guidebook edit " + areaName,
+                                "Click to edit this area.")));
 
         Location location = area.getLocation();
         GuidebookMessages.send(
