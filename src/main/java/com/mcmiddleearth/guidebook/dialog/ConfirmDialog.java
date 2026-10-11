@@ -16,42 +16,25 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
 
 /**
- * A confirmation dialog for an action on one Area, such as deleting it. It shows the question, the Area's
- * name and its Title. Esc runs the Cancel button's action, so closing the dialog counts as Cancel.
+ * The confirmation dialog for deleting an Area. It shows the question, the Area's name and its Title. Deleting can't be
+ * undone, so its Confirm is red. Esc runs the Cancel button's action, so closing the dialog counts as Cancel.
  */
 public final class ConfirmDialog {
 
     private ConfirmDialog() {}
 
     /**
-     * What Confirm does to the Area, with the dialog's wording and Confirm's colour. Deleting can't be undone, so its
-     * Confirm is red.
-     */
-    private enum Mode {
-        DELETE("Delete", "deleted", "Do you really want to delete this Guidebook area?", NamedTextColor.RED);
-
-        private final String verb;
-        private final String done;
-        private final String question;
-        private final TextColor confirmColor;
-
-        Mode(String verb, String done, String question, TextColor confirmColor) {
-            this.verb = verb;
-            this.done = done;
-            this.question = question;
-            this.confirmColor = confirmColor;
-        }
-    }
-
-    /**
      * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and Cancel says it was not deleted.
      */
     public static void openToDelete(Player player, InfoArea area) {
-        openToDelete(player, area, canceller -> sendNotDone(canceller, area, Mode.DELETE));
+        openToDelete(
+                player,
+                area,
+                canceller -> GuidebookMessages.sendInfo(
+                        canceller, GuidebookMessages.area(area.getName()), " was not deleted."));
     }
 
     /**
@@ -59,33 +42,10 @@ public final class ConfirmDialog {
      * or Esc, so a dialog that opened the confirmation can reopen itself.
      */
     public static void openToDelete(Player player, InfoArea area, Consumer<Player> cancelled) {
-        open(player, area, Mode.DELETE, confirmer -> delete(confirmer, area), cancelled);
-    }
-
-    private static void delete(Player player, InfoArea area) {
-        if (PluginData.deleteInfoArea(area)) {
-            GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was deleted.");
-        } else {
-            GuidebookMessages.sendError(player, "There was an error while deleting the data file from disk.");
-        }
-    }
-
-    private static void sendNotDone(Player player, InfoArea area, Mode mode) {
-        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was not " + mode.done + ".");
-    }
-
-    /**
-     * Each dialog holds its own Area and actions, so two players confirming at once can't act on each other's Area.
-     *
-     * @param confirmed runs on Confirm, if {@code area} is still the Area registered under its name
-     * @param cancelled runs on Cancel or Esc
-     */
-    private static void open(
-            Player player, InfoArea area, Mode mode, Consumer<Player> confirmed, Consumer<Player> cancelled) {
         String areaName = area.getName();
         String title = area.getTitle();
         List<DialogBody> body = List.of(
-                DialogBody.plainMessage(Component.text(mode.question)),
+                DialogBody.plainMessage(Component.text("Do you really want to delete this Guidebook area?")),
                 DialogBody.plainMessage(Component.text("Area: ").append(GuidebookMessages.stressed(areaName))),
                 DialogBody.plainMessage(Component.text("Title: ")
                         .append(
@@ -95,9 +55,8 @@ public final class ConfirmDialog {
 
         // Each dialog gets its own single-use callbacks, holding the Area it acts on
         ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
-        ActionButton confirm = ActionButton.builder(Component.text("✔ " + mode.verb, mode.confirmColor))
-                .action(DialogAction.customClick(
-                        (response, audience) -> confirm(audience, area, mode, confirmed), once))
+        ActionButton confirm = ActionButton.builder(Component.text("✔ Delete", NamedTextColor.RED))
+                .action(DialogAction.customClick((response, audience) -> delete(audience, area), once))
                 .build();
         ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
                 .action(DialogAction.customClick(
@@ -110,7 +69,7 @@ public final class ConfirmDialog {
                 .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text(mode.verb + " Guidebook area ")
+                .base(DialogBase.builder(Component.text("Delete Guidebook area ")
                                 .append(GuidebookMessages.stressed(areaName))
                                 .append(Component.text("?")))
                         .body(body)
@@ -118,7 +77,8 @@ public final class ConfirmDialog {
                 .type(DialogType.confirmation(confirm, cancel))));
     }
 
-    private static void confirm(Audience audience, InfoArea area, Mode mode, Consumer<Player> confirmed) {
+    /** Deletes {@code area}, if it is still the Area registered under its name. */
+    private static void delete(Audience audience, InfoArea area) {
         if (!(audience instanceof Player player)) {
             return;
         }
@@ -127,9 +87,13 @@ public final class ConfirmDialog {
             GuidebookMessages.sendError(
                     player,
                     GuidebookMessages.area(area.getName()),
-                    " was deleted or reloaded while you decided. It was NOT " + mode.done + ".");
+                    " was deleted or reloaded while you decided. It was NOT deleted.");
             return;
         }
-        confirmed.accept(player);
+        if (PluginData.deleteInfoArea(area)) {
+            GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was deleted.");
+        } else {
+            GuidebookMessages.sendError(player, "There was an error while deleting the data file from disk.");
+        }
     }
 }
