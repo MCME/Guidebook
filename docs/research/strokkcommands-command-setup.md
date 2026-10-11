@@ -135,7 +135,7 @@ void toggle(CommandSender s, @Literal({"enable", "disable"}) String action, @Cus
 
 Generated root, in both cases: `.requires(source -> source.getSender().hasPermission("guidebook.staff"))`. The `enable`/`disable` (or `reload`/`list`) literals get **no** `requires`. The `on` and `help` literals keep `guidebook.user`, but they're unreachable for a user-only player, because the root rejects them first. Removing `toggle` restored the `staff || user` root (P3b).
 
-**Rule for this repo:** every `@Permission`-carrying `@Executes` or `@Subcommand` must have a non-empty path whose first literal is the command name (`@Executes("enable")`, `@Subcommand("size")`). Never attach `@Permission` to the `@Command` class itself either: requirements stack, so it would gate `on`, `off` and `help` too. It's worth one line in `CONTEXT.md` or ADR 0001.
+**Rule for this repo:** every `@Permission`-carrying `@Executes` or `@Subcommand` must have a non-empty path whose first literal is the command name (`@Executes("enable")`, `@Subcommand("size")`). Never attach `@Permission` to the `@Command` class itself either: requirements stack, so it would gate `on`, `off` and `help` too. It's worth one line in `GLOSSARY.md` or ADR 0001.
 
 ### 2.3 Candidate: split `GuidebookRoot` into external subcommand classes
 
@@ -345,7 +345,7 @@ LifecycleEvents.COMMANDS, event -> GuidebookRootBrigadier.register(event.registr
 
 ## 6. Ranked recommendations
 
-1. **Adopt the permission-placement rule now (no code change).** Every `@Permission` needs a non-empty `@Executes("<cmd>")` or `@Subcommand("<cmd>")` path, and there must be no class-level `@Permission` on `GuidebookRoot`. Otherwise `guidebook.staff` lands on the root and user-only players lose `on`, `off` and `help` without any error (§2.2, verified). Record it in ADR 0001 or `CONTEXT.md`. Cost: none.
+1. **Adopt the permission-placement rule now (no code change).** Every `@Permission` needs a non-empty `@Executes("<cmd>")` or `@Subcommand("<cmd>")` path, and there must be no class-level `@Permission` on `GuidebookRoot`. Otherwise `guidebook.staff` lands on the root and user-only players lose `on`, `off` and `help` without any error (§2.2, verified). Record it in ADR 0001 or `GLOSSARY.md`. Cost: none.
 2. **Use `Optional` for `help` and `list` (2.3.0; low churn).** 6 methods become 3 with an identical tree (§4.1). Don't use it for `set`. Cost: tiny, and no Phase 2 conflict.
 3. **Merge `dev watch|unwatch` with `@Literal({"watch","unwatch"})` (low churn).** It removes 2 suppressions (§3.3). Not for `enable|disable` (§2.2).
 4. **After Phase 2, split `GuidebookRoot` into external subcommand fields (medium churn).** Start with `size` and `dev`, each owning its `@Executes` and its own `@DefaultExecutes` (§2.3). It shrinks the root, and the per-class `@DefaultExecutes` could replace the root's `args` parsing. Wait for Phase 2 before doing `set`, `title`, `description` and `delete`, and use repeatable `@Executes` for `edit|title|description` (§4.2).

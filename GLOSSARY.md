@@ -17,7 +17,14 @@ The identifier of an Area. It is unique ignoring case and may contain only lette
 
 **Shape**:
 The geometry of an Area: a sphere, a cuboid, or a prism (a polygon extruded between two heights).
-_Avoid_: size (that is the command which changes a Shape's dimensions)
+_Avoid_: size, region
+
+**Warp point**:
+The spot `warp` takes a player to: where the staff member stood when the Area was created or last moved. For a sphere it is also the centre.
+_Avoid_: location, centre (for a cuboid or prism)
+
+**Overlap**:
+Two Areas overlap when at least one block lies inside both. A player standing there gets both Welcomes. Areas that only touch do not overlap.
 
 **Title**:
 The short name of an Area, shown at the centre of the screen when a player enters it (if Show title is on). It is written in MiniMessage, and its length limit counts only the visible text.
