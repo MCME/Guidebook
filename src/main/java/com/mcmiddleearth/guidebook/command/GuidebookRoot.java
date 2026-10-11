@@ -8,6 +8,7 @@ import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.math.BlockPosition;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import net.strokkur.commands.paper.Description;
 import net.strokkur.commands.paper.Executor;
 import net.strokkur.commands.paper.arguments.CustomArg;
 import net.strokkur.commands.permission.Permission;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -76,10 +78,23 @@ class GuidebookRoot {
         GuidebookMessages.sendInfo(sender, "You will no longer receive info messages from Guidebook.");
     }
 
-    @Executes("details")
+    @Executes("select")
     @Permission(STAFF)
-    void details(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
-        GuidebookDetails.send(sender, area);
+    void select(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        World world = area.getRegion().getWorld();
+        if (!player.getWorld().equals(world)) {
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.area(area.getName()),
+                    " is in " + world.getName() + ". Go to that world to select it.");
+            return;
+        }
+        WorldEditSelections.select(player, world, area.getGeometry());
+        GuidebookMessages.sendInfo(
+                player,
+                "Your WorldEdit selection is now ",
+                GuidebookMessages.area(area.getName()),
+                " (" + area.getShape().displayName() + ").");
     }
 
     @Executes("warp")

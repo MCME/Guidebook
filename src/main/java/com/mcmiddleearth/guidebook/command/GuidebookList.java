@@ -25,7 +25,7 @@ final class GuidebookList {
 
     /**
      * Sends one page of the Area names containing {@code filter}, ignoring case. Clicking a name fills in its
-     * {@code details} command, and the page arrows show the neighbouring pages.
+     * {@code select} command, and the page arrows show the neighbouring pages.
      *
      * @param filter the text to search for, or empty to list every Area
      * @param page the page to show, moved into range if there's no such page
@@ -51,7 +51,7 @@ final class GuidebookList {
         GuidebookMessages.startBlock(sender);
         GuidebookMessages.send(
                 sender,
-                GuidebookMessages.info("Guidebook areas (click for details) [page " + shownPage + "/" + maxPage + "]"));
+                GuidebookMessages.info("Guidebook areas (click to select) [page " + shownPage + "/" + maxPage + "]"));
         if (shownPage > 1) {
             GuidebookMessages.send(sender, pageLink("---^ page up ^---", filter, shownPage - 1));
         }
@@ -68,7 +68,7 @@ final class GuidebookList {
         return GuidebookMessages.infoIndented(
                 "- ",
                 GuidebookMessages.suggestsCommand(
-                        Component.text(name, NamedTextColor.BLUE), "/guidebook details " + name, "Click for details."));
+                        Component.text(name, NamedTextColor.BLUE), "/guidebook select " + name, "Click to select."));
     }
 
     private static Component pageLink(String text, String filter, int page) {
