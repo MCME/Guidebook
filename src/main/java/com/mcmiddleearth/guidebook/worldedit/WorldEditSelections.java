@@ -69,11 +69,15 @@ public final class WorldEditSelections {
         };
     }
 
-    // Every selector has a primary position once anything has been selected
+    // Only the cuboid and polygon selectors (and their extending variants) reliably refuse a primary position before
+    // anything is selected. A cleared sphere or ellipsoid selector still reports a centre, so after //sel those would
+    // read as incomplete. Guidebook can't use them anyway, so an unfinished one counts as no selection
     private static boolean hasStarted(RegionSelector selector) {
+        if (!(selector instanceof CuboidRegionSelector || selector instanceof Polygonal2DRegionSelector)) {
+            return false;
+        }
         try {
-            selector.getPrimaryPosition();
-            return true;
+            return selector.getPrimaryPosition() != null;
         } catch (IncompleteRegionException ex) {
             return false;
         }

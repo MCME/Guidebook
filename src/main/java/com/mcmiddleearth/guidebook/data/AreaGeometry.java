@@ -49,16 +49,26 @@ public sealed interface AreaGeometry {
         };
     }
 
-    /** The Shape and its block-inclusive dimensions, such as "cuboid, 21 × 10 × 30 blocks (x × y × z)". */
+    /**
+     * The Shape, its block-inclusive footprint and the heights it spans, such as "cuboid, 21 × 30 blocks, from y 60 to
+     * 69". The height range is where selection mistakes usually are: one block tall, or at the wrong level.
+     */
     default String describe() {
         Sides sides = sides();
-        String dimensions = sides.x() + " × " + sides.y() + " × " + sides.z() + " blocks (x × y × z)";
+        String footprint = sides.x() + " × " + sides.z() + " blocks";
         String shape = shape().displayName();
         return switch (this) {
-            case Sphere sphere -> shape + ", radius " + sphere.radius();
-            case Cuboid cuboid -> shape + ", " + dimensions;
-            case Prism prism -> shape + " with " + prism.xs().size() + " corners, " + dimensions;
+            case Sphere sphere ->
+                shape + ", radius " + sphere.radius()
+                        + heights(sphere.centerY() - sphere.radius(), sphere.centerY() + sphere.radius());
+            case Cuboid cuboid -> shape + ", " + footprint + heights(cuboid.minY(), cuboid.maxY());
+            case Prism prism ->
+                shape + " with " + prism.xs().size() + " corners, " + footprint + heights(prism.minY(), prism.maxY());
         };
+    }
+
+    private static String heights(int minY, int maxY) {
+        return ", from y " + minY + " to " + maxY;
     }
 
     record Sphere(int centerX, int centerY, int centerZ, int radius) implements AreaGeometry {}

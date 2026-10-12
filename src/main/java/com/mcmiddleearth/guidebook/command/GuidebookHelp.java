@@ -47,7 +47,7 @@ final class GuidebookHelp {
             new Entry(
                     "create",
                     STAFF,
-                    "create <name>",
+                    "create <world>-<project>-<place>",
                     "Create an area from your WorldEdit selection, or as a sphere around you, in a dialog that"
                             + " checks the placement first."),
             new Entry(
@@ -63,7 +63,7 @@ final class GuidebookHelp {
                     "edit [area]",
                     "Edit an area's title, subtitle, boss bar, description and whether it's enabled, in a dialog."
                             + " With no <area>, edit the one you're standing in."),
-            new Entry("rename", STAFF, "rename <area> <new name>", "Rename an area."),
+            new Entry("rename", STAFF, "rename <area> <world>-<project>-<place>", "Rename an area."),
             new Entry("delete", STAFF, "delete <area>", "Delete an area after you confirm."),
             new Entry(
                     "list",

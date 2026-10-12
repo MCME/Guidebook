@@ -156,7 +156,7 @@ class GuidebookRoot {
     void rename(
             CommandSender sender,
             @CustomArg(AreaArgument.class) InfoArea area,
-            @CustomArg(NewAreaNameArgument.class) String newName) {
+            @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String newName) {
         String oldName = area.getName();
         boolean oldFileDeleted;
         try {

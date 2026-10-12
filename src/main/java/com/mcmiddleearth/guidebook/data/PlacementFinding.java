@@ -54,15 +54,26 @@ public sealed interface PlacementFinding {
     }
 
     /**
-     * The staff member is standing outside the Shape, so the Warp point will be too.
+     * The staff member is standing outside the Shape, so the Warp point will be too. Just outside is often deliberate,
+     * such as a Warp point at a town's gate, so it's information. Further out it warns, and too far out it blocks, since
+     * a Warp point that far from its Area is never useful.
      *
      * @param distance the distance in blocks to the Shape's nearest block, at least 1
      */
     record Outside(int distance) implements PlacementFinding {
 
+        /** Standing further outside than this many blocks warns. */
+        public static final int WARNING_DISTANCE = 32;
+
+        /** Standing further outside than this many blocks blocks the placement. */
+        public static final int BLOCKING_DISTANCE = 200;
+
         @Override
         public Severity severity() {
-            return Severity.INFORMATION;
+            if (distance > BLOCKING_DISTANCE) {
+                return Severity.BLOCKING;
+            }
+            return distance > WARNING_DISTANCE ? Severity.WARNING : Severity.INFORMATION;
         }
     }
 

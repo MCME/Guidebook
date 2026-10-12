@@ -25,16 +25,18 @@ import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 /**
  * The Placement dialog: where an Area will go, checked before anything is written. It shows the staff member's
  * WorldEdit selection and the {@link PlacementCheck}'s findings, and offers to place the Area from the selection or as
- * a sphere around them. For {@code create} it continues into the Edit dialog; for {@code move} it also shows where the
- * Area is now, and its Move buttons are the confirmation. Every button runs the check again, since other staff may
- * have changed Areas meanwhile. A sphere's findings can't be shown before it is pressed, so a sphere with warnings
- * shows the dialog again with them, and a button to continue with that sphere anyway.
+ * a sphere around them. When the selection can't be used, its button is greyed out, with the reason on hover. Sphere
+ * around me opens a sphere step with a radius slider, which shows up front how far the sphere can reach before it
+ * overlaps another Area. For {@code create} it continues into the Edit dialog; for {@code move} it also shows where
+ * the Area is now, and its Move buttons are the confirmation. Every placing button runs the check again, since other
+ * staff may have changed Areas meanwhile.
  *
  * <p>There is no Refresh button: the selection can't change while the dialog is open, so staff cancel, fix it and run
  * the command again.
@@ -58,7 +60,16 @@ public final class PlacementDialog {
 
         String useSelection();
 
+        String useSelectionTooltip();
+
         String sphereAroundMe();
+
+        String sphereAroundMeTooltip();
+
+        /** The sphere step's button that places the sphere. */
+        String placeSphere();
+
+        String placeSphereTooltip();
 
         /** Tells the player that Cancel changed nothing. */
         void sendCancelled(Player player);
@@ -87,12 +98,34 @@ public final class PlacementDialog {
 
         @Override
         public String useSelection() {
-            return "Use selection";
+            return "Use WorldEdit selection";
+        }
+
+        @Override
+        public String useSelectionTooltip() {
+            return "Creates the area from your WorldEdit selection, with its Warp point where you stand.";
         }
 
         @Override
         public String sphereAroundMe() {
             return "Sphere around me";
+        }
+
+        @Override
+        public String sphereAroundMeTooltip() {
+            return "Creates the area as a sphere centred on you. Next you choose its radius, and see how far it can"
+                    + " reach without overlapping another area.";
+        }
+
+        @Override
+        public String placeSphere() {
+            return "Create sphere";
+        }
+
+        @Override
+        public String placeSphereTooltip() {
+            return "Creates the area as a sphere centred on you, with the radius above, and goes on to its Title and"
+                    + " Description.";
         }
 
         @Override
@@ -126,12 +159,34 @@ public final class PlacementDialog {
 
         @Override
         public String useSelection() {
-            return "Move to selection";
+            return "Move to WorldEdit selection";
+        }
+
+        @Override
+        public String useSelectionTooltip() {
+            return "Moves the area to your WorldEdit selection, with its Warp point where you stand.";
         }
 
         @Override
         public String sphereAroundMe() {
             return "Move to sphere around me";
+        }
+
+        @Override
+        public String sphereAroundMeTooltip() {
+            return "Moves the area to a sphere centred on you. Next you choose its radius, and see how far it can"
+                    + " reach without overlapping another area.";
+        }
+
+        @Override
+        public String placeSphere() {
+            return "Move to sphere";
+        }
+
+        @Override
+        public String placeSphereTooltip() {
+            return "Moves the area to a sphere centred on you, with the radius above. Its Warp point becomes where you"
+                    + " stand.";
         }
 
         @Override
@@ -146,7 +201,7 @@ public final class PlacementDialog {
 
         @Override
         public Optional<Component> currentPlacement() {
-            return Optional.of(Component.text("Now: ", NamedTextColor.GRAY)
+            return Optional.of(Component.text("Now: ")
                     .append(Component.text(
                             area.getWorldName() + ", " + area.getGeometry().describe())));
         }
@@ -186,26 +241,20 @@ public final class PlacementDialog {
 
     /** Opens the dialog that places the new Area {@code name}. The name was free when the command ran. */
     public static void openToCreate(Player player, String name) {
-        show(player, new Create(name), List.of(), Optional.empty());
+        show(player, new Create(name), List.of());
     }
 
     /** Opens the dialog that moves {@code area}, showing where it is now above the new placement. */
     public static void openToMove(Player player, InfoArea area) {
-        show(player, new Move(area), List.of(), Optional.empty());
+        show(player, new Move(area), List.of());
     }
 
     /**
      * Shows the dialog for the player's current selection.
      *
      * @param refused blocking findings that stopped a button press, shown at the top
-     * @param warnedSphere a pressed Sphere around me that has warnings, shown with them and a button to continue with
-     *     it anyway
      */
-    private static void show(
-            Player player,
-            Purpose purpose,
-            List<PlacementFinding> refused,
-            Optional<PlacementCheck.Proposal> warnedSphere) {
+    private static void show(Player player, Purpose purpose, List<PlacementFinding> refused) {
         WorldEditSelections.Selection selection = WorldEditSelections.read(player);
         Optional<PlacementCheck.Proposal> proposal = selection instanceof WorldEditSelections.Usable usable
                 ? Optional.of(new PlacementCheck.Proposal(usable.world(), usable.geometry()))
@@ -219,76 +268,47 @@ public final class PlacementDialog {
             refused.forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
         }
         purpose.currentPlacement().ifPresent(current -> body.add(DialogBody.plainMessage(current)));
-        warnedSphere.ifPresent(sphere -> {
-            body.add(DialogBody.plainMessage(Component.text("Sphere around you: ", NamedTextColor.GRAY)
-                    .append(Component.text(sphere.geometry().describe()))));
-            check(player, purpose, sphere).forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
-        });
-        body.add(DialogBody.plainMessage(selectionLine(selection)));
+        selectionLines(selection).forEach(line -> body.add(DialogBody.plainMessage(line)));
         // A refused finding that still applies is already shown above
         findings.stream()
                 .filter(finding -> !refused.contains(finding))
                 .forEach(finding -> body.add(DialogBody.plainMessage(line(finding))));
 
-        Optional<Integer> warnedRadius = warnedSphere.map(sphere -> ((AreaGeometry.Sphere) sphere.geometry()).radius());
-        // A sphere being reviewed keeps its radius on the slider
-        int initialRadius = warnedRadius.orElse(RADIUS_DEFAULT);
-        List<DialogInput> inputs =
-                List.of(DialogInput.numberRange(RADIUS, Component.text("Sphere radius"), RADIUS_MIN, RADIUS_MAX)
-                        .step(1f)
-                        .initial((float) initialRadius)
-                        .width(300)
-                        .build());
-
         // Each dialog gets its own single-use callbacks, holding what it places
         ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
         List<ActionButton> buttons = new ArrayList<>();
-        warnedRadius.ifPresent(keptRadius -> {
-            buttons.add(ActionButton.builder(Component.text("● Continue with this sphere anyway", NamedTextColor.GOLD))
-                    .tooltip(Component.text("Places the area as the sphere of radius " + keptRadius
-                            + " shown above, centred on you, despite its warnings."))
-                    .action(DialogAction.customClick(
-                            (response, audience) -> {
-                                if (audience instanceof Player placer) {
-                                    place(
-                                            placer,
-                                            purpose,
-                                            PlacementCheck.Proposal.sphereAround(positionOf(placer), keptRadius),
-                                            false);
-                                }
-                            },
-                            once))
-                    .build());
-        });
         if (proposal.isPresent() && !hasBlocking(findings)) {
             PlacementCheck.Proposal fromSelection = proposal.get();
             buttons.add(ActionButton.builder(Component.text("✔ " + purpose.useSelection(), NamedTextColor.GREEN))
-                    .tooltip(Component.text(
-                            "Places the area in your WorldEdit selection, with its Warp point where you stand."))
+                    .tooltip(Component.text(purpose.useSelectionTooltip()))
                     .action(DialogAction.customClick(
                             (response, audience) -> {
                                 if (audience instanceof Player placer) {
-                                    place(placer, purpose, fromSelection, false);
+                                    place(placer, purpose, fromSelection);
                                 }
                             },
                             once))
                     .build());
+        } else {
+            // Greyed out with no action, so staff can see the option exists and hover to learn why it's unavailable.
+            // Light grey with a red cross, as dark grey on the grey button was hard to read
+            buttons.add(ActionButton.builder(Component.text("✘ ", NamedTextColor.RED)
+                            .append(Component.text(purpose.useSelection(), NamedTextColor.GRAY)))
+                    .tooltip(Component.text(unusableReason(selection)))
+                    .build());
         }
-        buttons.add(ActionButton.builder(Component.text("● " + purpose.sphereAroundMe(), NamedTextColor.GREEN))
-                .tooltip(Component.text("Places the area as a sphere centred on you, with the radius above."))
+        buttons.add(ActionButton.builder(Component.text("● " + purpose.sphereAroundMe(), NamedTextColor.WHITE))
+                .tooltip(Component.text(purpose.sphereAroundMeTooltip()))
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             if (audience instanceof Player placer) {
-                                place(
-                                        placer,
-                                        purpose,
-                                        PlacementCheck.Proposal.sphereAround(positionOf(placer), radius(response)),
-                                        true);
+                                showSphere(placer, purpose);
                             }
                         },
                         once))
                 .build());
-        buttons.add(ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
+        // Cancel is the exit action, so it sits on its own row below the others and Esc runs it too
+        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
                 .action(DialogAction.customClick(
                         (response, audience) -> {
                             audience.closeDialog();
@@ -297,41 +317,98 @@ public final class PlacementDialog {
                             }
                         },
                         once))
-                .build());
+                .build();
 
-        player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(
-                                Component.text(purpose.title()).append(GuidebookMessages.stressed(purpose.areaName())))
-                        // Cancel is the only way out, so it always says that nothing changed
-                        .canCloseWithEscape(false)
-                        // Stays open after a button until the server replaces or closes it, as the Edit dialog does
-                        .afterAction(DialogBase.DialogAfterAction.NONE)
-                        .pause(false)
-                        .body(body)
-                        .inputs(inputs)
-                        .build())
-                .type(DialogType.multiAction(buttons, null, 1))));
+        player.showDialog(Dialog.create(builder ->
+                builder.empty().base(base(purpose, body, List.of())).type(DialogType.multiAction(buttons, cancel, 2))));
     }
 
     /**
-     * Checks the proposal again against the current Areas, and places it unless something now blocks it.
-     *
-     * @param reviewWarnings whether warnings stop the placement and show it again first, for a sphere whose findings
-     *     the staff member hasn't seen yet
+     * The sphere step: a radius slider, with how far a sphere centred on the player can reach before it overlaps
+     * another Area worked out up front, so the radius is chosen knowing it. Back and Esc return to the Placement
+     * dialog.
      */
-    private static void place(
-            Player player, Purpose purpose, PlacementCheck.Proposal proposal, boolean reviewWarnings) {
-        List<PlacementFinding> findings = check(player, purpose, proposal);
-        List<PlacementFinding> blocking = findings.stream()
+    private static void showSphere(Player player, Purpose purpose) {
+        PlacementCheck.StaffPosition staff = positionOf(player);
+        PlacementCheck.SphereClearance clearance = PlacementCheck.sphereClearance(
+                staff, PluginData.getInfoAreas().values(), purpose.movedAreaName(), RADIUS_MIN, RADIUS_MAX);
+        int clear = clearance.largestClearRadius();
+
+        List<DialogBody> body = new ArrayList<>();
+        purpose.currentPlacement().ifPresent(current -> body.add(DialogBody.plainMessage(current)));
+        body.add(DialogBody.plainMessage(Component.text("Sphere around you at " + staff.x() + " " + staff.y() + " "
+                + staff.z() + ", with its Warp point" + " where you stand.")));
+        if (clearance.overlappedNext().isEmpty()) {
+            body.add(DialogBody.plainMessage(
+                    Component.text("No other area is within radius " + RADIUS_MAX + " of you.", NamedTextColor.GREEN)));
+        } else if (clear == 0) {
+            body.add(DialogBody.plainMessage(warning("Even radius " + RADIUS_MIN + " overlaps "
+                    + overlappedAreas(clearance.overlappedNext()) + ". You're standing in or next to it.")));
+        } else {
+            body.add(DialogBody.plainMessage(
+                    Component.text("Up to radius " + clear + " overlaps no other area.", NamedTextColor.GREEN)));
+            body.add(DialogBody.plainMessage(warning("Radius " + (clear + 1) + " or more overlaps "
+                    + overlappedAreas(clearance.overlappedNext()) + ". Players standing in both get both Welcomes.")));
+        }
+
+        // Starts at the default radius, or the largest clear one when that's smaller
+        int initialRadius = clear == 0 ? RADIUS_DEFAULT : Math.min(RADIUS_DEFAULT, clear);
+        List<DialogInput> inputs =
+                List.of(DialogInput.numberRange(RADIUS, Component.text("Sphere radius"), RADIUS_MIN, RADIUS_MAX)
+                        .step(1f)
+                        .initial((float) initialRadius)
+                        .width(300)
+                        .build());
+
+        ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
+        ActionButton placeSphere = ActionButton.builder(
+                        Component.text("✔ " + purpose.placeSphere(), NamedTextColor.GREEN))
+                .tooltip(Component.text(purpose.placeSphereTooltip()))
+                .action(DialogAction.customClick(
+                        (response, audience) -> {
+                            if (audience instanceof Player placer) {
+                                place(
+                                        placer,
+                                        purpose,
+                                        PlacementCheck.Proposal.sphereAround(positionOf(placer), radius(response)));
+                            }
+                        },
+                        once))
+                .build();
+        ActionButton back = ActionButton.builder(Component.text("← Back", NamedTextColor.WHITE))
+                .tooltip(Component.text("Back to choosing between your WorldEdit selection and a sphere."))
+                .action(DialogAction.customClick(
+                        (response, audience) -> {
+                            if (audience instanceof Player backer) {
+                                show(backer, purpose, List.of());
+                            }
+                        },
+                        once))
+                .build();
+
+        player.showDialog(Dialog.create(builder -> builder.empty()
+                .base(base(purpose, body, inputs))
+                .type(DialogType.multiAction(List.of(placeSphere), back, 1))));
+    }
+
+    private static DialogBase base(Purpose purpose, List<DialogBody> body, List<DialogInput> inputs) {
+        return DialogBase.builder(
+                        Component.text(purpose.title()).append(GuidebookMessages.stressed(purpose.areaName())))
+                // Stays open after a button until the server replaces or closes it, as the Edit dialog does
+                .afterAction(DialogBase.DialogAfterAction.NONE)
+                .pause(false)
+                .body(body)
+                .inputs(inputs)
+                .build();
+    }
+
+    /** Checks the proposal again against the current Areas, and places it unless something now blocks it. */
+    private static void place(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
+        List<PlacementFinding> blocking = check(player, purpose, proposal).stream()
                 .filter(finding -> finding.severity() == PlacementFinding.Severity.BLOCKING)
                 .toList();
         if (!blocking.isEmpty()) {
-            show(player, purpose, blocking, Optional.empty());
-            return;
-        }
-        if (reviewWarnings
-                && findings.stream().anyMatch(finding -> finding.severity() == PlacementFinding.Severity.WARNING)) {
-            show(player, purpose, List.of(), Optional.of(proposal));
+            show(player, purpose, blocking);
             return;
         }
         purpose.place(player, proposal.geometry(), player.getLocation().clone());
@@ -360,24 +437,45 @@ public final class PlacementDialog {
         return Math.clamp(Math.round(radius), RADIUS_MIN, RADIUS_MAX);
     }
 
-    /** The selection's Shape and dimensions, or why it can't be used. */
-    private static Component selectionLine(WorldEditSelections.Selection selection) {
-        Component label = Component.text("Your WorldEdit selection: ", NamedTextColor.GRAY);
+    /**
+     * The selection's Shape and dimensions, or what's wrong with it in gold, with what to do about it on a line of its
+     * own.
+     */
+    private static List<Component> selectionLines(WorldEditSelections.Selection selection) {
+        Component label = Component.text("Your WorldEdit selection: ");
+        String again = " then run this command again.";
         return switch (selection) {
             case WorldEditSelections.Usable usable ->
-                label.append(Component.text(usable.geometry().describe()));
+                List.of(label.append(Component.text(usable.geometry().describe())));
             case WorldEditSelections.NoSelection none ->
-                label.append(Component.text(
-                        "none. Select a cuboid or polygon with WorldEdit to use it.", NamedTextColor.GOLD));
+                List.of(
+                        label.append(Component.text("none", NamedTextColor.GOLD)),
+                        Component.text("To use one, select a cuboid or polygon with WorldEdit," + again
+                                + " Or use Sphere around me."));
             case WorldEditSelections.Incomplete incomplete ->
-                label.append(Component.text(
-                        "an incomplete " + incomplete.typeName() + ". Finish it with WorldEdit to use it.",
-                        NamedTextColor.GOLD));
+                List.of(
+                        label.append(Component.text("an unfinished " + incomplete.typeName(), NamedTextColor.GOLD)),
+                        Component.text("Set its remaining points with WorldEdit," + again));
             case WorldEditSelections.Unsupported unsupported ->
-                label.append(Component.text(
-                        "a " + unsupported.typeName() + ", which Guidebook can't use. Select a cuboid or polygon, or"
-                                + " use Sphere around me.",
-                        NamedTextColor.GOLD));
+                List.of(
+                        label.append(Component.text("a " + unsupported.typeName(), NamedTextColor.GOLD)),
+                        Component.text("Guidebook can only use a cuboid or polygon. Switch with //sel cuboid or //sel"
+                                + " poly, select it," + again + " Or use Sphere around me."));
+        };
+    }
+
+    /** Why the selection button is greyed out, for its tooltip. */
+    private static String unusableReason(WorldEditSelections.Selection selection) {
+        String again = " then run this command again.";
+        return switch (selection) {
+            case WorldEditSelections.Usable usable -> "Your selection can't be used here. The reason is shown above.";
+            case WorldEditSelections.NoSelection none ->
+                "You have no WorldEdit selection. Select a cuboid or polygon," + again;
+            case WorldEditSelections.Incomplete incomplete ->
+                "Your WorldEdit selection isn't finished. Set its remaining points," + again;
+            case WorldEditSelections.Unsupported unsupported ->
+                "Guidebook can't use a " + unsupported.typeName() + " selection. Select a cuboid or polygon (//sel"
+                        + " cuboid or //sel poly)," + again;
         };
     }
 
@@ -396,7 +494,10 @@ public final class PlacementDialog {
         return joinWithAnd(axes);
     }
 
-    /** One finding on its own line: blocking ones in red, warnings marked ⚠. */
+    /**
+     * One finding on its own line: blocking ones in red, warnings marked ⚠ in gold, and information in the default white,
+     * since grey is hard to read over a bright sky behind the dialog.
+     */
     private static Component line(PlacementFinding finding) {
         return switch (finding) {
             case PlacementFinding.AnotherWorld anotherWorld ->
@@ -416,16 +517,52 @@ public final class PlacementDialog {
                 warning("It's over " + PlacementCheck.MAX_SIDE + " blocks along "
                         + axes(tooLarge.sides(), side -> side > PlacementCheck.MAX_SIDE)
                         + ". Check your selection is what you meant.");
-            case PlacementFinding.Outside outside ->
-                Component.text(
-                        "You're standing " + outside.distance() + (outside.distance() == 1 ? " block" : " blocks")
-                                + " outside it, and the Warp point will be where you stand. Move inside it first if"
-                                + " the Warp point should be.",
-                        NamedTextColor.GRAY);
+            case PlacementFinding.Outside outside -> outsideLine(outside);
             case PlacementFinding.Overlap overlap ->
-                warning("This overlaps " + namesUpToFive(overlap.areaNames())
+                warning("This overlaps " + overlappedAreas(overlap.areaNames())
                         + ". Players standing in both get both Welcomes.");
         };
+    }
+
+    /**
+     * Where the staff member stands, which becomes the Warp point: plain information just outside, a warning further
+     * out, and in red once it blocks.
+     */
+    private static Component outsideLine(PlacementFinding.Outside outside) {
+        String blocks = outside.distance() == 1 ? " block" : " blocks";
+        Component distance = Component.text(outside.distance());
+        return switch (outside.severity()) {
+            // Only the number stands out: gold here, and bold in the warning's and blocker's own colours
+            case INFORMATION ->
+                Component.text()
+                        .append(Component.text("You're standing "))
+                        .append(distance.color(NamedTextColor.GOLD))
+                        .append(Component.text(blocks + " outside it, so the Warp point will be outside the area too."))
+                        .build();
+            case WARNING ->
+                Component.text()
+                        .color(NamedTextColor.GOLD)
+                        .append(Component.text("⚠ You're standing "))
+                        .append(distance.decorate(TextDecoration.BOLD))
+                        .append(Component.text(
+                                blocks + " outside it, the Warp point will be far from the area, maybe move closer."))
+                        .build();
+            case BLOCKING ->
+                Component.text()
+                        .color(NamedTextColor.RED)
+                        .append(Component.text("✘ You're standing "))
+                        .append(distance.decorate(TextDecoration.BOLD))
+                        .append(Component.text(blocks + " outside it. The Warp point is placed where you stand, move"
+                                + " to at least within " + PlacementFinding.Outside.BLOCKING_DISTANCE
+                                + " blocks of your selection, then run this command again."))
+                        .build();
+        };
+    }
+
+    /** Such as "the Guidebook area 'a'", or "the Guidebook areas 'a', 'b' and 3 more". */
+    private static String overlappedAreas(List<String> names) {
+        return "the Guidebook " + (names.size() == 1 ? "area " : "areas ")
+                + namesUpToFive(names.stream().map(name -> "'" + name + "'").toList());
     }
 
     private static Component warning(String text) {

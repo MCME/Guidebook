@@ -29,7 +29,7 @@ final class GuidebookList {
 
     /**
      * Sends one page of the Areas whose names contain {@code filter}, ignoring case, one line each. Hovering a name
-     * shows the Area's Title, Shape and Enabled state, and Disabled names are grey. Each line ends with buttons that run
+     * shows the Area's Title, Shape and Enabled state, and Disabled names are grey. Each line starts with buttons that run
      * {@code edit}, {@code warp}, {@code select} and {@code delete} for its Area. The page arrows show the neighbouring
      * pages.
      *
@@ -68,22 +68,23 @@ final class GuidebookList {
         }
     }
 
-    // ▸ <name>  ✎ W ⬚ 🗑, short-indented so long names have room before the line wraps
+    // ✎ W ⬚ 🗑 ... <name>. The buttons come first so they line up down the page, whatever the names' lengths, and
+    // the short indent gives long names room before the line wraps. The button tooltips are short, since a tooltip
+    // covers the name to its right
     private static Component areaLine(InfoArea area) {
         String name = area.getName();
         Component nameText = Component.text(name, area.isEnabled() ? NamedTextColor.BLUE : NamedTextColor.GRAY)
                 .hoverEvent(HoverEvent.showText(nameHover(area)));
         return GuidebookMessages.infoShortIndented(
-                "▸ ",
-                nameText,
-                "  ",
-                button("✎", NamedTextColor.WHITE, "edit", name, "Edit this area"),
+                button("✎", NamedTextColor.WHITE, "edit", name, "Edit"),
                 " ",
-                button("W", NamedTextColor.GREEN, "warp", name, "Warp to this area"),
+                button("W", NamedTextColor.GREEN, "warp", name, "Warp"),
                 " ",
                 button("⬚", NamedTextColor.AQUA, "select", name, "Set your WorldEdit selection to this area"),
                 " ",
-                button("🗑", NamedTextColor.RED, "delete", name, "Delete this area (asks to confirm)"));
+                button("🗑", NamedTextColor.RED, "delete", name, "Delete"),
+                Component.text("  ...  ", NamedTextColor.DARK_GRAY),
+                nameText);
     }
 
     // Clicking runs the command straight away; delete asks to confirm by itself
@@ -108,7 +109,7 @@ final class GuidebookList {
                 .build();
     }
 
-    // Such as "■ Cuboid, 21 × 10 × 30 blocks (x × y × z)"
+    // Such as "■ Cuboid, 21 × 30 blocks, from y 60 to 69"
     private static String shapeText(InfoArea area) {
         return area.getShape().symbol() + " " + capitalised(area.getGeometry().describe());
     }

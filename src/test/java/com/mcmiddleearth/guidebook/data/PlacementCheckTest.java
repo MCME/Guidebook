@@ -217,9 +217,34 @@ class PlacementCheckTest {
         assertEquals(List.of(new PlacementFinding.Outside(1)), outsideFindings(CUBOID, 21, 81, 10));
     }
 
+    // Standing just outside is often deliberate, such as a Warp point at a town's gate
     @Test
-    void outsideIsInformation() {
-        assertEquals(PlacementFinding.Severity.INFORMATION, new PlacementFinding.Outside(5).severity());
+    void standingUpTo32BlocksOutsideIsInformation() {
+        assertEquals(PlacementFinding.Severity.INFORMATION, outsideSeverity(52));
+    }
+
+    @Test
+    void standingOver32BlocksOutsideWarns() {
+        assertEquals(PlacementFinding.Severity.WARNING, outsideSeverity(53));
+    }
+
+    @Test
+    void standingUpTo200BlocksOutsideStillOnlyWarns() {
+        assertEquals(PlacementFinding.Severity.WARNING, outsideSeverity(220));
+    }
+
+    // A Warp point that far from its Area is never useful
+    @Test
+    void standingOver200BlocksOutsideBlocks() {
+        assertEquals(PlacementFinding.Severity.BLOCKING, outsideSeverity(221));
+    }
+
+    // The severity of standing at x, level with the cuboid, whose east edge is at x 20
+    private static PlacementFinding.Severity outsideSeverity(int x) {
+        List<PlacementFinding> outside = outsideFindings(CUBOID, x, 70, 10);
+        assertEquals(1, outside.size());
+        assertEquals(x - 20, ((PlacementFinding.Outside) outside.getFirst()).distance());
+        return outside.getFirst().severity();
     }
 
     // An L, with its notch at x 10 to 20, z 10 to 20

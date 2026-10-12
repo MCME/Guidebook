@@ -16,7 +16,7 @@ final class AreaOverlap {
     private AreaOverlap() {}
 
     /** The Overlap finding for {@code proposal}, or empty when it overlaps nothing. The moved Area is skipped. */
-    static Optional<PlacementFinding> overlapping(
+    static Optional<PlacementFinding.Overlap> overlapping(
             PlacementCheck.Proposal proposal,
             Collection<? extends MarkableArea> areas,
             Optional<String> movedAreaName) {

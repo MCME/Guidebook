@@ -59,6 +59,53 @@ public final class PlacementCheck {
         return findings;
     }
 
+    /**
+     * How far Sphere around me reaches before it overlaps another Area.
+     *
+     * @param largestClearRadius the largest radius, from the smallest offered up to the largest, that overlaps no other
+     *     Area, or 0 when even the smallest does
+     * @param overlappedNext the Areas the next radius up overlaps, sorted, or none when every radius offered is clear
+     */
+    public record SphereClearance(int largestClearRadius, List<String> overlappedNext) {}
+
+    /**
+     * Works out the {@link SphereClearance} of a sphere centred on the staff member, for radii {@code minRadius} to
+     * {@code maxRadius}. A larger sphere holds every block of a smaller one, so once a radius overlaps, every larger one
+     * does too.
+     *
+     * @param movedAreaName the Area being moved, if this is a move, which is never compared with itself
+     */
+    public static SphereClearance sphereClearance(
+            StaffPosition staff,
+            Collection<? extends MarkableArea> areas,
+            Optional<String> movedAreaName,
+            int minRadius,
+            int maxRadius) {
+        if (overlapped(staff, areas, movedAreaName, maxRadius).isEmpty()) {
+            return new SphereClearance(maxRadius, List.of());
+        }
+        // Binary search for the smallest overlapping radius, which is somewhere in low to high
+        int low = minRadius;
+        int high = maxRadius;
+        while (low < high) {
+            int middle = (low + high) / 2;
+            if (overlapped(staff, areas, movedAreaName, middle).isEmpty()) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        int largestClear = low == minRadius ? 0 : low - 1;
+        return new SphereClearance(largestClear, overlapped(staff, areas, movedAreaName, low));
+    }
+
+    private static List<String> overlapped(
+            StaffPosition staff, Collection<? extends MarkableArea> areas, Optional<String> movedAreaName, int radius) {
+        return AreaOverlap.overlapping(Proposal.sphereAround(staff, radius), areas, movedAreaName)
+                .map(PlacementFinding.Overlap::areaNames)
+                .orElse(List.of());
+    }
+
     /** What is wrong with the Shape on its own: a flat polygon, or a side too small or too large. */
     private static List<PlacementFinding> shapeFindings(AreaGeometry geometry) {
         List<PlacementFinding> findings = new ArrayList<>();

@@ -20,7 +20,8 @@ import org.bukkit.entity.Player;
 
 /**
  * The confirmation dialog for deleting an Area. It shows the question, the Area's name and its Title. Deleting can't be
- * undone, so its Confirm is red. Esc runs the Cancel button's action, so closing the dialog counts as Cancel.
+ * undone, so "delete" in the title and question, and its Confirm, are red. Esc runs the Cancel button's action, so
+ * closing the dialog counts as Cancel.
  */
 public final class ConfirmDialog {
 
@@ -45,7 +46,9 @@ public final class ConfirmDialog {
         String areaName = area.getName();
         String title = area.getTitle();
         List<DialogBody> body = List.of(
-                DialogBody.plainMessage(Component.text("Do you really want to delete this Guidebook area?")),
+                DialogBody.plainMessage(Component.text("Do you really want to ")
+                        .append(Component.text("delete", NamedTextColor.RED))
+                        .append(Component.text(" this Guidebook area?"))),
                 DialogBody.plainMessage(Component.text("Area: ").append(GuidebookMessages.stressed(areaName))),
                 DialogBody.plainMessage(Component.text("Title: ")
                         .append(
@@ -69,9 +72,13 @@ public final class ConfirmDialog {
                 .build();
 
         player.showDialog(Dialog.create(builder -> builder.empty()
-                .base(DialogBase.builder(Component.text("Delete Guidebook area ")
+                // Appended text takes its parent's colour, so the red "Delete" is a sibling rather than the parent
+                .base(DialogBase.builder(Component.text()
+                                .append(Component.text("Delete", NamedTextColor.RED))
+                                .append(Component.text(" Guidebook area "))
                                 .append(GuidebookMessages.stressed(areaName))
-                                .append(Component.text("?")))
+                                .append(Component.text("?"))
+                                .build())
                         .body(body)
                         .build())
                 .type(DialogType.confirmation(confirm, cancel))));
