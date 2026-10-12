@@ -6,8 +6,8 @@ import java.util.List;
 /**
  * Which blocks are inside a prism, by the same rule as PluginUtils' {@code PrismoidRegion}, which decides who gets a
  * Welcome. It is copied here, rounding and all, so the Placement check can use it without a running server. The rule
- * casts a ray along each axis from the block, counting crossed edges with each edge's slope rounded to whole blocks, and
- * counts the polygon's corners as inside.
+ * casts a ray along each axis from the block, counting crossed edges with each edge's slope rounded to whole blocks,
+ * and counts the polygon's corners as inside.
  */
 final class PrismInside {
 

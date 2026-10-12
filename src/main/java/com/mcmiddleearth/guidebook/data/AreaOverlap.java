@@ -177,7 +177,9 @@ final class AreaOverlap {
         }
     }
 
-    /** A block is inside by {@link PrismInside}'s copy of {@code PrismoidRegion}'s rule, edges and rounding included. */
+    /**
+     * A block is inside by {@link PrismInside}'s copy of {@code PrismoidRegion}'s rule, edges and rounding included.
+     */
     private static final class PrismColumns implements Columns {
 
         private final PrismInside inside;

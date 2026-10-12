@@ -12,7 +12,9 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.junit.jupiter.api.Test;
 
-/** The Overlap finding of the {@link PlacementCheck}: which existing Areas share at least one block with a placement. */
+/**
+ * The Overlap finding of the {@link PlacementCheck}: which existing Areas share at least one block with a placement.
+ */
 class PlacementCheckOverlapTest {
 
     private static final String WORLD = "middle_earth";

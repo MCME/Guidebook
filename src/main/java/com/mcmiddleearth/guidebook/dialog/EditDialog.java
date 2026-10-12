@@ -32,10 +32,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 
 /**
- * The Edit dialog: every editable field of an Area on one screen. Text is typed as MiniMessage. Save checks the
- * lengths and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes. Delete asks to confirm, and backing out of that returns to the
- * dialog with the changes kept. For an Area {@code create} is placing, the dialog creates it: the Area exists
- * only once Create is pressed, and Esc is turned off so that Cancel can say nothing was created.
+ * The Edit dialog: every editable field of an Area on one screen. Text is typed as MiniMessage. Save checks the lengths
+ * and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes.
+ * Delete asks to confirm, and backing out of that returns to the dialog with the changes kept. For an Area
+ * {@code create} is placing, the dialog creates it: the Area exists only once Create is pressed, and Esc is turned off
+ * so that Cancel can say nothing was created.
  */
 public final class EditDialog {
 
@@ -108,8 +109,8 @@ public final class EditDialog {
     }
 
     /**
-     * Opens the dialog that creates {@code area}, which the Placement dialog has built but not added. Nothing is added or written
-     * until Create is pressed.
+     * Opens the dialog that creates {@code area}, which the Placement dialog has built but not added. Nothing is added
+     * or written until Create is pressed.
      */
     public static void openToCreate(Player player, InfoArea area) {
         show(player, area, Mode.CREATE, Values.of(area).forNewArea(), null);

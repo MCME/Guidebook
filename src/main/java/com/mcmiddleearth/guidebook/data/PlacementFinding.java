@@ -55,8 +55,8 @@ public sealed interface PlacementFinding {
 
     /**
      * The staff member is standing outside the Shape, so the Warp point will be too. Just outside is often deliberate,
-     * such as a Warp point at a town's gate, so it's information. Further out it warns, and too far out it blocks, since
-     * a Warp point that far from its Area is never useful.
+     * such as a Warp point at a town's gate, so it's information. Further out it warns, and too far out it blocks,
+     * since a Warp point that far from its Area is never useful.
      *
      * @param distance the distance in blocks to the Shape's nearest block, at least 1
      */

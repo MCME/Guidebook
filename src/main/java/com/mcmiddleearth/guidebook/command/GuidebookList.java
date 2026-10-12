@@ -29,9 +29,9 @@ final class GuidebookList {
 
     /**
      * Sends one page of the Areas whose names contain {@code filter}, ignoring case, one line each. Hovering a name
-     * shows the Area's Title, Shape and Enabled state, and Disabled names are grey. Each line starts with buttons that run
-     * {@code edit}, {@code warp}, {@code select} and {@code delete} for its Area. The page arrows show the neighbouring
-     * pages.
+     * shows the Area's Title, Shape and Enabled state, and Disabled names are grey. Each line starts with buttons that
+     * run {@code edit}, {@code warp}, {@code select} and {@code delete} for its Area. The page arrows show the
+     * neighbouring pages.
      *
      * @param filter the text to search for, or empty to list every Area
      * @param page the page to show, moved into range if there's no such page

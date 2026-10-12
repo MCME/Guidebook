@@ -35,9 +35,9 @@ class PlacementCheckSphereClearanceTest {
         }
     }
 
-    // A one-block cuboid on the x axis, d blocks east of the staff member
-    private static TestArea blockEastBy(String name, int d) {
-        return new TestArea(name, WORLD, new AreaGeometry.Cuboid(d, 64, 0, d, 64, 0));
+    // A one-block cuboid on the x axis, distance blocks east of the staff member
+    private static TestArea blockEastBy(String name, int distance) {
+        return new TestArea(name, WORLD, new AreaGeometry.Cuboid(distance, 64, 0, distance, 64, 0));
     }
 
     private static PlacementCheck.SphereClearance clearance(List<TestArea> areas) {

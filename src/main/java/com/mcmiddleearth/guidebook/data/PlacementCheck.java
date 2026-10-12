@@ -70,8 +70,8 @@ public final class PlacementCheck {
 
     /**
      * Works out the {@link SphereClearance} of a sphere centred on the staff member, for radii {@code minRadius} to
-     * {@code maxRadius}. A larger sphere holds every block of a smaller one, so once a radius overlaps, every larger one
-     * does too.
+     * {@code maxRadius}. A larger sphere holds every block of a smaller one, so once a radius overlaps, every larger
+     * one does too.
      *
      * @param movedAreaName the Area being moved, if this is a move, which is never compared with itself
      */

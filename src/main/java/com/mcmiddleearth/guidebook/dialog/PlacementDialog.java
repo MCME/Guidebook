@@ -23,6 +23,7 @@ import java.util.function.IntPredicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -47,6 +48,9 @@ public final class PlacementDialog {
     private static final int RADIUS_MIN = 1;
     private static final int RADIUS_MAX = 200;
     private static final int RADIUS_DEFAULT = 20;
+
+    /** Ends the advice for anything fixed outside the dialog, since the selection can't change while it's open. */
+    private static final String RUN_AGAIN = "then run this command again.";
 
     private PlacementDialog() {}
 
@@ -294,7 +298,7 @@ public final class PlacementDialog {
             // Light grey with a red cross, as dark grey on the grey button was hard to read
             buttons.add(ActionButton.builder(Component.text("✘ ", NamedTextColor.RED)
                             .append(Component.text(purpose.useSelection(), NamedTextColor.GRAY)))
-                    .tooltip(Component.text(unusableReason(selection)))
+                    .tooltip(unusableTooltip(selection, findings))
                     .build());
         }
         buttons.add(ActionButton.builder(Component.text("● " + purpose.sphereAroundMe(), NamedTextColor.WHITE))
@@ -337,7 +341,7 @@ public final class PlacementDialog {
         List<DialogBody> body = new ArrayList<>();
         purpose.currentPlacement().ifPresent(current -> body.add(DialogBody.plainMessage(current)));
         body.add(DialogBody.plainMessage(Component.text("Sphere around you at " + staff.x() + " " + staff.y() + " "
-                + staff.z() + ", with its Warp point" + " where you stand.")));
+                + staff.z() + ", with its Warp point where you stand.")));
         if (clearance.overlappedNext().isEmpty()) {
             body.add(DialogBody.plainMessage(
                     Component.text("No other area is within radius " + RADIUS_MAX + " of you.", NamedTextColor.GREEN)));
@@ -443,40 +447,38 @@ public final class PlacementDialog {
      */
     private static List<Component> selectionLines(WorldEditSelections.Selection selection) {
         Component label = Component.text("Your WorldEdit selection: ");
-        String again = " then run this command again.";
         return switch (selection) {
             case WorldEditSelections.Usable usable ->
                 List.of(label.append(Component.text(usable.geometry().describe())));
             case WorldEditSelections.NoSelection none ->
                 List.of(
                         label.append(Component.text("none", NamedTextColor.GOLD)),
-                        Component.text("To use one, select a cuboid or polygon with WorldEdit," + again
+                        Component.text("To use one, select a cuboid or polygon with WorldEdit, " + RUN_AGAIN
                                 + " Or use Sphere around me."));
             case WorldEditSelections.Incomplete incomplete ->
                 List.of(
                         label.append(Component.text("an unfinished " + incomplete.typeName(), NamedTextColor.GOLD)),
-                        Component.text("Set its remaining points with WorldEdit," + again));
+                        Component.text("Set its remaining points with WorldEdit, " + RUN_AGAIN));
             case WorldEditSelections.Unsupported unsupported ->
                 List.of(
                         label.append(Component.text("a " + unsupported.typeName(), NamedTextColor.GOLD)),
                         Component.text("Guidebook can only use a cuboid or polygon. Switch with //sel cuboid or //sel"
-                                + " poly, select it," + again + " Or use Sphere around me."));
+                                + " poly, select it, " + RUN_AGAIN + " Or use Sphere around me."));
         };
     }
 
-    /** Why the selection button is greyed out, for its tooltip. */
-    private static String unusableReason(WorldEditSelections.Selection selection) {
-        String again = " then run this command again.";
-        return switch (selection) {
-            case WorldEditSelections.Usable usable -> "Your selection can't be used here. The reason is shown above.";
-            case WorldEditSelections.NoSelection none ->
-                "You have no WorldEdit selection. Select a cuboid or polygon," + again;
-            case WorldEditSelections.Incomplete incomplete ->
-                "Your WorldEdit selection isn't finished. Set its remaining points," + again;
-            case WorldEditSelections.Unsupported unsupported ->
-                "Guidebook can't use a " + unsupported.typeName() + " selection. Select a cuboid or polygon (//sel"
-                        + " cuboid or //sel poly)," + again;
-        };
+    /**
+     * Why the selection button is greyed out, for its tooltip: the same lines the body shows, so it says what's wrong
+     * and what to do. A usable selection is only greyed out by a blocking finding.
+     */
+    private static Component unusableTooltip(WorldEditSelections.Selection selection, List<PlacementFinding> findings) {
+        List<Component> lines = selection instanceof WorldEditSelections.Usable
+                ? findings.stream()
+                        .filter(finding -> finding.severity() == PlacementFinding.Severity.BLOCKING)
+                        .map(PlacementDialog::line)
+                        .toList()
+                : selectionLines(selection);
+        return Component.join(JoinConfiguration.newlines(), lines);
     }
 
     /** The axes along which a test holds, such as "x and z". */
@@ -495,8 +497,8 @@ public final class PlacementDialog {
     }
 
     /**
-     * One finding on its own line: blocking ones in red, warnings marked ⚠ in gold, and information in the default white,
-     * since grey is hard to read over a bright sky behind the dialog.
+     * One finding on its own line: blocking ones in red, warnings marked ⚠ in gold, and information in the default
+     * white, since grey is hard to read over a bright sky behind the dialog.
      */
     private static Component line(PlacementFinding finding) {
         return switch (finding) {
@@ -554,7 +556,7 @@ public final class PlacementDialog {
                         .append(distance.decorate(TextDecoration.BOLD))
                         .append(Component.text(blocks + " outside it. The Warp point is placed where you stand, move"
                                 + " to at least within " + PlacementFinding.Outside.BLOCKING_DISTANCE
-                                + " blocks of your selection, then run this command again."))
+                                + " blocks of your selection, " + RUN_AGAIN))
                         .build();
         };
     }

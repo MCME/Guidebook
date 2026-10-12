@@ -41,7 +41,10 @@ public final class GuidebookMessages {
         return prefixed(INFO, STRESSED, parts);
     }
 
-    /** A line starting with the {@code [Guidebook]} prefix, in the error colour, with {@link #stressed} parts in dark red. */
+    /**
+     * A line starting with the {@code [Guidebook]} prefix, in the error colour, with {@link #stressed} parts in dark
+     * red.
+     */
     public static Component error(Object... parts) {
         return prefixed(ERROR, ERROR_STRESSED, parts);
     }
@@ -64,7 +67,9 @@ public final class GuidebookMessages {
         return line(INDENT, INFO, STRESSED, parts);
     }
 
-    /** A line slightly indented to follow an {@link #info} line, for long lines that would wrap under the full indent. */
+    /**
+     * A line slightly indented to follow an {@link #info} line, for long lines that would wrap under the full indent.
+     */
     public static Component infoShortIndented(Object... parts) {
         return line(SHORT_INDENT, INFO, STRESSED, parts);
     }
