@@ -260,9 +260,10 @@ public final class PlacementDialog {
      */
     private static void show(Player player, Purpose purpose, List<PlacementFinding> refused) {
         WorldEditSelections.Selection selection = WorldEditSelections.read(player);
-        Optional<PlacementCheck.Proposal> proposal = selection instanceof WorldEditSelections.Usable usable
-                ? Optional.of(new PlacementCheck.Proposal(usable.world(), usable.geometry()))
-                : Optional.empty();
+        Optional<PlacementCheck.Proposal> proposal =
+                selection instanceof WorldEditSelections.Usable(String world, AreaGeometry geometry)
+                        ? Optional.of(new PlacementCheck.Proposal(world, geometry))
+                        : Optional.empty();
         List<PlacementFinding> findings =
                 proposal.map(p -> check(player, purpose, p)).orElse(List.of());
 

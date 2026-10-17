@@ -20,14 +20,17 @@ import java.util.List;
 import org.bukkit.entity.Player;
 
 /**
- * Guidebook's view of a staff member's WorldEdit selection. Untested: it needs a running WorldEdit. It reads the
- * session directly, so an incomplete selection is an ordinary result rather than a logged stack trace.
+ * Guidebook's view of a staff member's WorldEdit selection. It reads the session directly, so a missing or unfinished
+ * selection is an ordinary result and not an exception.
  */
 public final class WorldEditSelections {
 
     private WorldEditSelections() {}
 
-    /** A staff member's WorldEdit selection, as far as Guidebook can use it. */
+    /**
+     * A staff member's WorldEdit selection, as far as Guidebook can use it.
+     * A sum type: it's exactly one of the records below, so a {@code switch} over it must handle every case.
+     */
     public sealed interface Selection {}
 
     /** A cuboid or polygon selection, as an Area's Shape in the selection's own world. */
@@ -52,6 +55,7 @@ public final class WorldEditSelections {
         if (world == null) {
             return new NoSelection();
         }
+
         RegionSelector selector = session.getRegionSelector(world);
         if (!selector.isDefined()) {
             return hasStarted(selector) ? new Incomplete(selector.getTypeName()) : new NoSelection();
@@ -62,6 +66,7 @@ public final class WorldEditSelections {
         } catch (IncompleteRegionException ex) {
             return new Incomplete(selector.getTypeName());
         }
+
         return switch (region) {
             case CuboidRegion cuboid -> new Usable(world.getName(), toGeometry(cuboid));
             case Polygonal2DRegion polygon -> new Usable(world.getName(), toGeometry(polygon));
