@@ -3,9 +3,11 @@ main: com.mcmiddleearth.guidebook.GuidebookPlugin
 version: ${version}
 description: sending information about places via chat messages
 load: POSTWORLD
+# Staff place and select Areas with WorldEdit selections, so create, move and select can't work without it
+depend: [WorldEdit]
 # Multiverse-Core loads its worlds in its own onEnable. Saved areas look their world up by name
 # on load, so Guidebook must enable after Multiverse or those lookups return null.
-softdepend: [Multiverse-Core, WorldEdit, PluginUtils, dynmap]
+softdepend: [Multiverse-Core, PluginUtils, dynmap]
 api-version: '${apiVersion}'
 
 permissions:
