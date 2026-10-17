@@ -1,7 +1,7 @@
 name: Guidebook
 main: com.mcmiddleearth.guidebook.GuidebookPlugin
 version: ${version}
-description: sending information about places via chat messages
+description: Welcomes players to the places they enter with a title and a short description.
 load: POSTWORLD
 # Staff place and select Areas with WorldEdit selections, so create, move and select can't work without it
 depend: [WorldEdit]
