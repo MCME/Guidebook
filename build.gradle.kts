@@ -58,9 +58,9 @@ tasks {
         useJUnitPlatform()
     }
 
-    // Dynamically adding the name, version and api-version to the paper plugin.yml
+    // Dynamically adding the version and api-version to the paper plugin.yml
     processResources {
-        val props = mapOf("name" to project.name, "version" to version, "apiVersion" to minecraftVersion)
+        val props = mapOf("version" to version, "apiVersion" to minecraftVersion)
         inputs.properties(props)
         filesMatching("plugin.yml") {
             expand(props)

@@ -1,4 +1,4 @@
-name: ${name}
+name: Guidebook
 main: com.mcmiddleearth.guidebook.GuidebookPlugin
 version: ${version}
 description: sending information about places via chat messages
