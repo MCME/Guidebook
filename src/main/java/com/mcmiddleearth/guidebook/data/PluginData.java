@@ -18,25 +18,24 @@ package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.pluginutil.FileUtil;
-import com.mcmiddleearth.pluginutil.message.MessageUtil;
-import com.mcmiddleearth.pluginutil.region.CuboidRegion;
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import com.mcmiddleearth.pluginutil.region.SphericalRegion;
-
+import com.mcmiddleearth.guidebook.webmap.MarkerLayer;
+import com.mcmiddleearth.guidebook.webmap.NoWebMap;
+import com.mcmiddleearth.guidebook.webmap.WebMap;
+import com.mcmiddleearth.pluginutil.region.Region;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -46,9 +45,11 @@ import org.bukkit.entity.Player;
  */
 public class PluginData {
 
-    private static final MessageUtil messageUtil = new MessageUtil();
+    private static final Map<String, InfoArea> infoAreas = new HashMap<>();
 
-    private final static Map<String, InfoArea> infoAreas = new HashMap<>();
+    private static final AreaRegistry<InfoArea> registry = new AreaRegistry<>(infoAreas.values());
+
+    private static MarkerLayer webMapLayer = new NoWebMap().layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
 
     private static Set<UUID> excludedPlayers = new HashSet<>();
 
@@ -58,7 +59,6 @@ public class PluginData {
         if (!GuidebookPlugin.getPluginInstance().getDataFolder().exists()) {
             GuidebookPlugin.getPluginInstance().getDataFolder().mkdirs();
         }
-        messageUtil.setPluginName("Guidebook");
     }
 
     public static boolean isExcluded(Player player) {
@@ -69,22 +69,95 @@ public class PluginData {
         return infoAreas.put(name, newArea);
     }
 
-    public static boolean deleteInfoArea(String name) {
-        InfoArea area = infoAreas.get(name);
-        area.clearInformedPlayers();
-        boolean result = getDataFile(getWorldFolder(name), name).delete();
+    /**
+     * Writes a new Area's file, then adds it and draws it, so an Area whose file couldn't be written is never added.
+     */
+    public static void createInfoArea(InfoArea area) throws IOException {
+        writeArea(area);
+        addInfoArea(area.getName(), area);
+        drawArea(area);
+    }
+
+    public static boolean deleteInfoArea(InfoArea area) {
+        area.clearPlayers();
+        boolean result = getDataFile(area, area.getName()).delete();
         if (result) {
-            infoAreas.remove(name);
+            infoAreas.remove(area.getName());
+            eraseArea(area.getName());
         }
         return result;
     }
 
-    public static InfoArea getInfoArea(String name) {
-        return infoAreas.get(name);
+    /**
+     * @return false if the Area was renamed but its old data file couldn't be deleted, so it would load under both
+     *     names after a reload
+     */
+    public static boolean renameInfoArea(InfoArea area, String newName) throws IOException {
+        String oldName = area.getName();
+        // Found before the rename, while it still points at the old name's file
+        File oldDataFile = getDataFile(area, oldName);
+
+        infoAreas.remove(oldName);
+        area.setName(newName);
+        infoAreas.put(newName, area);
+        try {
+            writeArea(area);
+        } catch (IOException ex) {
+            infoAreas.remove(newName);
+            area.setName(oldName);
+            infoAreas.put(oldName, area);
+            throw ex;
+        }
+        boolean oldFileDeleted = oldDataFile.delete();
+        eraseArea(oldName);
+        drawArea(area);
+        return oldFileDeleted;
     }
 
-    public static boolean hasInfoArea(String name) {
-        return infoAreas.get(name) != null;
+    /**
+     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}.
+     *
+     * @return false if the Area was moved to another world but its old world's data file couldn't be deleted, so it
+     *     would load twice after a reload
+     */
+    public static boolean moveInfoArea(InfoArea area, AreaGeometry geometry, Location warpPoint) throws IOException {
+        Region region = InfoArea.regionOf(geometry, warpPoint);
+        Region oldRegion = area.getRegion();
+        // Found before the move: the world folder comes from the region
+        File oldDataFile = getDataFile(area, area.getName());
+
+        area.setRegion(region);
+        try {
+            writeArea(area);
+        } catch (IOException ex) {
+            area.setRegion(oldRegion);
+            throw ex;
+        }
+        boolean oldFileGone = oldDataFile.equals(getDataFile(area, area.getName())) || oldDataFile.delete();
+        // The marker's id doesn't change, so this replaces it even in another world
+        drawArea(area);
+        return oldFileGone;
+    }
+
+    /**
+     * @return the Area the typed name reaches (ignoring case, exact case wins), or null if there is none
+     */
+    public static InfoArea getInfoArea(String name) {
+        return registry.resolve(name).orElse(null);
+    }
+
+    /**
+     * @return the Area with exactly this name, or null if there is none
+     */
+    public static InfoArea getInfoAreaExact(String name) {
+        return registry.resolveExact(name).orElse(null);
+    }
+
+    /**
+     * @return why the name can't be given to a new or renamed Area, or empty if it can
+     */
+    public static Optional<String> newAreaNameProblem(String name) {
+        return registry.newNameProblem(name);
     }
 
     public static void include(Player player) {
@@ -106,20 +179,22 @@ public class PluginData {
         Logger.getGlobal().info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
 
+    /** Writes the Area's file, then redraws it on the Web map, so a failed save leaves its marker as it was. */
     public static void saveArea(InfoArea area) throws IOException {
-        for (String areaName : infoAreas.keySet()) {
-            if (infoAreas.get(areaName) == area) {
-                DevUtil.log("SaveData " + areaName);
-                FileConfiguration config = new YamlConfiguration();
-                infoAreas.get(areaName).save(config);
-                File worldFolder = getWorldFolder(areaName);
-                if (!worldFolder.exists()) {
-                    worldFolder.mkdir();
-                }
-                File dataFile = getDataFile(worldFolder, areaName);
-                config.save(dataFile);
-            }
-        }
+        writeArea(area);
+        drawArea(area);
+    }
+
+    private static void writeArea(InfoArea area) throws IOException {
+        final String areaName = area.getName();
+        DevUtil.log("SaveData " + areaName);
+
+        FileConfiguration config = new YamlConfiguration();
+        area.save(config);
+
+        File dataFile = getDataFile(area, areaName);
+        dataFile.getParentFile().mkdir();
+        config.save(dataFile);
     }
 
     public static void loadData() {
@@ -131,41 +206,53 @@ public class PluginData {
             excludedPlayers.add(UUID.fromString(id));
         }
         for (InfoArea area : infoAreas.values()) {
-            area.clearInformedPlayers();
+            area.clearPlayers();
         }
         infoAreas.clear();
-        File[] worldFolders = dataFolder.listFiles(FileUtil.getDirFilter());
-        for (File folder : worldFolders) {
-            File[] dataFiles = folder.listFiles(FileUtil.getFileExtFilter("yml"));
-            for (File dataFile : dataFiles) {
-                String areaName = FileUtil.getShortName(dataFile);
-                DevUtil.log("Load area " + areaName);
-                config = new YamlConfiguration();
-                try {
-                    config.load(dataFile);
-                    if (SphericalRegion.isValidConfig(config)) {
-                        infoAreas.put(areaName,
-                            new SphericalInfoArea(config));
-                    } else if (PrismoidRegion.isValidConfig(config)) {
-                        infoAreas.put(areaName,
-                            new PrismoidInfoArea(config));
-                    } else if (CuboidRegion.isValidConfig(config) || config.contains("xSize")) { // xSize is to notice old data format
-                        infoAreas.put(areaName,
-                            new CuboidInfoArea(config));
-                    }
-                } catch (IOException | InvalidConfigurationException ex) {
-                    Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
+        AreaFileLoader.Outcome outcome = AreaFileLoader.load(dataFolder, LocalDateTime.now());
+        Logger logger = GuidebookPlugin.getPluginInstance().getLogger();
+        outcome.backup()
+                .ifPresent(backup -> logger.info("Backed up the Guidebook folder to " + backup
+                        + " before converting Guidebook areas from Legacy markup to MiniMessage."));
+        outcome.problems().forEach(logger::severe);
+        for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
+            String areaName = loaded.name();
+            config = loaded.config();
+            DevUtil.log("Load area " + areaName);
+            InfoArea.load(areaName, config).ifPresent(area -> addInfoArea(areaName, area));
         }
+        drawWebMap();
     }
 
-    private static File getWorldFolder(String areaName) {
-        return new File(dataFolder, infoAreas.get(areaName).getLocation().getWorld().getName());
+    /** Draws every Area on this Web map from now on, starting with the Areas already loaded. */
+    public static void useWebMap(WebMap webMap) {
+        webMapLayer = webMap.layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
+        drawWebMap();
     }
 
-    private static File getDataFile(File folder, String areaName) {
-        return new File(folder, areaName + ".yml");
+    private static void drawWebMap() {
+        webMapLayer.clear();
+        infoAreas.values().forEach(PluginData::drawArea);
+    }
+
+    private static void drawArea(InfoArea area) {
+        // Its world isn't loaded, so there's nowhere to draw it
+        if (!area.getRegion().isValid()) {
+            eraseArea(area.getName());
+            GuidebookPlugin.getPluginInstance()
+                    .getLogger()
+                    .warning("Area " + area.getName() + " isn't drawn on the Web map because its world isn't loaded.");
+            return;
+        }
+        webMapLayer.put(AreaMarkers.toMarker(area));
+    }
+
+    private static void eraseArea(String areaName) {
+        webMapLayer.remove(AreaMarkers.id(areaName));
+    }
+
+    private static File getDataFile(InfoArea area, String areaName) {
+        return new File(new File(dataFolder, area.getWorldName()), areaName + ".yml");
     }
 
     public static void disable() {
@@ -175,20 +262,20 @@ public class PluginData {
             Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
         }
         for (InfoArea area : infoAreas.values()) {
-            area.clearInformedPlayers();
+            area.clearPlayers();
         }
-    }
-
-    public static MessageUtil getMessageUtil() {
-        return messageUtil;
     }
 
     public static Map<String, InfoArea> getInfoAreas() {
         return infoAreas;
     }
 
-    public static List<String> getAreaNames() {
-        return new ArrayList<String>(infoAreas.keySet());
+    public static List<String> suggestAreaNames(String typed) {
+        return suggestAreas(typed).stream().map(AreaRegistry.Suggestion::name).toList();
+    }
+
+    public static List<AreaRegistry.Suggestion> suggestAreas(String typed) {
+        return registry.suggest(typed);
     }
 
     public static File getDataFolder() {

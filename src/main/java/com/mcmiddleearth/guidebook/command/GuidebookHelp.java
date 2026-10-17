@@ -1,94 +1,157 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.PluginData;
-
-import java.util.ArrayList;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.bukkit.Bukkit;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+import net.kyori.adventure.text.Component;
+import net.strokkur.commands.CustomSuggestion;
 import org.bukkit.command.CommandSender;
 
 /**
- * @author Eriol_Eandur
+ * {@code help [command]}, and bare {@code /guidebook}: the help table for every {@code /guidebook} command. Each row
+ * is shown only to senders with its permission, matching the Brigadier requirements in {@link GuidebookRoot}.
  */
-public class GuidebookHelp extends GuidebookCommand {
+final class GuidebookHelp {
 
-    public GuidebookHelp(String... permissionNodes) {
-        super(0, true, permissionNodes);
-        setShortDescription(": Help for Guidebook.");
-        setUsageDescription(" [subcommand]: Without a given [subcommand] shows short help messages for all Guidebook commands. With additional argument shows detailed help for [subcommand].");
-    }
+    // GuidebookRoot's @Permission requirements use these too, so the table and the command tree agree
+    static final String USER = "guidebook.user";
+    static final String STAFF = "guidebook.staff";
 
-    @Override
-    protected List<String> getCompletions(CommandSender cs, String... args) {
-        if (args.length != 1) return List.of();
+    private static final String MANUAL = "https://www.mcmiddleearth.com/resources/guidebook-plugin-manual.107/";
 
-        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
-            .getExecutor()).getCommands();
+    /**
+     * One command in the help table.
+     *
+     * @param usages each form of the command, after {@code /guidebook}
+     */
+    private record Entry(String name, String permission, List<String> usages, String description) {
 
-        List<String> subcommandNames = new ArrayList<>(commands.keySet());
-        return subcommandNames;
-    }
-
-    @Override
-    protected void execute(CommandSender cs, String... args) {
-        sendHelpStartMessage(cs);
-        Map<String, GuidebookCommand> commands = ((GuidebookCommandExecutor) Bukkit.getPluginCommand("guidebook")
-            .getExecutor()).getCommands();
-        if (args.length > 0) {
-            GuidebookCommand command = commands.get(args[0]);
-            if (command == null) {
-                sendNoSuchCommandMessage(cs, args[0]);
-            } else {
-                String description = command.getUsageDescription();
-                if (description == null) {
-                    description = command.getShortDescription();
-                }
-                if (description != null) {
-                    sendDescriptionMessage(cs, args[0], description);
-                } else {
-                    sendNoDescriptionMessage(cs, args[0]);
-                }
-            }
-        } else {
-            Set<String> keys = commands.keySet();
-            for (String key : keys) {
-                String description = commands.get(key).getShortDescription();
-                if (description != null) {
-                    sendDescriptionMessage(cs, key, description);
-                } else {
-                    sendNoDescriptionMessage(cs, key);
-                }
-            }
+        Entry(String name, String permission, String usage, String description) {
+            this(name, permission, List.of(usage), description);
         }
-        sendManualMessage(cs);
     }
 
-    private void sendHelpStartMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendInfoMessage(cs, "Help for Guidebook plugin.");
+    private static final List<Entry> COMMANDS = List.of(
+            new Entry("on", USER, "on", "Receive welcome messages when you enter a Guidebook area."),
+            new Entry("off", USER, "off", "Stop receiving welcome messages when you enter a Guidebook area."),
+            new Entry("help", USER, "help [command]", "List the commands you can use, or show one command in detail."),
+            new Entry("select", STAFF, "select <area>", "Replace your WorldEdit selection with an area's shape."),
+            new Entry("warp", STAFF, "warp <area>", "Teleport to an area."),
+            new Entry(
+                    "create",
+                    STAFF,
+                    "create <world>-<project>-<place>",
+                    "Create an area from your WorldEdit selection, or as a sphere around you, in a dialog that"
+                            + " checks the placement first."),
+            new Entry(
+                    "move",
+                    STAFF,
+                    "move <area>",
+                    "Move an area to your WorldEdit selection, or to a sphere around you, in a dialog that shows"
+                            + " where it is now and checks the new placement. To reshape an area, select it, adjust"
+                            + " the selection in WorldEdit, then move it."),
+            new Entry(
+                    "edit",
+                    STAFF,
+                    "edit [area]",
+                    "Edit an area's title, subtitle, boss bar, description and whether it's enabled, in a dialog."
+                            + " With no <area>, edit the one you're standing in."),
+            new Entry("rename", STAFF, "rename <area> <world>-<project>-<place>", "Rename an area."),
+            new Entry("delete", STAFF, "delete <area>", "Delete an area after you confirm."),
+            new Entry(
+                    "list",
+                    STAFF,
+                    List.of("list [page]", "list <filter> [page]"),
+                    "List the areas, or those whose names contain <filter>."),
+            new Entry("reload", STAFF, "reload", "Reload every area from its file."),
+            new Entry(
+                    "dev",
+                    STAFF,
+                    List.of("dev", "dev console <true|false>", "dev level <level>", "dev watch", "dev unwatch"),
+                    "Show or change the debug output."));
+
+    private GuidebookHelp() {}
+
+    /** Marks {@code help}'s command argument, which suggests the commands the sender may run. */
+    @CustomSuggestion
+    @interface CommandSuggestions {}
+
+    @CommandSuggestions
+    static CompletableFuture<Suggestions> suggest(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        CommandSender sender = ctx.getSource().getSender();
+        String typed = builder.getRemainingLowerCase();
+        visibleTo(sender)
+                .map(Entry::name)
+                .filter(name -> name.startsWith(typed))
+                .forEach(builder::suggest);
+        return builder.buildFuture();
     }
 
-    private void sendNoSuchCommandMessage(CommandSender cs, String arg) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + ": There is no such command.");
+    /**
+     * Lists the commands the sender may run, each with its simplest form. Clicking one fills it in, and a command with
+     * more forms links to its own help.
+     */
+    static void sendAll(CommandSender sender) {
+        GuidebookMessages.startBlock(sender);
+        GuidebookMessages.send(sender, GuidebookMessages.info("Guidebook commands (click one to fill it in):"));
+        visibleTo(sender).forEach(entry -> GuidebookMessages.send(sender, summaryLine(entry)));
+        sendManual(sender);
     }
 
-    private void sendDescriptionMessage(CommandSender cs, String arg, String description) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + description);
+    private static Component summaryLine(Entry entry) {
+        Component line = GuidebookMessages.infoShortIndented(
+                fillsIn(entry, entry.usages().getFirst()), ": " + entry.description());
+        if (entry.usages().size() == 1) {
+            return line;
+        }
+        String help = "/guidebook help " + entry.name();
+        return line.append(Component.text(" (more forms: "))
+                .append(GuidebookMessages.runsCommand(
+                        GuidebookMessages.stressed(help), help, "Click to see every form."))
+                .append(Component.text(")"));
     }
 
-    private void sendNoDescriptionMessage(CommandSender cs, String arg) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "/guidebook " + arg + ": There is no help for this command.");
+    /** Shows each form of one command and what it does, if the sender may run it. */
+    static void sendOne(CommandSender sender, String name) {
+        Optional<Entry> found = visibleTo(sender)
+                .filter(entry -> entry.name().equals(name.toLowerCase(Locale.ROOT)))
+                .findFirst();
+        if (found.isEmpty()) {
+            GuidebookMessages.sendError(sender, "There is no Guidebook command '" + name + "' you can use.");
+            return;
+        }
+        Entry entry = found.get();
+        GuidebookMessages.startBlock(sender);
+        GuidebookMessages.send(sender, GuidebookMessages.info("Help for /guidebook " + entry.name()));
+        for (String usage : entry.usages()) {
+            GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(fillsIn(entry, usage)));
+        }
+        GuidebookMessages.send(sender, GuidebookMessages.infoShortIndented(entry.description()));
     }
 
-    private void sendManualMessage(CommandSender cs) {
-        PluginData.getMessageUtil().sendNoPrefixInfoMessage(cs, "Manual: https://www.mcmiddleearth.com/resources/guidebook-plugin-manual.107/");
+    /** The usage in the stressed colour. Clicking it fills in the command, up to where its arguments start. */
+    private static Component fillsIn(Entry entry, String usage) {
+        String command = "/guidebook " + entry.name() + (usage.equals(entry.name()) ? "" : " ");
+        return GuidebookMessages.suggestsCommand(
+                GuidebookMessages.stressed("/guidebook " + usage), command, "Click to fill in the command.");
     }
 
+    private static Stream<Entry> visibleTo(CommandSender sender) {
+        return COMMANDS.stream().filter(entry -> sender.hasPermission(entry.permission()));
+    }
+
+    private static void sendManual(CommandSender sender) {
+        GuidebookMessages.send(
+                sender,
+                GuidebookMessages.infoShortIndented(
+                        "Manual: ",
+                        GuidebookMessages.opensUrl(Component.text(MANUAL), MANUAL, "Click to open the manual.")));
+    }
 }
