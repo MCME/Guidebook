@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.mcmiddleearth"
-version = "2.0.0"
+version = "2.0.1"
 
 // "26.2.build.129-stable" -> "26.2"
 val minecraftVersion = libs.versions.paper.get().substringBefore(".build")
