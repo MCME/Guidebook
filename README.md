@@ -32,7 +32,8 @@ than they could in-game
 
 ## Installing
 
-Build the jar (see below) and put it in `plugins/`. WorldEdit is required. Dynmap and
+Download the jar from a [GitHub release](https://github.com/MCME/Guidebook/releases), or build it
+(see below), and put it in `plugins/`. WorldEdit is required. Dynmap and
 Multiverse-Core are supported if they're present, and PluginUtils is only needed to convert Area
 files from Guidebook 1.x. Each Area is saved as `plugins/Guidebook/<world>/<area>.yml`. If you
 edit one by hand, run `/guidebook reload`.
@@ -50,3 +51,31 @@ formats staged Java files with Spotless.
 
 Before changing anything, read [`GLOSSARY.md`](GLOSSARY.md) for what the domain terms mean, and
 [`docs/adr/`](docs/adr) for why things are the way they are.
+
+### Depending on Guidebook
+
+Releases are published to MCME's Maven repository, so another plugin can listen for
+`GuidebookSendEvent`:
+
+```kotlin
+repositories {
+    maven("https://repo.mcmiddleearth.com/releases")
+}
+
+dependencies {
+    compileOnly("com.mcmiddleearth:Guidebook:2.0.1")
+}
+```
+
+Add `Guidebook` to that plugin's `depend` or `softdepend` in `plugin.yml`.
+
+### Releasing
+
+1. Set `version` in [`build.gradle.kts`](build.gradle.kts), and date its section in
+   [`CHANGELOG.md`](CHANGELOG.md) (`## [2.0.1] - 2026-10-20`)
+2. Merge `development` into `master`, then tag the merge commit `v<version>` and push the tag
+
+CI then checks that the tag, the jar's `plugin.yml` and the changelog agree. It publishes
+`com.mcmiddleearth:Guidebook` to repo.mcmiddleearth.com, then creates the GitHub release with the
+jar and its SHA-256. The releases repository refuses to overwrite a version, so each version is
+published once.
