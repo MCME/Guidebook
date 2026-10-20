@@ -1,5 +1,6 @@
 plugins {
     java
+    `maven-publish`
     alias(libs.plugins.run.paper)
     alias(libs.plugins.spotless)
 }
@@ -38,6 +39,32 @@ dependencies {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
+    }
+    // Other plugins compile against Guidebook (to listen for GuidebookSendEvent), so the sources are published too
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+    // Publishes com.mcmiddleearth:Guidebook to MCME's Reposilite, where the other MCME plugins and libraries live.
+    // The version suffix picks the repository: releases refuses to redeploy a version, snapshots doesn't
+    //
+    // Credentials come from the MCME_MAVEN_NAME / MCME_MAVEN_SECRET org secrets in CI, or the same-named
+    // environment variables locally. Without them only `publish` fails, build and test are unaffected
+    repositories {
+        maven {
+            name = "mcme"
+            val repository = if (version.toString().endsWith("SNAPSHOT")) "snapshots" else "releases"
+            url = uri("https://repo.mcmiddleearth.com/$repository")
+            credentials {
+                username = System.getenv("MCME_MAVEN_NAME")
+                password = System.getenv("MCME_MAVEN_SECRET")
+            }
+        }
     }
 }
 
