@@ -1,0 +1,121 @@
+name: build
+
+on:
+  push:
+    branches: [master, development]
+    # Releases are tagged v<version>, like v1.1.4
+    tags: ['v*']
+  pull_request:
+  # Publishing is a deliberate act, so it is reachable from the Actions tab ("Run workflow")
+  # rather than riding along with every push
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    # Pinned, not ubuntu-latest: a new runner image should arrive as a commit that CI tested
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # v5, not v6: v6 moves the caching into a proprietary component, and upgrading accepts
+      # its terms of use (https://blog.gradle.org/github-actions-for-gradle-v6)
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      # build runs spotlessCheck too, so unformatted code fails here as well as in the pre-commit hook
+      - name: Build and test
+        run: ./gradlew build --no-daemon --stacktrace
+
+      # Read from the plugin.yml that went into the jar, so a version that failed to expand shows up
+      # here instead of on a server
+      - name: Read versions from plugin.yml
+        id: version
+        run: |
+          yml=build/resources/main/plugin.yml
+          version=$(tr -d '\r' < "$yml" | sed -n 's/^version: *//p')
+          minecraft=$(tr -d '\r' < "$yml" | sed -n "s/^api-version: *'\(.*\)'/\1/p")
+          jar="build/libs/Guidebook-$version.jar"
+          if [ ! -f "$jar" ]; then
+            echo "::error::$jar was not built (plugin.yml says version '$version')"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "minecraft=$minecraft" >> "$GITHUB_OUTPUT"
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
+          echo "jarname=$(basename "$jar" .jar)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.version.outputs.jarname }}
+          path: ${{ steps.version.outputs.jar }}
+          if-no-files-found: error
+
+      # Every check sits ahead of the publish: the releases repository refuses to redeploy a version
+      # (409), so a check failing after publishing would leave the artifact on repo.mcmiddleearth.com
+      # with no GitHub release, and a re-run would stop at the publish
+      - name: Check that the tag matches the plugin version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          if [ "v${{ steps.version.outputs.version }}" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match plugin version ${{ steps.version.outputs.version }}"
+            exit 1
+          fi
+
+      - name: Extract release notes from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          awk -v ver="$ver" '/^## \[/{p = ($2 == "[" ver "]")} p' CHANGELOG.md > release-notes.md
+          # Also catches a section still headed "Unreleased"
+          if ! head -n 1 release-notes.md | grep -qE '^## \[[^]]+\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::CHANGELOG.md needs a dated section for $ver, headed '## [$ver] - YYYY-MM-DD'"
+            exit 1
+          fi
+
+      # The MCME_MAVEN_* org secrets are shared with selected repositories only. A repository that
+      # wasn't granted them gets empty values rather than an error, and the publish fails with a 401
+      - name: Check the Maven credentials
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          MCME_MAVEN_NAME: ${{ secrets.MCME_MAVEN_NAME }}
+          MCME_MAVEN_SECRET: ${{ secrets.MCME_MAVEN_SECRET }}
+        run: |
+          if [ -z "$MCME_MAVEN_NAME" ] || [ -z "$MCME_MAVEN_SECRET" ]; then
+            echo "::error::MCME_MAVEN_NAME / MCME_MAVEN_SECRET are empty: give this repository access to the org secrets"
+            exit 1
+          fi
+
+      # Publishes com.mcmiddleearth:Guidebook to repo.mcmiddleearth.com - releases or snapshots is
+      # chosen by the version suffix in build.gradle.kts. Deliberately NOT run on ordinary pushes:
+      # trigger it manually, or by pushing a v* tag
+      - name: Publish to repo.mcmiddleearth.com
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          MCME_MAVEN_NAME: ${{ secrets.MCME_MAVEN_NAME }}
+          MCME_MAVEN_SECRET: ${{ secrets.MCME_MAVEN_SECRET }}
+        run: ./gradlew publish --no-daemon --stacktrace
+
+      - name: GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jar="${{ steps.version.outputs.jar }}"
+          (cd "$(dirname "$jar")" && sha256sum "$(basename "$jar")" > "$(basename "$jar").sha256")
+          gh release create "$GITHUB_REF_NAME" "$jar" "$jar.sha256" \
+            --title "version ${{ steps.version.outputs.version }} for mc ${{ steps.version.outputs.minecraft }}" \
+            --notes-file release-notes.md
