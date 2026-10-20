@@ -15,7 +15,8 @@ drawn on the web map.
   uses the 1.x markup to MiniMessage and rewrites it. Before converting anything it copies
   `plugins/Guidebook` to `plugins/Guidebook-legacy-backup-<timestamp>`. Going back to 1.x means
   restoring that backup and losing every edit made since.
-- Needs Paper 26.2 and Java 25. WorldEdit is now required.
+- Needs Paper 26.2 and Java 25. WorldEdit and PluginUtils are now required (`depend`), so
+  Guidebook won't load on a server without them.
 - Staff need a 1.21.6 or newer client to edit Areas and to confirm a delete or a move.
 - `guidebook.staff` no longer grants `autoteleport.user`.
 
