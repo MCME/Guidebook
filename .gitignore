@@ -74,6 +74,23 @@ nb-configuration.xml
 .scratch/
 
 ##############################
+## Claude Code / AI working docs
+##############################
+# MCME policy: these stay local and are never committed to the (public) repository
+CLAUDE.md
+.claude/
+docs/agents/
+docs/research/
+docs/superpowers/
+IMPROVEMENT_PLAN.md
+AUDIT.md
+audit.md
+AUDIT_LOG.md
+AUDIT-REMEDIATION-PLAN.md
+Audit-*.html
+BRAINSTORM-*.md
+
+##############################
 ## run-paper
 ##############################
 run/
