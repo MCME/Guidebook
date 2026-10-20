@@ -1,0 +1,24 @@
+# Version updates for the Gradle build: gradle/libs.versions.toml, the build plugins and the Gradle wrapper.
+# Dependabot reads this file from the default branch (master), so it starts once a release brings it there
+#
+# Dynmap is never updated: repo.mikeprimm.com serves the jars but no maven-metadata.xml, which is where
+# Dependabot looks for new versions
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    # Work is merged into development, and released from master
+    target-branch: development
+    schedule:
+      interval: monthly
+    # One pull request a month for the minor and patch bumps, instead of one per library
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # A new Minecraft version moves api-version in plugin.yml with it, and a plugin built for 26.3 won't load
+      # on 26.2 servers, so that move goes with the network's own upgrade. New 26.2 builds still come through
+      - dependency-name: io.papermc.paper:paper-api
+        update-types: [version-update:semver-major, version-update:semver-minor]
+    commit-message:
+      prefix: build
