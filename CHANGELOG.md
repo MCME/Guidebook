@@ -4,7 +4,7 @@ All notable changes to Guidebook are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions before 2.0.1 have no entries;
 see the GitHub history.
 
-## [2.0.1] - Unreleased
+## [2.0.1] - 2026-10-20
 
 Guidebook for Paper 26.2. Staff edit Areas in dialogs, Area text is MiniMessage, and every Area is
 drawn on the web map.
