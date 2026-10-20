@@ -6,59 +6,32 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.util.DevUtil;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 /**
  * @author Eriol_Eandur
  */
-public class GuidebookDev extends GuidebookCommand {
+final class GuidebookDev {
 
-    public GuidebookDev(String... permissionNodes) {
-        super(0, false, permissionNodes);
-        setShortDescription(": ");
-        setUsageDescription(": ");
-    }
+    private GuidebookDev() {}
 
-    @Override
-    protected void execute(CommandSender cs, String... args) {
-        if (args.length > 0 && args[0].equalsIgnoreCase("true")) {
-            DevUtil.setConsoleOutput(true);
-            showDetails(cs);
+    /** Shows the debug level, whether debug output goes to the console, and the developers watching it in chat. */
+    static void showState(CommandSender sender) {
+        GuidebookMessages.sendInfo(
+                sender, "Debug level: " + DevUtil.getLevel() + "; console output: " + DevUtil.isConsoleOutput());
+        if (DevUtil.getDeveloper().isEmpty()) {
+            sendIndented(sender, "No developers are watching.");
             return;
-        } else if (args.length > 0 && args[0].equalsIgnoreCase("false")) {
-            DevUtil.setConsoleOutput(false);
-            showDetails(cs);
-            return;
-        } else if (args.length > 0) {
-            try {
-                int level = Integer.parseInt(args[0]);
-                DevUtil.setLevel(level);
-                showDetails(cs);
-                return;
-            } catch (NumberFormatException e) {
-            }
-            ;
         }
-        if (cs instanceof Player) {
-            Player player = (Player) cs;
-            if (args.length > 0 && args[0].equalsIgnoreCase("r")) {
-                DevUtil.remove(player);
-                showDetails(cs);
-                return;
-            }
-            DevUtil.add(player);
-            showDetails(cs);
+        sendIndented(sender, "Watching developers:");
+        for (OfflinePlayer developer : DevUtil.getDeveloper()) {
+            sendIndented(sender, "- " + developer.getName());
         }
     }
 
-    private void showDetails(CommandSender cs) {
-        cs.sendMessage("DevUtil: Level - " + DevUtil.getLevel() + "; Console - " + DevUtil.isConsoleOutput() + "; ");
-        cs.sendMessage("         Developer:");
-        for (OfflinePlayer player : DevUtil.getDeveloper()) {
-            cs.sendMessage("                " + player.getName());
-        }
+    private static void sendIndented(CommandSender sender, String text) {
+        GuidebookMessages.send(sender, GuidebookMessages.infoIndented(text));
     }
 }
-
