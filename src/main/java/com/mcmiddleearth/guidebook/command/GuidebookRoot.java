@@ -1,0 +1,248 @@
+package com.mcmiddleearth.guidebook.command;
+
+import static com.mcmiddleearth.guidebook.command.GuidebookHelp.STAFF;
+import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
+
+import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.dialog.EditDialog;
+import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
+import com.mcmiddleearth.guidebook.util.DevUtil;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.strokkur.commands.Command;
+import net.strokkur.commands.DefaultExecutes;
+import net.strokkur.commands.Executes;
+import net.strokkur.commands.Literal;
+import net.strokkur.commands.arguments.IntArg;
+import net.strokkur.commands.arguments.StringArg;
+import net.strokkur.commands.paper.Description;
+import net.strokkur.commands.paper.Executor;
+import net.strokkur.commands.paper.arguments.CustomArg;
+import net.strokkur.commands.permission.Permission;
+import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+/**
+ * The Brigadier {@code /guidebook} command. StrokkCommands generates {@link GuidebookRootBrigadier} from it.
+ */
+@Command("guidebook")
+@Description("manage guidebook areas")
+class GuidebookRoot {
+
+    // Every @Permission goes on an @Executes("<command>") with a non-empty path, and never on this class. A permission
+    // lands on the node where its path ends, so an empty path would put it on the /guidebook root and lock
+    // guidebook.user players out of on, off and help. See docs/adr/0001-commands-via-strokkcommands.md
+
+    // Runs for bare /guidebook and every incomplete command, such as "move" or "dev level". The root needs
+    // guidebook.user or guidebook.staff, and the help is filtered to what the sender may run
+    @DefaultExecutes
+    void help(CommandSender sender, List<String> args) {
+        // args is the whole input, which starts with "execute ... run" when run through /execute
+        int root = 0;
+        while (root < args.size() && !args.get(root).matches("(\\w+:)?guidebook")) {
+            root++;
+        }
+        if (root + 1 < args.size()) {
+            GuidebookHelp.sendOne(sender, args.get(root + 1));
+        } else {
+            GuidebookHelp.sendAll(sender);
+        }
+    }
+
+    @Executes("help")
+    @Permission(USER)
+    void help(CommandSender sender, @GuidebookHelp.CommandSuggestions Optional<String> command) {
+        command.ifPresentOrElse(c -> GuidebookHelp.sendOne(sender, c), () -> GuidebookHelp.sendAll(sender));
+    }
+
+    @Executes("on")
+    @Permission(USER)
+    void on(CommandSender sender, @Executor Player player) {
+        PluginData.include(player);
+        GuidebookMessages.sendInfo(sender, "You will now receive info messages from Guidebook.");
+    }
+
+    @Executes("off")
+    @Permission(USER)
+    void off(CommandSender sender, @Executor Player player) {
+        PluginData.exclude(player);
+        GuidebookMessages.sendInfo(sender, "You will no longer receive info messages from Guidebook.");
+    }
+
+    @Executes("select")
+    @Permission(STAFF)
+    void select(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        // By name, as the Area's world may not be loaded
+        String worldName = area.getWorldName();
+        World world = player.getWorld();
+        if (!world.getName().equals(worldName)) {
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.area(area.getName()),
+                    " is in " + worldName + ". Go to that world to select it.");
+            return;
+        }
+        WorldEditSelections.select(player, world, area.getGeometry());
+        GuidebookMessages.sendInfo(
+                player,
+                "Your WorldEdit selection is now ",
+                GuidebookMessages.area(area.getName()),
+                " (" + area.getShape().displayName() + ").");
+    }
+
+    @Executes("warp")
+    @Permission(STAFF)
+    void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        player.teleport(area.getLocation());
+        GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
+    }
+
+    @Executes("create")
+    @Permission(STAFF)
+    void create(
+            @Executor Player player,
+            @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String name) {
+        PlacementDialog.openToCreate(player, name);
+    }
+
+    @Executes("move")
+    @Permission(STAFF)
+    void move(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        PlacementDialog.openToMove(player, area);
+    }
+
+    @Executes("edit")
+    @Permission(STAFF)
+    void editHere(@Executor Player player) {
+        List<InfoArea> here = PluginData.getInfoAreas().values().stream()
+                .filter(area -> area.isInside(player.getLocation()))
+                .toList();
+        if (here.size() == 1) {
+            EditDialog.open(player, here.getFirst());
+        } else if (here.isEmpty()) {
+            GuidebookMessages.sendError(
+                    player, "You aren't standing in a Guidebook area. Name one: /guidebook edit <area>");
+        } else {
+            List<Object> parts = new ArrayList<>();
+            parts.add("You're standing in more than one Guidebook area (");
+            here.stream().map(InfoArea::getName).sorted().forEach(name -> {
+                if (parts.size() > 1) {
+                    parts.add(", ");
+                }
+                parts.add(GuidebookMessages.stressed(name));
+            });
+            parts.add("). Name one: /guidebook edit <area>");
+            GuidebookMessages.sendError(player, parts.toArray());
+        }
+    }
+
+    @Executes("edit")
+    @Permission(STAFF)
+    void edit(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+        EditDialog.open(player, area);
+    }
+
+    @Executes("rename")
+    @Permission(STAFF)
+    void rename(
+            CommandSender sender,
+            @CustomArg(AreaArgument.class) InfoArea area,
+            @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String newName) {
+        String oldName = area.getName();
+        boolean oldFileDeleted;
+        try {
+            oldFileDeleted = PluginData.renameInfoArea(area, newName);
+        } catch (IOException ex) {
+            Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
+            GuidebookMessages.sendNotDone(sender, oldName, "renamed");
+            return;
+        }
+        GuidebookMessages.sendInfo(
+                sender,
+                GuidebookMessages.area(oldName),
+                " has been renamed to ",
+                GuidebookMessages.stressed(newName),
+                ".");
+        if (!oldFileDeleted) {
+            GuidebookMessages.sendError(
+                    sender,
+                    "The old data file " + oldName
+                            + ".yml couldn't be deleted. Delete it before reloading, or the area will load under both names.");
+        }
+    }
+
+    @Executes("delete")
+    @Permission(STAFF)
+    void delete(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
+        GuidebookDelete.delete(sender, area);
+    }
+
+    // Declared ahead of listFiltered, so the page branch is registered ahead of the filter branch and a bare number is
+    // always a page. Out-of-range pages are clamped rather than rejected, because a rejected number would be parsed
+    // as a filter instead
+    @Executes("list")
+    @Permission(STAFF)
+    void list(CommandSender sender, OptionalInt page) {
+        GuidebookList.send(sender, "", page.orElse(1));
+    }
+
+    @Executes("list")
+    @Permission(STAFF)
+    void listFiltered(CommandSender sender, @StringArg String filter, OptionalInt page) {
+        GuidebookList.send(sender, filter, page.orElse(1));
+    }
+
+    @Executes("reload")
+    @Permission(STAFF)
+    void reload(CommandSender sender) {
+        PluginData.loadData();
+        GuidebookMessages.sendInfo(sender, "All Guidebook areas reloaded from file.");
+    }
+
+    @Executes("dev")
+    @Permission(STAFF)
+    void dev(CommandSender sender) {
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission(STAFF)
+    void devConsole(
+            CommandSender sender,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("console") String console,
+            boolean output) {
+        DevUtil.setConsoleOutput(output);
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission(STAFF)
+    void devLevel(
+            CommandSender sender,
+            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("level") String levelLiteral,
+            @IntArg int level) {
+        DevUtil.setLevel(level);
+        GuidebookDev.showState(sender);
+    }
+
+    @Executes("dev")
+    @Permission(STAFF)
+    void devWatchOrUnwatch(
+            CommandSender sender, @Executor Player player, @Literal({"watch", "unwatch"}) String action) {
+        if (action.equals("watch")) {
+            DevUtil.add(player);
+        } else {
+            DevUtil.remove(player);
+        }
+        GuidebookDev.showState(sender);
+    }
+}

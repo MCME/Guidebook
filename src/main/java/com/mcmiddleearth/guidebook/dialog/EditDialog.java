@@ -1,0 +1,413 @@
+package com.mcmiddleearth.guidebook.dialog;
+
+import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.util.AreaText;
+import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.DialogResponseView;
+import io.papermc.paper.registry.data.dialog.ActionButton;
+import io.papermc.paper.registry.data.dialog.DialogBase;
+import io.papermc.paper.registry.data.dialog.action.DialogAction;
+import io.papermc.paper.registry.data.dialog.body.DialogBody;
+import io.papermc.paper.registry.data.dialog.input.DialogInput;
+import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput;
+import io.papermc.paper.registry.data.dialog.input.TextDialogInput;
+import io.papermc.paper.registry.data.dialog.type.DialogType;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.event.ClickCallback;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.entity.Player;
+
+/**
+ * The Edit dialog: every editable field of an Area on one screen. Text is typed as MiniMessage. Save checks the lengths
+ * and saves the Area, then shows its Welcome so staff can spot markup mistakes. Cancel and Esc discard the changes.
+ * Delete asks to confirm, and backing out of that returns to the dialog with the changes kept. For an Area
+ * {@code create} is placing, the dialog creates it: the Area exists only once Create is pressed, and Esc is turned off
+ * so that Cancel can say nothing was created.
+ */
+public final class EditDialog {
+
+    // The Title and Subtitle limits count visible characters, so their inputs leave room for markup
+    private static final int TITLE_MAX = 32;
+    private static final int SUBTITLE_MAX = 64;
+    private static final int TITLE_SUBTITLE_INPUT_MAX = 256;
+    private static final int DESCRIPTION_MAX = 4096;
+    // The default width of the chat box, so a Description wraps as most players see it
+    private static final int PREVIEW_WIDTH = 320;
+    private static final String WEBUI_URL = "https://webui.advntr.dev/";
+
+    private static final String SHOW_TITLE = "show_title";
+    private static final String TITLE = "title";
+    private static final String SUBTITLE = "subtitle";
+    private static final String SHOW_BOSS_BAR = "show_boss_bar";
+    private static final String DESCRIPTION = "description";
+    private static final String STATUS = "status";
+    private static final String ENABLED = "enabled";
+    private static final String DISABLED = "disabled";
+
+    private EditDialog() {}
+
+    /** The dialog's fields, as typed and stored: MiniMessage, with real line breaks in the Description. */
+    private record Values(
+            boolean showTitle,
+            String title,
+            String subtitle,
+            boolean showBossBar,
+            String description,
+            boolean enabled) {
+
+        static Values of(InfoArea area) {
+            return new Values(
+                    area.isShowTitle(),
+                    area.getTitle(),
+                    area.getSubtitle(),
+                    area.isShowScoreboard(),
+                    area.getDescription(),
+                    area.isEnabled());
+        }
+
+        static Values of(DialogResponseView response) {
+            return new Values(
+                    Boolean.TRUE.equals(response.getBoolean(SHOW_TITLE)),
+                    Objects.requireNonNullElse(response.getText(TITLE), ""),
+                    Objects.requireNonNullElse(response.getText(SUBTITLE), ""),
+                    Boolean.TRUE.equals(response.getBoolean(SHOW_BOSS_BAR)),
+                    Objects.requireNonNullElse(response.getText(DESCRIPTION), ""),
+                    ENABLED.equals(response.getText(STATUS)));
+        }
+
+        /**
+         * A new Area's dialog starts with no Title (not the stored placeholder), Show title ticked and the
+         * Description's usual opening.
+         */
+        Values forNewArea() {
+            return new Values(
+                    true,
+                    "",
+                    subtitle,
+                    showBossBar,
+                    description.isEmpty() ? AreaText.DEFAULT_DESCRIPTION : description,
+                    enabled);
+        }
+    }
+
+    public static void open(Player player, InfoArea area) {
+        show(player, area, Mode.EDIT, Values.of(area), null);
+    }
+
+    /**
+     * Opens the dialog that creates {@code area}, which the Placement dialog has built but not added. Nothing is added
+     * or written until Create is pressed.
+     */
+    public static void openToCreate(Player player, InfoArea area) {
+        show(player, area, Mode.CREATE, Values.of(area).forNewArea(), null);
+    }
+
+    /** Whether the dialog changes a stored Area, or creates one that the Placement dialog has built. */
+    private enum Mode {
+        EDIT("Editing", "✔ Save", "saved"),
+        CREATE("Creating", "✔ Create", "created");
+
+        private final String titleVerb;
+        private final String button;
+        private final String done;
+
+        Mode(String titleVerb, String button, String done) {
+            this.titleVerb = titleVerb;
+            this.button = button;
+            this.done = done;
+        }
+    }
+
+    // A label doesn't wrap, so the tag list goes in a hover to keep the dialog centred
+    // Underlined with an info mark, so it reads as something to hover
+    private static final Component GUIDEBOOK_TAGS = Component.text("ⓘ ", NamedTextColor.AQUA)
+            .append(Component.text("Guidebook tags", NamedTextColor.AQUA, TextDecoration.UNDERLINED))
+            .hoverEvent(HoverEvent.showText(Component.join(
+                    JoinConfiguration.newlines(),
+                    tagHint("<guide>", "Guide: in dark aqua, then white text"),
+                    tagHint("<bullet>", "a grey ▸ list marker"),
+                    tagHint("<date>…</date>", "yellow text"),
+                    tagHint("<term:meaning>…</term>", "gold, with meaning on hover"),
+                    tagHint("<wiki:page>…</wiki>", "aqua, opens Tolkien Gateway page"),
+                    tagHint("<warp:name>…</warp>", "green, runs /warp name"),
+                    Component.empty(),
+                    Component.text(
+                            "A wiki page is its name, not its URL, e.g. <wiki:Minas Tirith>", NamedTextColor.GRAY),
+                    Component.empty(),
+                    Component.text("Use quotes if you need special characters like : or >", NamedTextColor.GRAY),
+                    Component.text("e.g. <term:'Sindarin: hill'>", NamedTextColor.GRAY))));
+
+    private static final Component BOSS_BAR_HELP = Component.text("Show boss bar ")
+            .append(Component.text("ⓘ", NamedTextColor.AQUA)
+                    .hoverEvent(HoverEvent.showText(Component.join(
+                            JoinConfiguration.newlines(),
+                            Component.text("Shows the Title in a bar at the top of the screen"),
+                            Component.text("the whole time a player is in the area"),
+                            Component.empty(),
+                            Component.text("Off by default", NamedTextColor.GRAY)))));
+
+    private static Component tagHint(String tag, String rendersAs) {
+        return Component.text(tag).append(Component.text(" " + rendersAs, NamedTextColor.GRAY));
+    }
+
+    /** Shows the dialog filled with {@code values}, with {@code error} at the top if it isn't null. */
+    private static void show(Player player, InfoArea area, Mode mode, Values values, Component error) {
+        List<DialogBody> body = new ArrayList<>();
+        if (error != null) {
+            body.add(DialogBody.plainMessage(error.color(NamedTextColor.RED)));
+        }
+
+        // The Dialog API puts body text above every input, so the Description's hint goes in its label
+        List<DialogInput> inputs = List.of(
+                // Named options rather than a checkbox, so Disabled says what it means
+                DialogInput.singleOption(
+                                STATUS,
+                                Component.text("Status"),
+                                List.of(
+                                        SingleOptionDialogInput.OptionEntry.create(
+                                                ENABLED,
+                                                Component.text("Enabled", NamedTextColor.GREEN)
+                                                        .append(Component.text(
+                                                                " – players entering are welcomed",
+                                                                NamedTextColor.WHITE)),
+                                                values.enabled()),
+                                        SingleOptionDialogInput.OptionEntry.create(
+                                                DISABLED,
+                                                Component.text("Disabled", NamedTextColor.RED)
+                                                        .append(Component.text(
+                                                                " – players entering see nothing",
+                                                                NamedTextColor.WHITE)),
+                                                !values.enabled())))
+                        .width(300)
+                        .build(),
+                DialogInput.text(TITLE, Component.text("Title"))
+                        .width(300)
+                        .initial(values.title())
+                        .maxLength(TITLE_SUBTITLE_INPUT_MAX)
+                        .build(),
+                DialogInput.text(SUBTITLE, Component.text("Subtitle"))
+                        .width(300)
+                        .initial(values.subtitle())
+                        .maxLength(TITLE_SUBTITLE_INPUT_MAX)
+                        .build(),
+                DialogInput.bool(SHOW_TITLE, Component.text("Show title"))
+                        .initial(values.showTitle())
+                        .build(),
+                DialogInput.bool(SHOW_BOSS_BAR, BOSS_BAR_HELP)
+                        .initial(values.showBossBar())
+                        .build(),
+                DialogInput.text(
+                                DESCRIPTION,
+                                Component.text("Description ")
+                                        .append(Component.text(
+                                                "(MiniMessage; line wraps will be indented) ", NamedTextColor.GRAY))
+                                        .append(GUIDEBOOK_TAGS))
+                        .width(400)
+                        .initial(values.description())
+                        .maxLength(DESCRIPTION_MAX)
+                        .multiline(TextDialogInput.MultilineOptions.create(null, 150))
+                        .build());
+
+        // Each dialog gets its own single-use callbacks, holding the Area it edits or creates
+        ClickCallback.Options once = ClickCallback.Options.builder().uses(1).build();
+        ActionButton save = ActionButton.builder(Component.text(mode.button, NamedTextColor.GREEN))
+                .action(DialogAction.customClick(
+                        (response, audience) -> save(audience, area, mode, Values.of(response)), once))
+                .build();
+        ActionButton preview = ActionButton.builder(Component.text("Preview", GuidebookMessages.INFO))
+                .tooltip(Component.text(
+                        "Shows the Title, Subtitle and Description as players will see them, saved or not."))
+                .action(DialogAction.customClick(
+                        (response, audience) -> {
+                            if (audience instanceof Player previewer) {
+                                showPreview(previewer, area, mode, Values.of(response));
+                            }
+                        },
+                        once))
+                .build();
+        // Esc just closes when editing. Creating turns Esc off, so Cancel is the only way out and always says that
+        // nothing was created
+        ActionButton cancel = ActionButton.builder(Component.text("✘ Cancel", NamedTextColor.WHITE))
+                .action(DialogAction.customClick(
+                        (response, audience) -> {
+                            audience.closeDialog();
+                            if (mode == Mode.CREATE && audience instanceof Player canceller) {
+                                GuidebookMessages.sendInfo(canceller, "No Guidebook area was created.");
+                            }
+                        },
+                        once))
+                .build();
+
+        List<ActionButton> buttons = new ArrayList<>(List.of(save, preview, cancel));
+        // Only a stored Area can be deleted. With three columns it gets a row of its own, apart from Save
+        if (mode == Mode.EDIT) {
+            buttons.add(ActionButton.builder(Component.text("🗑 Delete", NamedTextColor.RED))
+                    .tooltip(Component.text("Deletes this Guidebook area. Asks you to confirm first."))
+                    .action(DialogAction.customClick(
+                            (response, audience) -> {
+                                if (audience instanceof Player deleter) {
+                                    Values typed = Values.of(response);
+                                    // Cancel comes back here with what was typed, so backing out loses nothing
+                                    ConfirmDialog.openToDelete(
+                                            deleter, area, canceller -> show(canceller, area, mode, typed, null));
+                                }
+                            },
+                            once))
+                    .build());
+        }
+
+        player.showDialog(Dialog.create(builder -> builder.empty()
+                .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area ")
+                                .append(GuidebookMessages.stressed(area.getName())))
+                        .canCloseWithEscape(mode == Mode.EDIT)
+                        // The dialog stays open after a button until the server replaces or closes it, so that typed
+                        // text isn't lost. Minecraft only allows that for a dialog that doesn't pause the
+                        // game, and pausing only ever applies in single-player
+                        .afterAction(DialogBase.DialogAfterAction.NONE)
+                        .pause(false)
+                        .body(body)
+                        .inputs(inputs)
+                        .build())
+                .type(DialogType.multiAction(buttons, null, 3))));
+    }
+
+    /**
+     * Shows the typed Title, Subtitle and Description rendered as players see them, so staff can check their markup
+     * before saving. Back reopens the Edit dialog with {@code values}, so nothing typed is lost.
+     */
+    private static void showPreview(Player player, InfoArea area, Mode mode, Values values) {
+        List<DialogBody> body = new ArrayList<>();
+        addPreview(body, "Title", values.title(), values.showTitle() ? null : "not shown: Show title is off");
+        addPreview(body, "Subtitle", values.subtitle(), values.showTitle() ? null : "not shown: Show title is off");
+        addPreview(body, "Description", values.description(), null);
+        // Opened empty: filling it in is left to staff, who can paste any text they want to try out
+        ActionButton webUi = ActionButton.builder(Component.text("Open the WebUI", GuidebookMessages.INFO))
+                .tooltip(Component.text("Opens the Adventure WebUI, an external site for writing and previewing "
+                        + "MiniMessage. Guidebook's own tags show there as literal text."))
+                .action(DialogAction.staticAction(ClickEvent.openUrl(WEBUI_URL)))
+                .build();
+        // Esc runs Back, so it can't lose the typed text either
+        ActionButton back = ActionButton.builder(Component.text("◀ Back", NamedTextColor.WHITE))
+                .action(DialogAction.customClick(
+                        (response, audience) -> show(player, area, mode, values, null),
+                        ClickCallback.Options.builder().uses(1).build()))
+                .build();
+
+        player.showDialog(Dialog.create(builder -> builder.empty()
+                .base(DialogBase.builder(Component.text("Preview of Guidebook area ")
+                                .append(GuidebookMessages.stressed(area.getName())))
+                        .afterAction(DialogBase.DialogAfterAction.NONE)
+                        .pause(false)
+                        .body(body)
+                        .build())
+                .type(DialogType.multiAction(List.of(webUi), back, 1))));
+    }
+
+    /** Adds a grey label, with {@code note} if it isn't null, and then {@code text} rendered at chat width. */
+    private static void addPreview(List<DialogBody> body, String label, String text, String note) {
+        Component heading = Component.text(label, NamedTextColor.GRAY);
+        if (note != null) {
+            heading = heading.append(Component.text(" (" + note + ")", NamedTextColor.DARK_GRAY));
+        }
+        body.add(DialogBody.plainMessage(heading, PREVIEW_WIDTH));
+        body.add(DialogBody.plainMessage(
+                AreaText.isVisiblyBlank(text)
+                        ? Component.text("(empty)", NamedTextColor.DARK_GRAY)
+                        : AreaText.render(text),
+                PREVIEW_WIDTH));
+    }
+
+    private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
+        if (!(audience instanceof Player player)) {
+            return;
+        }
+        String areaName = area.getName();
+        // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
+        if (mode == Mode.EDIT && PluginData.getInfoAreaExact(areaName) != area) {
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.area(areaName),
+                    " was deleted or reloaded while you edited it. Your changes were NOT saved.");
+            player.closeDialog();
+            return;
+        }
+        Optional<String> problem = problem(values);
+        if (problem.isPresent()) {
+            show(player, area, mode, values, Component.text(problem.get() + " Nothing was " + mode.done + "."));
+            return;
+        }
+        player.closeDialog();
+        // The name was free when create ran, but it isn't reserved while the dialog is open
+        if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
+            GuidebookMessages.sendError(
+                    player,
+                    GuidebookMessages.area(areaName),
+                    " was created by someone else while you edited it. Nothing was created.");
+            return;
+        }
+
+        area.setShowTitle(values.showTitle());
+        area.setTitle(values.title());
+        area.setSubtitle(values.subtitle());
+        area.setShowScoreboard(values.showBossBar());
+        area.setDescription(values.description().stripTrailing());
+        if (values.enabled()) {
+            area.statusOn();
+        } else {
+            area.statusOff();
+        }
+        try {
+            if (mode == Mode.CREATE) {
+                PluginData.createInfoArea(area);
+            } else {
+                PluginData.saveArea(area);
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, ex);
+            GuidebookMessages.sendNotDone(player, areaName, mode.done);
+            return;
+        }
+        // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName), " was " + mode.done + ":");
+        area.previewWelcome(player);
+    }
+
+    /**
+     * @return why the values can't be saved, or empty if they can. The Title and Subtitle limits count visible
+     *     characters, which the dialog can't enforce. It enforces the Description's length, but a modified client
+     *     could send longer text.
+     */
+    private static Optional<String> problem(Values values) {
+        if (AreaText.isVisiblyBlank(values.title()) && (values.showTitle() || values.showBossBar())) {
+            return Optional.of("Give the area a Title, or untick Show title and Show boss bar.");
+        }
+        int titleLength = AreaText.visibleLength(values.title());
+        if (titleLength > TITLE_MAX) {
+            return Optional.of(
+                    "The Title has " + titleLength + " visible characters, more than the " + TITLE_MAX + " allowed.");
+        }
+        int subtitleLength = AreaText.visibleLength(values.subtitle());
+        if (subtitleLength > SUBTITLE_MAX) {
+            return Optional.of("The Subtitle has " + subtitleLength + " visible characters, more than the "
+                    + SUBTITLE_MAX + " allowed.");
+        }
+        if (values.description().length() > DESCRIPTION_MAX) {
+            return Optional.of("The Description is longer than " + DESCRIPTION_MAX + " characters.");
+        }
+        return Optional.empty();
+    }
+}
