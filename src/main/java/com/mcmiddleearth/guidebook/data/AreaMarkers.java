@@ -12,8 +12,8 @@ import java.util.Optional;
 /** Turns an Area into its Area marker on the Web map. */
 public final class AreaMarkers {
 
-    /** Every Area marker is in one layer, hidden by default because it's for staff. */
-    public static final String LAYER_ID = "guidebook";
+    /** Every Area marker is in one layer, hidden by default, placed in the debug layer group */
+    public static final String LAYER_ID = "debug.guidebook";
 
     public static final String LAYER_LABEL = "Guidebook";
 
