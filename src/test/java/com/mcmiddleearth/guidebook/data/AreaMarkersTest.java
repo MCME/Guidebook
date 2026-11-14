@@ -1,6 +1,7 @@
 package com.mcmiddleearth.guidebook.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mcmiddleearth.guidebook.webmap.Marker;
 import com.mcmiddleearth.guidebook.webmap.MarkerStyle;
@@ -29,7 +30,7 @@ class AreaMarkersTest {
     }
 
     private static Marker markerOf(TestArea area) {
-        return AreaMarkers.toMarker(area);
+        return AreaMarkers.toMarker(area, List.of(area));
     }
 
     @Test
@@ -185,5 +186,84 @@ class AreaMarkersTest {
         assertEquals(
                 "world-gondor-minas\nShape: sphere\nTitle: Fish & Chips\nSubtitle: (none)\n\na < b > c & d",
                 popupOf("Fish & Chips", "", "a < b > c & d"));
+    }
+
+    private static TestArea placed(String name, String world, AreaGeometry geometry) {
+        return new TestArea(name, "Title", "", "", true, world, geometry);
+    }
+
+    private static double fillOf(TestArea area, TestArea... drawn) {
+        return AreaMarkers.toMarker(area, List.of(drawn)).style().fillOpacity();
+    }
+
+    private static final TestArea CITY = placed("city", "world", new AreaGeometry.Cuboid(0, 0, 0, 100, 90, 100));
+
+    private static final TestArea TOWER = placed("tower", "world", new AreaGeometry.Cuboid(40, 60, 40, 50, 90, 50));
+
+    // Unfilled, LiveAtlas draws only the outline, so the Area inside can be clicked
+    @Test
+    void anAreaHoldingAnotherIsUnfilledAndTheOneInsideIsFilled() {
+        assertEquals(0, fillOf(CITY, CITY, TOWER));
+        assertTrue(fillOf(TOWER, CITY, TOWER) > 0);
+    }
+
+    @Test
+    void anUnfilledAreaKeepsItsColourAndHasAThickerLine() {
+        MarkerStyle style = AreaMarkers.toMarker(CITY, List.of(CITY, TOWER)).style();
+
+        assertEquals(0x0072B2, style.lineRgb());
+        assertTrue(style.lineWeight() > markerOf(TOWER).style().lineWeight());
+    }
+
+    // Each still has a part of its own to click, so neither gives up its fill
+    @Test
+    void areasThatOnlyPartlyOverlapAreBothFilled() {
+        TestArea neighbour = placed("neighbour", "world", new AreaGeometry.Cuboid(50, 0, 50, 150, 90, 150));
+
+        assertTrue(fillOf(CITY, CITY, neighbour) > 0);
+        assertTrue(fillOf(neighbour, CITY, neighbour) > 0);
+    }
+
+    // Heights are ignored because the Web map is flat
+    @Test
+    void anAreaAboveOrBelowAnotherStillCountsAsInsideIt() {
+        TestArea cellar = placed("cellar", "world", new AreaGeometry.Cuboid(10, -40, 10, 20, -30, 20));
+
+        assertEquals(0, fillOf(CITY, CITY, cellar));
+    }
+
+    @Test
+    void anAreaInAnotherWorldDoesntCount() {
+        TestArea elsewhere = placed("elsewhere", "nether", new AreaGeometry.Cuboid(40, 60, 40, 50, 90, 50));
+
+        assertTrue(fillOf(CITY, CITY, elsewhere) > 0);
+    }
+
+    @Test
+    void aCircleAndAPrismHoldWhatIsInsideTheirBoxes() {
+        TestArea circle = placed("circle", "world", new AreaGeometry.Sphere(0, 64, 0, 30));
+        TestArea prism = placed("prism", "world", new AreaGeometry.Prism(List.of(0, 60, 30), List.of(0, 0, 60), 0, 90));
+        TestArea small = placed("small", "world", new AreaGeometry.Cuboid(10, 0, 10, 20, 90, 20));
+
+        assertEquals(0, fillOf(circle, circle, small));
+        assertEquals(0, fillOf(prism, prism, small));
+    }
+
+    // Otherwise each would leave the other unclickable, or neither would be filled
+    @Test
+    void ofTwoAreasWithTheSameBoxOnlyTheFirstByNameIsUnfilled() {
+        TestArea first = placed("Alpha", "world", new AreaGeometry.Cuboid(0, 0, 0, 10, 10, 10));
+        TestArea second = placed("beta", "world", new AreaGeometry.Sphere(5, 5, 5, 5));
+
+        assertEquals(0, fillOf(first, first, second));
+        assertTrue(fillOf(second, first, second) > 0);
+    }
+
+    // Unclamped, the radius would turn the sphere's box inside out, reaching back across the city
+    @Test
+    void aSphereWithANegativeRadiusIsHeldOnlyWhereItsCentreIs() {
+        TestArea broken = placed("broken", "world", new AreaGeometry.Sphere(200, 64, 50, -150));
+
+        assertTrue(fillOf(CITY, CITY, broken) > 0);
     }
 }

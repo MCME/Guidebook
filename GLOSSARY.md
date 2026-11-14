@@ -73,4 +73,4 @@ A browser map of the server's worlds (currently Dynmap). Guidebook draws every A
 _Avoid_: Dynmap (when you mean any web map), map (that's the in-game item)
 
 **Area marker**:
-One Area drawn on the Web map: its Shape's outline seen from above, marked as Enabled or Disabled, labelled with its Title, and showing its Title, Subtitle and Description as plain text when clicked.
+One Area drawn on the Web map: its Shape's outline seen from above, marked as Enabled or Disabled, labelled with its Title, and showing its Title, Subtitle and Description as plain text when clicked. An Area whose footprint holds another Area's is drawn as an outline only, so the Area inside can still be clicked.

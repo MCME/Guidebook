@@ -88,7 +88,11 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
 
         @Override
         public void put(Marker marker) {
-            markers.put(marker.id(), marker);
+            Marker previous = markers.put(marker.id(), marker);
+            // Redrawing an unchanged marker would only make every map viewer fetch it again
+            if (marker.equals(previous)) {
+                return;
+            }
             if (markerSet != null) {
                 draw(marker);
             }

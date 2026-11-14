@@ -5,6 +5,7 @@ import com.mcmiddleearth.guidebook.webmap.Marker;
 import com.mcmiddleearth.guidebook.webmap.MarkerStyle;
 import com.mcmiddleearth.guidebook.webmap.Outline;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -21,17 +22,26 @@ public final class AreaMarkers {
     private static final MarkerStyle ENABLED_STYLE = new MarkerStyle(0x0072B2, 2, 0x0072B2, 0.2);
     private static final MarkerStyle DISABLED_STYLE = new MarkerStyle(0xD55E00, 2, 0xD55E00, 0.2);
 
+    // With no fill, LiveAtlas draws only the outline, so the Areas inside it can be clicked. The outline is all of it
+    // that can be hovered or clicked, and LiveAtlas counts a click within half the line's width, so the line is thick
+    private static final MarkerStyle ENABLED_CONTAINER_STYLE = new MarkerStyle(0x0072B2, 3, 0x0072B2, 0);
+    private static final MarkerStyle DISABLED_CONTAINER_STYLE = new MarkerStyle(0xD55E00, 3, 0xD55E00, 0);
+
     private AreaMarkers() {}
 
-    /** @return the Area's Area marker */
-    public static Marker toMarker(MarkableArea area) {
+    /**
+     * @param drawn every Area drawn on the Web map, which may include {@code area}. An Area holding another is drawn
+     *     unfilled, so the one inside can still be clicked
+     * @return the Area's Area marker
+     */
+    public static Marker toMarker(MarkableArea area, Collection<? extends MarkableArea> drawn) {
         return new Marker(
                 id(area.getName()),
                 area.getWorldName(),
                 label(area),
                 popup(area),
                 outline(area.getGeometry()),
-                style(area));
+                style(area, holdsAnother(area, drawn)));
     }
 
     private static String label(MarkableArea area) {
@@ -56,8 +66,54 @@ public final class AreaMarkers {
         return AreaText.isVisiblyBlank(miniMessage) ? none : AreaText.plainText(miniMessage);
     }
 
-    private static MarkerStyle style(MarkableArea area) {
+    private static MarkerStyle style(MarkableArea area, boolean holdsAnother) {
+        if (holdsAnother) {
+            return area.isEnabled() ? ENABLED_CONTAINER_STYLE : DISABLED_CONTAINER_STYLE;
+        }
         return area.isEnabled() ? ENABLED_STYLE : DISABLED_STYLE;
+    }
+
+    /**
+     * Whether another Area's footprint box lies within this Area's. Boxes are looser than Shapes, so a circle or prism
+     * can count as holding an Area just outside it, which only costs it its fill.
+     */
+    private static boolean holdsAnother(MarkableArea area, Collection<? extends MarkableArea> drawn) {
+        Footprint footprint = Footprint.of(area.getGeometry());
+        return drawn.stream()
+                .filter(other -> other.getWorldName().equals(area.getWorldName()))
+                .filter(other -> !other.getName().equalsIgnoreCase(area.getName()))
+                .anyMatch(other -> {
+                    Footprint inner = Footprint.of(other.getGeometry());
+                    // Of two Areas with the same box, one is left filled so it can be clicked anywhere inside
+                    return footprint.equals(inner)
+                            ? area.getName().compareToIgnoreCase(other.getName()) < 0
+                            : footprint.holds(inner);
+                });
+    }
+
+    /** The blocks a Shape's bounding box covers seen from above, both corners included. */
+    private record Footprint(int minX, int minZ, int maxX, int maxZ) {
+
+        static Footprint of(AreaGeometry geometry) {
+            return switch (geometry) {
+                case AreaGeometry.Sphere sphere -> {
+                    // A hand-edited file can hold a negative radius, which would turn the box inside out
+                    int radius = Math.max(sphere.radius(), 0);
+                    yield new Footprint(
+                            sphere.centerX() - radius,
+                            sphere.centerZ() - radius,
+                            sphere.centerX() + radius,
+                            sphere.centerZ() + radius);
+                }
+                case AreaGeometry.Cuboid cuboid ->
+                    new Footprint(cuboid.minX(), cuboid.minZ(), cuboid.maxX(), cuboid.maxZ());
+                case AreaGeometry.Prism prism -> new Footprint(prism.minX(), prism.minZ(), prism.maxX(), prism.maxZ());
+            };
+        }
+
+        boolean holds(Footprint inner) {
+            return minX <= inner.minX && minZ <= inner.minZ && inner.maxX <= maxX && inner.maxZ <= maxZ;
+        }
     }
 
     private static Outline outline(AreaGeometry geometry) {

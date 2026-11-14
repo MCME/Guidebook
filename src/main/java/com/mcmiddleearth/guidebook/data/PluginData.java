@@ -75,7 +75,7 @@ public class PluginData {
     public static void createInfoArea(InfoArea area) throws IOException {
         writeArea(area);
         addInfoArea(area.getName(), area);
-        drawArea(area);
+        drawAreas();
     }
 
     public static boolean deleteInfoArea(InfoArea area) {
@@ -84,6 +84,7 @@ public class PluginData {
         if (result) {
             infoAreas.remove(area.getName());
             eraseArea(area.getName());
+            drawAreas();
         }
         return result;
     }
@@ -110,7 +111,7 @@ public class PluginData {
         }
         boolean oldFileDeleted = oldDataFile.delete();
         eraseArea(oldName);
-        drawArea(area);
+        drawAreas();
         return oldFileDeleted;
     }
 
@@ -135,7 +136,7 @@ public class PluginData {
         }
         boolean oldFileGone = oldDataFile.equals(getDataFile(area, area.getName())) || oldDataFile.delete();
         // The marker's id doesn't change, so this replaces it even in another world
-        drawArea(area);
+        drawAreas();
         return oldFileGone;
     }
 
@@ -182,7 +183,7 @@ public class PluginData {
     /** Writes the Area's file, then redraws it on the Web map, so a failed save leaves its marker as it was. */
     public static void saveArea(InfoArea area) throws IOException {
         writeArea(area);
-        drawArea(area);
+        drawAreas();
     }
 
     private static void writeArea(InfoArea area) throws IOException {
@@ -232,19 +233,27 @@ public class PluginData {
 
     private static void drawWebMap() {
         webMapLayer.clear();
-        infoAreas.values().forEach(PluginData::drawArea);
+        infoAreas.values().stream()
+                .filter(area -> !area.getRegion().isValid())
+                .forEach(area -> GuidebookPlugin.getPluginInstance()
+                        .getLogger()
+                        .warning("Area " + area.getName()
+                                + " isn't drawn on the Web map because its world isn't loaded."));
+        drawAreas();
     }
 
-    private static void drawArea(InfoArea area) {
-        // Its world isn't loaded, so there's nowhere to draw it
-        if (!area.getRegion().isValid()) {
-            eraseArea(area.getName());
-            GuidebookPlugin.getPluginInstance()
-                    .getLogger()
-                    .warning("Area " + area.getName() + " isn't drawn on the Web map because its world isn't loaded.");
-            return;
-        }
-        webMapLayer.put(AreaMarkers.toMarker(area));
+    /**
+     * Draws every Area again, since a change to one can change whether another holds an Area and so is drawn unfilled.
+     * An Area whose world isn't loaded has nowhere to be drawn, so its marker is erased.
+     */
+    private static void drawAreas() {
+        List<InfoArea> drawn = infoAreas.values().stream()
+                .filter(area -> area.getRegion().isValid())
+                .toList();
+        drawn.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, drawn)));
+        infoAreas.values().stream()
+                .filter(area -> !area.getRegion().isValid())
+                .forEach(area -> eraseArea(area.getName()));
     }
 
     private static void eraseArea(String areaName) {
