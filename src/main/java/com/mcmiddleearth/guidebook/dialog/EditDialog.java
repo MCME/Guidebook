@@ -89,10 +89,6 @@ public final class EditDialog {
                     ENABLED.equals(response.getText(STATUS)));
         }
 
-        /**
-         * A new Area's dialog starts with no Title (not the stored placeholder), Show title ticked and the
-         * Description's usual opening.
-         */
         Values forNewArea() {
             return new Values(
                     true,

@@ -90,7 +90,7 @@ public final class InfoArea implements MarkableArea {
 
         // scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         bossBar = BossBar.bossBar(Component.empty(), 0, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
-        setTitle("unnamed Guidebook area");
+        setTitle("");
         subtitle = "";
         status = true;
     }
