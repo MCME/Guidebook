@@ -2,7 +2,10 @@ package com.mcmiddleearth.guidebook.welcome;
 
 import org.bukkit.Location;
 
-/** The parts of an Area that the Watchman needs, so the Watchman works without a running server. */
+/**
+ * The parts of an Area that the Watchman needs.
+ * A real Area's Shape needs a loaded world, so this lets the Watchman's tests use simple fake Areas instead.
+ */
 public interface WelcomeArea {
 
     String getName();
