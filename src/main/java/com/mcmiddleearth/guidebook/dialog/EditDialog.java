@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.dialog;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
@@ -74,7 +75,7 @@ public final class EditDialog {
                     area.isShowTitle(),
                     area.getTitle(),
                     area.getSubtitle(),
-                    area.isShowScoreboard(),
+                    area.isShowBossBar(),
                     area.getDescription(),
                     area.isEnabled());
         }
@@ -359,7 +360,7 @@ public final class EditDialog {
         area.setShowTitle(values.showTitle());
         area.setTitle(values.title());
         area.setSubtitle(values.subtitle());
-        area.setShowScoreboard(values.showBossBar());
+        area.setShowBossBar(values.showBossBar());
         area.setDescription(values.description().stripTrailing());
         if (values.enabled()) {
             area.statusOn();
@@ -379,7 +380,7 @@ public final class EditDialog {
         }
         // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
         GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName), " was " + mode.done + ":");
-        area.previewWelcome(player);
+        GuidebookPlugin.getPluginInstance().getWatchman().preview(player, area);
     }
 
     /**

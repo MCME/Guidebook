@@ -40,7 +40,7 @@ _Avoid_: scoreboard
 The line shown under the Title on entry. It is written in MiniMessage, and its length limit counts only the visible text.
 
 **Description**:
-The body text of an Area, sent to the player in chat when they enter it. It is written in MiniMessage. By convention it opens with the `<guide>` tag (`Guide:` in dark aqua followed by white text), and a new Area starts with that opening.
+The body text of an Area, shown to the player after the Title when they enter it. It is written in MiniMessage. By convention it opens with the `<guide>` tag (`Guide:` in dark aqua followed by white text), and a new Area starts with that opening.
 
 **Legacy markup**:
 How Titles, Subtitles and Descriptions were written before MiniMessage: `§` colour codes (typed as `#`), `#RRGGBB` hex colours, and `[Click="…"]`/`[Hover="…"]` tags. Each Area is converted from it to MiniMessage once, keeping exactly what players saw.
@@ -59,7 +59,21 @@ MiniMessage tags of Guidebook's own, usable in a Title, Subtitle or Description 
 | `<bullet>`         | A grey `▸ ` list marker                                                                        |
 
 **Welcome**:
-What a player receives when they enter an Area: the Title, then the Description. Welcomes have a cooldown per player per Area.
+What a player receives when they enter an Area: the Title, then the Description, shown by the server's Display. Welcomes have a cooldown per player per Area.
+
+**Watchman**:
+The part of Guidebook that keeps watch over every Area, noticing players entering and leaving. A player who enters gets a Welcome when the Area is Enabled, the cooldown has passed, the player isn't Opted out, and no other plugin has cancelled it. The Watchman hands the Welcome to the Display to show.
+_Avoid_: Greeter, Welcoming
+
+**Display**:
+How a Welcome is shown to a player. The server uses one Display for every Area, falling back to the Chat display when the chosen one isn't available. Each Display owns its own look and settings.
+_Avoid_: style, renderer, frontend
+
+**Chat display**:
+The original Display: the Title and Subtitle on screen, then the Description as a chat message.
+
+**Typewriter display**:
+A Display that types the Welcome into a framed box over the chat, in pages the player turns and closes with a key. It needs the Typewriter plugin, and isn't part of Guidebook's own jar.
 
 **Enabled / Disabled**:
 Whether an Area welcomes anyone. This is set by staff for each Area.

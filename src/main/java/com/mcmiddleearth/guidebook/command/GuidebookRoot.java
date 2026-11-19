@@ -3,6 +3,7 @@ package com.mcmiddleearth.guidebook.command;
 import static com.mcmiddleearth.guidebook.command.GuidebookHelp.STAFF;
 import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
@@ -67,14 +68,14 @@ class GuidebookRoot {
     @Executes("on")
     @Permission(USER)
     void on(CommandSender sender, @Executor Player player) {
-        PluginData.include(player);
+        GuidebookPlugin.getPluginInstance().getWatchman().optIn(player.getUniqueId());
         GuidebookMessages.sendInfo(sender, "You will now receive info messages from Guidebook.");
     }
 
     @Executes("off")
     @Permission(USER)
     void off(CommandSender sender, @Executor Player player) {
-        PluginData.exclude(player);
+        GuidebookPlugin.getPluginInstance().getWatchman().optOut(player.getUniqueId());
         GuidebookMessages.sendInfo(sender, "You will no longer receive info messages from Guidebook.");
     }
 

@@ -16,35 +16,20 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
-import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
-import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.welcome.WelcomeArea;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import com.mcmiddleearth.pluginutil.region.Region;
 import com.mcmiddleearth.pluginutil.region.SphericalRegion;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.title.Title;
-import net.kyori.adventure.util.Ticks;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 /**
@@ -53,13 +38,9 @@ import org.bukkit.util.Vector;
  *
  * @author Eriol_Eandur
  */
-public final class InfoArea implements MarkableArea {
+public final class InfoArea implements MarkableArea, WelcomeArea {
 
     private static final int NEAR_DISTANCE = 10;
-    private static final Duration COOLDOWN = Duration.ofMinutes(1);
-    private static final Title.Times TITLE_TIMES =
-            Title.Times.times(Ticks.duration(15), Ticks.duration(25), Ticks.duration(10));
-
     private Region region;
 
     private String areaName;
@@ -67,29 +48,18 @@ public final class InfoArea implements MarkableArea {
     /** The world named in the Area's file, kept for when that world isn't loaded and the region has none. */
     private String loadedWorldName;
 
-    private final HashMap<UUID, Instant> lastInformedTimes = new HashMap<>();
-    /**
-     * All players currently within the InfoArea
-     * Used to determine if a player has entered or left an InfoArea
-     */
-    private final Set<UUID> areaPlayers = new HashSet<>();
-
     private boolean status;
-
-    private final BossBar bossBar;
 
     private String title;
     private String subtitle;
     private boolean showTitle;
-    private boolean showScoreboard;
+    private boolean showBossBar;
 
     private String description = "";
 
     private InfoArea(String areaName) {
         this.areaName = areaName;
 
-        // scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
-        bossBar = BossBar.bossBar(Component.empty(), 0, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
         setTitle("");
         subtitle = "";
         status = true;
@@ -101,7 +71,8 @@ public final class InfoArea implements MarkableArea {
         if (config.contains("title")) {
             setTitle((String) config.get("title"));
             setSubtitle((String) config.get("subtitle"));
-            showScoreboard = config.getBoolean("showScoreboard");
+            // Stored under its old name, from when it was a scoreboard
+            showBossBar = config.getBoolean("showScoreboard");
             showTitle = config.getBoolean("showTitle");
             status = config.getBoolean("enabled", true);
         }
@@ -235,10 +206,12 @@ public final class InfoArea implements MarkableArea {
         return region.getLocation();
     }
 
+    @Override
     public boolean isNear(Location loc) {
         return region.isNear(loc, NEAR_DISTANCE);
     }
 
+    @Override
     public boolean isInside(Location loc) {
         return region.isInside(loc);
     }
@@ -254,62 +227,6 @@ public final class InfoArea implements MarkableArea {
 
     public void statusOff() {
         status = false;
-        // A Disabled Area doesn't notice players leaving, so they'd keep the Boss bar
-        hideBossBar();
-    }
-
-    public boolean containsPlayer(Player player) {
-        return areaPlayers.contains(player.getUniqueId());
-    }
-
-    public final void onRegionEnter(Player player) {
-        UUID playerId = player.getUniqueId();
-        Instant now = Instant.now();
-
-        boolean hasBeenInformed = lastInformedTimes.containsKey(playerId);
-        if (hasBeenInformed) {
-            Instant lastNotified = lastInformedTimes.get(playerId);
-            if (Duration.between(lastNotified, now).compareTo(COOLDOWN) < 0) {
-                // Player has entered the region, but don't welcome them
-                areaPlayers.add(playerId);
-                return;
-            }
-        }
-
-        // Track that the player is in the region even if the Event is cancelled
-        // - otherwise onRegionEnter would keep being called!
-        areaPlayers.add(playerId);
-
-        GuidebookSendEvent sendEvent = new GuidebookSendEvent(player, areaName);
-        sendEvent.callEvent();
-        if (sendEvent.isCancelled()) return;
-
-        boolean notificationsEnabled = !PluginData.isExcluded(player);
-        if (notificationsEnabled) {
-            welcomePlayer(player);
-            lastInformedTimes.put(playerId, now);
-        }
-    }
-
-    public final void onRegionLeave(Player player) {
-        UUID playerId = player.getUniqueId();
-        areaPlayers.remove(playerId);
-        player.hideBossBar(bossBar);
-    }
-
-    public void clearPlayer(Player player) {
-        onRegionLeave(player);
-        UUID playerId = player.getUniqueId();
-        lastInformedTimes.remove(playerId);
-    }
-
-    public void clearPlayers() {
-        for (UUID uuid : new ArrayList<>(areaPlayers)) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
-                clearPlayer(player);
-            }
-        }
     }
 
     public void save(ConfigurationSection config) {
@@ -322,57 +239,10 @@ public final class InfoArea implements MarkableArea {
         config.set("description", description);
         config.set("title", title);
         config.set("subtitle", subtitle);
-        config.set("showScoreboard", showScoreboard);
+        config.set("showScoreboard", showBossBar);
         config.set("showTitle", showTitle);
         config.set("enabled", status);
         config.set(LegacyMarkupConverter.MARKER, true);
-    }
-
-    /**
-     * Gives staff the Welcome now, as a player entering the Area gets it, but with no cooldown, send event or opt-out
-     * check. The Boss bar appears only if they're inside an Enabled Area, because leaving it is what removes the bar.
-     */
-    public void previewWelcome(Player player) {
-        // An Area just created doesn't know yet that the player is inside. Marking them stops their next move
-        // counting as an entry and Welcoming them again. Only Enabled Areas notice a player leaving
-        if (isEnabled() && isInside(player.getLocation())) {
-            areaPlayers.add(player.getUniqueId());
-        }
-        welcomePlayer(player);
-    }
-
-    private void welcomePlayer(final Player player) {
-        int messageDelay = 0;
-        if (isShowTitle()) {
-            player.showTitle(Title.title(AreaText.render(getTitle()), AreaText.render(getSubtitle()), TITLE_TIMES));
-            messageDelay = 50;
-        }
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Only while still inside, or a player who left during the Title would keep the bar
-                if (isShowScoreboard() && containsPlayer(player)) {
-                    player.showBossBar(bossBar);
-                }
-                sendDescription(player);
-            }
-        }.runTaskLater(GuidebookPlugin.getPluginInstance(), messageDelay);
-    }
-
-    private void sendDescription(Player player) {
-        if (getDescription().isEmpty()) {
-            GuidebookMessages.send(
-                    player,
-                    GuidebookMessages.info(
-                            "Welcome to ",
-                            Component.text()
-                                    .color(GuidebookMessages.STRESSED)
-                                    .append(AreaText.render(getTitle()))
-                                    .append(Component.text(" (" + getName() + ")")),
-                            ". Unfortunately there is no further description for this area."));
-        } else {
-            GuidebookMessages.send(player, AreaText.render(getDescription()));
-        }
     }
 
     public void setDescription(String description) {
@@ -394,7 +264,6 @@ public final class InfoArea implements MarkableArea {
         objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);*/
         // An older file can hold an empty Title or Subtitle as null
         title = Objects.requireNonNullElse(newTitle, "");
-        bossBar.name(AreaText.render(title));
     }
 
     @Override
@@ -411,6 +280,7 @@ public final class InfoArea implements MarkableArea {
         this.subtitle = Objects.requireNonNullElse(subtitle, "");
     }
 
+    @Override
     public boolean isShowTitle() {
         return showTitle;
     }
@@ -419,25 +289,13 @@ public final class InfoArea implements MarkableArea {
         this.showTitle = showTitle;
     }
 
-    public boolean isShowScoreboard() {
-        return showScoreboard;
+    @Override
+    public boolean isShowBossBar() {
+        return showBossBar;
     }
 
-    public void setShowScoreboard(boolean showScoreboard) {
-        this.showScoreboard = showScoreboard;
-        if (!showScoreboard) {
-            hideBossBar();
-        }
-    }
-
-    // Only players inside the Area are shown the Boss bar
-    private void hideBossBar() {
-        for (UUID uuid : areaPlayers) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
-                player.hideBossBar(bossBar);
-            }
-        }
+    public void setShowBossBar(boolean showBossBar) {
+        this.showBossBar = showBossBar;
     }
 
     @Override
