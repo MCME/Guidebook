@@ -9,8 +9,8 @@ import org.bukkit.entity.Player;
 
 /**
  * Connects each Welcome to the Display the server's config chose, out of those registered by name. Other plugins
- * register theirs, and may do so after Guidebook enables, so the chosen Display is looked up for every Welcome. Whenever
- * it isn't registered, or fails, the Chat display shows the Welcome instead (ADR 0008).
+ * register theirs, and may do so after Guidebook enables, so the chosen Display is looked up for every Welcome.
+ * Whenever it isn't registered, or fails, the Chat display shows the Welcome instead (ADR 0008).
  */
 public final class DisplaySwitchboard implements Display {
 

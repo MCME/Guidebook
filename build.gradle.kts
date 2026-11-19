@@ -3,6 +3,7 @@ plugins {
     `maven-publish`
     alias(libs.plugins.run.paper)
     alias(libs.plugins.spotless)
+    checkstyle
 }
 
 group = "com.mcmiddleearth"

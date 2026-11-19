@@ -176,8 +176,8 @@ class GuidebookRoot {
         if (!oldFileDeleted) {
             GuidebookMessages.sendError(
                     sender,
-                    "The old data file " + oldName
-                            + ".yml couldn't be deleted. Delete it before reloading, or the area will load under both names.");
+                    "The old data file " + oldName + ".yml couldn't be deleted. Delete it before reloading,"
+                            + " or the area will load under both names.");
         }
     }
 
