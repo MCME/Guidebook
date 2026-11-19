@@ -239,6 +239,30 @@ class WatchmanTest {
     }
 
     @Test
+    void aPlayerWhoOptsBackInInsideAnAreaIsWelcomedToIt() {
+        TestPlayer player = new TestPlayer(-50);
+        watchman.optOut(player.id);
+        moveTo(player, 50);
+
+        watchman.optIn(player.id);
+        moveTo(player, 50);
+
+        assertEquals(1, shown.size());
+    }
+
+    @Test
+    void optingBackInWithinTheCooldownGivesNoSecondWelcome() {
+        TestPlayer player = new TestPlayer(-50);
+        moveTo(player, 50);
+        watchman.optOut(player.id);
+
+        watchman.optIn(player.id);
+        moveTo(player, 50);
+
+        assertEquals(1, shown.size());
+    }
+
+    @Test
     void aCancelledEventStopsTheWelcomeAndIsFiredOncePerEntry() {
         cancelEvents = true;
         TestPlayer player = new TestPlayer(-50);

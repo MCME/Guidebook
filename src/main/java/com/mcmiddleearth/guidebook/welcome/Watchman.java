@@ -81,8 +81,10 @@ public final class Watchman {
         optedOut.add(playerId);
     }
 
+    /** Opts a player back in. The Areas they're standing in count as entered again, so they get those Welcomes now. */
     public void optIn(UUID playerId) {
         optedOut.remove(playerId);
+        inside.values().forEach(players -> players.remove(playerId));
     }
 
     private boolean isOptedOut(UUID playerId) {

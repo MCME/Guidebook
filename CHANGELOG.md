@@ -16,6 +16,8 @@ see the GitHub history.
 ### Changed
 
 - Re-Enabling an Area Welcomes the players standing in it.
+- `/guidebook on` Welcomes you to the Areas you're standing in, instead of waiting for the next
+  one you enter.
 - `/guidebook reload` no longer undoes `/guidebook on` and `off` used since the server started.
 - `GuidebookSendEvent` isn't fired for Opted out players.
 
