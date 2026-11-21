@@ -93,7 +93,7 @@ class GuidebookWelcomeMessenger(
 
     private val settings = entry.layoutSettings(player)
     private val header = AreaText.plainText(welcome.title())
-    private val pages = layOutPages(AreaText.render(welcome.description()), header, settings)
+    private val pages = layOutPages(AreaText.render(welcome.description()))
     private val titleStep = TitleStep(welcome, entry.titleSettings())
 
     private var confirmation: Confirmation? = null
