@@ -18,10 +18,10 @@ class TypewriterDisplayTest {
 
     private val typewriter = FakeTypewriter()
     private var welcomeEntries = 1
-    private val installChecks = InstallChecks {
+    private val inspector = InstallInspector {
         List(welcomeEntries) { FoundWelcomeEntry("guidebookWelcome", "guidebook") }
     }
-    private val display = TypewriterDisplay(typewriter, installChecks, WelcomeQueues) { 1 }
+    private val display = TypewriterDisplay(typewriter, inspector, WelcomeQueues) { 1 }
 
     @Test
     fun `a Welcome opens the Guidebook Welcome entry for the player`() {
@@ -110,7 +110,7 @@ class TypewriterDisplayTest {
         assertEquals(emptyList<Welcome>(), typewriter.titlesOnly)
     }
 
-    private class FakeTypewriter : TypewriterSide {
+    private class FakeTypewriter : BoxOpener {
         var hasSession = true
         var inDialogue = false
         val started = mutableListOf<Welcome>()

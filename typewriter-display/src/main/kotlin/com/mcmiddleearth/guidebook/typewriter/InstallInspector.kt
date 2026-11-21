@@ -1,21 +1,18 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// SEAM: Install checks. The one place that answers "may the Display run?", asked when Typewriter initializes the
-// extension and on every Welcome. The rules are the spec's "Registration" module.
-//
 // Touches no Guidebook class, so it can tell an admin their Guidebook is too old for the classes the Display needs.
 
 import java.util.Properties
 
-/** One Guidebook Welcome entry found in Typewriter's pages: its id, and the name of the Typewriter page holding it. */
+/** One Guidebook Welcome entry found in a Typewriter page: its id, and the name of the Typewriter page holding it. */
 data class FoundWelcomeEntry(val id: String, val typewriterPage: String)
 
 /**
- * Whether the Typewriter display is installed well enough to show Welcomes. [welcomeEntries] finds every Guidebook
- * Welcome entry in Typewriter's pages, passed in so tests can fake them. Each new problem goes to [log] once, so
- * asking on every Welcome doesn't fill the log.
+ * Whether the Typewriter display is installed well enough to show Welcomes, asked when Typewriter loads the extension
+ * and on every Welcome. [welcomeEntries] finds every Guidebook Welcome entry in the Typewriter pages, passed in so
+ * tests can fake them. Each new problem goes to [log] once, so asking on every Welcome doesn't fill the log.
  */
-class InstallChecks(
+class InstallInspector(
     private val log: (String) -> Unit = {},
     private val welcomeEntries: () -> List<FoundWelcomeEntry>,
 ) {
@@ -44,7 +41,7 @@ class InstallChecks(
         /** The lowest Guidebook version the Typewriter display works with, set in its build. */
         val LOWEST_GUIDEBOOK_VERSION: String by lazy {
             val properties = Properties()
-            InstallChecks::class.java.getResourceAsStream("build.properties")!!.use(properties::load)
+            InstallInspector::class.java.getResourceAsStream("build.properties")!!.use(properties::load)
             properties.getProperty("lowestGuidebookVersion")
         }
 

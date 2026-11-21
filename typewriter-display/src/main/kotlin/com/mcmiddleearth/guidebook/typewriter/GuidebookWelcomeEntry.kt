@@ -153,7 +153,7 @@ class GuidebookWelcomeMessenger(
         if (!ended) player.chatHistory.resendMessages(player)
         val queue = WelcomeQueues.find(player.uniqueId) ?: return
         if (closedByPlayer) {
-            queue.closedByPlayer(welcome, Bukkit.getCurrentTick())?.let { TypewriterGlue.start(player, it) }
+            queue.closedByPlayer(welcome, Bukkit.getCurrentTick())?.let { TypewriterBoxOpener.start(player, it) }
         } else {
             queue.endedOtherwise(welcome)
         }

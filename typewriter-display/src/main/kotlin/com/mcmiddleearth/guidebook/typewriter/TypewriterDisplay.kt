@@ -4,11 +4,16 @@ import com.mcmiddleearth.guidebook.welcome.Display
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import org.bukkit.entity.Player
 
-/** What the Typewriter display needs from Typewriter, so tests can fake it. */
-interface TypewriterSide {
+/**
+ * A way of opening a Welcome's box for a player, or of showing only its Title step when it gets no box. An
+ * implementation must say truthfully whether the player can be given a box now, as opening one for a player who can't
+ * is silently dropped.
+ */
+interface BoxOpener {
     /** Whether Typewriter has a session for [player] yet; it drops anything triggered for a player without one. */
     fun hasSession(player: Player): Boolean
 
+    /** Whether [player] is in any Typewriter dialogue, a box of this Display's included. */
     fun isInDialogue(player: Player): Boolean
 
     /** Opens the Guidebook Welcome entry for [player], with [welcome] in its context. */
@@ -23,8 +28,8 @@ interface TypewriterSide {
  * through the Chat display instead, so no player misses one.
  */
 class TypewriterDisplay(
-    private val typewriter: TypewriterSide,
-    private val installChecks: InstallChecks,
+    private val boxes: BoxOpener,
+    private val inspector: InstallInspector,
     private val queues: WelcomeQueues,
     private val currentTick: () -> Int,
 ) : Display {
@@ -32,15 +37,15 @@ class TypewriterDisplay(
     override fun show(player: Player, welcome: Welcome) {
         // No box to close, so it neither waits behind nor replaces one
         if (isEmptyDescription(welcome.description())) {
-            if (welcome.showTitle()) typewriter.showTitle(player, welcome)
+            if (welcome.showTitle()) boxes.showTitle(player, welcome)
             return
         }
-        check(typewriter.hasSession(player)) { "${player.name} has no Typewriter session yet" }
-        installChecks.problem()?.let { error(it) }
+        check(boxes.hasSession(player)) { "${player.name} has no Typewriter session yet" }
+        inspector.problem()?.let { error(it) }
 
         val queue = queues.of(player.uniqueId)
-        when (queue.arrive(welcome, currentTick(), typewriter.isInDialogue(player))) {
-            QueueDecision.Start, QueueDecision.Replace -> typewriter.start(player, welcome)
+        when (queue.arrive(welcome, currentTick(), boxes.isInDialogue(player))) {
+            QueueDecision.Start, QueueDecision.Replace -> boxes.start(player, welcome)
             QueueDecision.Queue -> {}
             QueueDecision.ShowInChat -> error("${player.name} is in another Typewriter dialogue")
         }

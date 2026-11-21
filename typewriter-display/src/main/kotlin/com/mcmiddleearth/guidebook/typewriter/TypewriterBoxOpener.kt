@@ -12,12 +12,11 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.koin.java.KoinJavaComponent
-import java.time.Duration
 
-/** The Typewriter display's way into Typewriter itself. */
-object TypewriterGlue : TypewriterSide {
+/** Opens boxes through Typewriter itself, by triggering the Guidebook Welcome entry. */
+object TypewriterBoxOpener : BoxOpener {
 
-    fun welcomeEntries(): List<GuidebookWelcomeEntry> = Query.find<GuidebookWelcomeEntry>().toList()
+    private fun welcomeEntries(): List<GuidebookWelcomeEntry> = Query.find<GuidebookWelcomeEntry>().toList()
 
     override fun hasSession(player: Player): Boolean =
         with(KoinJavaComponent.get<PlayerSessionManager>(PlayerSessionManager::class.java)) { player.session != null }
@@ -32,9 +31,9 @@ object TypewriterGlue : TypewriterSide {
     override fun showTitle(player: Player, welcome: Welcome) {
         val settings = welcomeEntries().firstOrNull()?.titleSettings() ?: TitleSettings()
         val titleStep = TitleStep(welcome, settings)
-        var ticks = 0L
+        var tick = 0L
         Bukkit.getScheduler().runTaskTimer(plugin, { task: BukkitTask ->
-            val elapsed = Duration.ofMillis(ticks++ * 50)
+            val elapsed = ticks(tick++)
             if (player.isOnline) titleStep.tick(player, elapsed)
             // Its last frame is shown by the time the Description would have started
             if (!player.isOnline || elapsed >= titleStep.descriptionDelay) task.cancel()
