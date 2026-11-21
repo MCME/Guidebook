@@ -43,13 +43,33 @@ class TypewriterDisplayTest {
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
+    @Test
+    fun `a player in someone else's Typewriter dialogue gets the Welcome in chat`() {
+        typewriter.inDialogue = true
+
+        assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
+        assertEquals(emptyList<Welcome>(), typewriter.started)
+    }
+
+    @Test
+    fun `a Welcome on the tick of the open box waits behind it`() {
+        val prancing = Welcome("me-bree-prancing-pony", "The Prancing Pony", "", "<guide>An inn.", true)
+        display.show(player, bree)
+        typewriter.inDialogue = true
+
+        display.show(player, prancing)
+
+        assertEquals(listOf(bree), typewriter.started)
+    }
+
     private class FakeTypewriter : TypewriterSide {
         var hasSession = true
+        var inDialogue = false
         val started = mutableListOf<Welcome>()
 
         override fun hasSession(player: Player) = hasSession
 
-        override fun isInDialogue(player: Player) = false
+        override fun isInDialogue(player: Player) = inDialogue
 
         override fun start(player: Player, welcome: Welcome) {
             started += welcome
