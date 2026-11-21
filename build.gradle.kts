@@ -122,6 +122,48 @@ tasks {
             hangar("WorldEdit", libs.versions.worldedit.get())
             val pluginUtils = libs.versions.pluginutils.get()
             url("https://repo.mcmiddleearth.com/releases/com/mcmiddleearth/PluginUtils/$pluginUtils/PluginUtils-$pluginUtils.jar")
+            // For the Typewriter display: the Typewriter build it names, and the PacketEvents Typewriter needs
+            modrinth("typewriter", "0.9.0-beta-177")
+            modrinth("packetevents", "2.14.0+spigot")
+        }
+
+        // Typewriter loads extensions and pages from its own folders, which downloadPlugins can't reach, so the
+        // Typewriter display, its Typewriter page and the BasicExtension Typewriter needs are put there before each start
+        dependsOn(":typewriter-display:jar")
+        doFirst {
+            val run = runDirectory.get().asFile
+            val extensions = run.resolve("plugins/Typewriter/extensions")
+            extensions.mkdirs()
+            extensions.listFiles { f -> f.name.startsWith("typewriter-display-") }!!.forEach { it.delete() }
+            project(":typewriter-display").tasks.named<Jar>("jar").get().archiveFile.get().asFile.let {
+                it.copyTo(extensions.resolve(it.name), overwrite = true)
+            }
+            val basic = extensions.resolve("BasicExtension.jar")
+            if (!basic.exists()) {
+                // The BasicExtension built for the Typewriter version above
+                uri("https://cdn.modrinth.com/data/Vm7B3ymm/versions/728uFaZd/BasicExtension.jar")
+                    .toURL()
+                    .openStream()
+                    .use { input -> basic.outputStream().use { input.copyTo(it) } }
+            }
+
+            // Only if missing, so changes made to it in Typewriter's panel are kept
+            val page = run.resolve("plugins/Typewriter/pages/guidebook.json")
+            page.parentFile.mkdirs()
+            if (!page.exists()) rootDir.resolve("typewriter-display/guidebook.json").copyTo(page)
+
+            // Close the box with F (swap hands) instead of Typewriter's default, sneak
+            val typewriterConfig = run.resolve("plugins/Typewriter/config.yml")
+            if (!typewriterConfig.exists() || "confirmationKey:" !in typewriterConfig.readText()) {
+                typewriterConfig.appendText("\nconfirmationKey: SWAP_HANDS\n")
+            }
+
+            // Choose the Typewriter display, unless the config already chooses one
+            val guidebookConfig = run.resolve("plugins/Guidebook/config.yml")
+            guidebookConfig.parentFile.mkdirs()
+            if (!guidebookConfig.exists() || "display:" !in guidebookConfig.readText()) {
+                guidebookConfig.appendText("\ndisplay: typewriter\n")
+            }
         }
     }
 }
