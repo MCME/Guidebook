@@ -43,9 +43,47 @@ class TypewriterDisplayTest {
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
+    @Test
+    fun `a Welcome with an empty Description gets its Title and no box`() {
+        val empty = Welcome("me-weathertop", "Weathertop", "Amon Sûl", "<gray> ", true)
+
+        display.show(player, empty)
+
+        assertEquals(listOf(empty), typewriter.titlesOnly)
+        assertEquals(emptyList<Welcome>(), typewriter.started)
+    }
+
+    @Test
+    fun `a Welcome with an empty Description and Show title off shows nothing`() {
+        display.show(player, Welcome("me-weathertop", "Weathertop", "Amon Sûl", "", false))
+
+        assertEquals(emptyList<Welcome>(), typewriter.titlesOnly)
+        assertEquals(emptyList<Welcome>(), typewriter.started)
+    }
+
+    @Test
+    fun `a Welcome with an empty Description leaves an open box alone`() {
+        display.show(player, bree)
+
+        display.show(player, Welcome("me-weathertop", "Weathertop", "Amon Sûl", "", true))
+
+        assertEquals(listOf(bree), typewriter.started)
+    }
+
+    @Test
+    fun `a Description of only the guide tag still gets a box`() {
+        val guide = Welcome("me-weathertop", "Weathertop", "Amon Sûl", "<guide>", true)
+
+        display.show(player, guide)
+
+        assertEquals(listOf(guide), typewriter.started)
+        assertEquals(emptyList<Welcome>(), typewriter.titlesOnly)
+    }
+
     private class FakeTypewriter : TypewriterSide {
         var hasSession = true
         val started = mutableListOf<Welcome>()
+        val titlesOnly = mutableListOf<Welcome>()
 
         override fun hasSession(player: Player) = hasSession
 
@@ -53,6 +91,10 @@ class TypewriterDisplayTest {
 
         override fun start(player: Player, welcome: Welcome) {
             started += welcome
+        }
+
+        override fun showTitle(player: Player, welcome: Welcome) {
+            titlesOnly += welcome
         }
     }
 }

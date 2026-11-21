@@ -13,6 +13,9 @@ interface TypewriterSide {
 
     /** Opens the Guidebook Welcome entry for [player], with [welcome] in its context. */
     fun start(player: Player, welcome: Welcome)
+
+    /** Shows [player] only [welcome]'s Title step, with no box: for a Welcome whose Description is empty. */
+    fun showTitle(player: Player, welcome: Welcome)
 }
 
 /**
@@ -27,6 +30,11 @@ class TypewriterDisplay(
 ) : Display {
 
     override fun show(player: Player, welcome: Welcome) {
+        // No box to close, so it neither waits behind nor replaces one
+        if (isEmptyDescription(welcome.description())) {
+            if (welcome.showTitle()) typewriter.showTitle(player, welcome)
+            return
+        }
         check(typewriter.hasSession(player)) { "${player.name} has no Typewriter session yet" }
         installChecks.problem()?.let { error(it) }
 
