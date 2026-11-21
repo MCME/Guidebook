@@ -1,7 +1,7 @@
 # Guidebook's Typewriter display
 
 The Typewriter display types each [Guidebook](../README.md) Welcome into a framed box over the
-chat. The Area's name sits in the top border, the Description is typed out on Pages of 8 lines,
+chat. The Title, as plain text, sits in the top border, the Description is typed out on Pages of 8 lines,
 and the bottom border says which key turns the Page or closes the box. The Title types in on
 screen first. The box stays until the player closes it.
 

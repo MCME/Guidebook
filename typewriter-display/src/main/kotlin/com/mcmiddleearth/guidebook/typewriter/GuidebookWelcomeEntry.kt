@@ -51,17 +51,17 @@ class GuidebookWelcomeEntry(
     override val triggers: List<Ref<TriggerableEntry>> = emptyList(),
     override val speaker: Ref<SpeakerEntry> = emptyRef(),
     @Help("How long each character of the Description takes to type; spaces take no time")
-    val typingSpeed: Var<Duration> = ConstVar(Duration.ofMillis(20)),
+    val typingSpeed: Var<Duration> = ConstVar(LayoutSettings().typingSpeed),
     @Help("The most time typing one Page may take, so long Pages don't drag")
-    val pageTypingCap: Var<Duration> = ConstVar(Duration.ofSeconds(4)),
-    @Help("Colour of the Area name in the box's top border, the same for every Area, as hex (#e3c77d)")
-    val headerColor: String = "#e3c77d",
+    val pageTypingCap: Var<Duration> = ConstVar(LayoutSettings().pageTypingCap),
+    @Help("Colour of the Title in the box's top border, the same for every Area, as hex")
+    val headerColor: String = LayoutSettings().headerColor.asHexString(),
     @Help("Ticks between each character as the Title types in")
-    val titleTicksPerCharacter: Int = 2,
+    val titleTicksPerCharacter: Int = TitleSettings().ticksPerCharacter,
     @Help("Ticks the finished Title is held before the Subtitle appears")
-    val titleSubtitlePauseTicks: Int = 6,
+    val titleSubtitlePauseTicks: Int = TitleSettings().subtitlePauseTicks,
     @Help("Ticks after the Subtitle appears before the Description starts")
-    val descriptionDelayTicks: Int = 24,
+    val descriptionDelayTicks: Int = TitleSettings().descriptionDelayTicks,
 ) : DialogueEntry {
 
     override fun messenger(player: Player, context: InteractionContext): DialogueMessenger<*>? {
