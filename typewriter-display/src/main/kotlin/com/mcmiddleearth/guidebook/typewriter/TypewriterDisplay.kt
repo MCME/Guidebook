@@ -24,8 +24,8 @@ interface BoxOpener {
 }
 
 /**
- * The Typewriter display: types each Welcome into a box over the chat. Throwing from [show] sends that Welcome
- * through the Chat display instead, so no player misses one.
+ * The Typewriter display: types each Welcome into a box over the chat. When it can't now, it throws
+ * [Display.Unavailable], so the Chat display shows that Welcome instead and no player misses one.
  */
 class TypewriterDisplay(
     private val boxes: BoxOpener,
@@ -40,14 +40,15 @@ class TypewriterDisplay(
             if (welcome.showTitle()) boxes.showTitle(player, welcome)
             return
         }
-        check(boxes.hasSession(player)) { "${player.name} has no Typewriter session yet" }
-        inspector.problem()?.let { error(it) }
+        if (!boxes.hasSession(player)) throw Display.Unavailable("${player.name} has no Typewriter session yet")
+        // Already logged once by the inspector, so each Welcome only needs to go to the Chat display
+        inspector.problem()?.let { throw Display.Unavailable(it) }
 
         val queue = queues.of(player.uniqueId)
         when (queue.arrive(welcome, currentTick(), boxes.isInDialogue(player))) {
             QueueDecision.Start, QueueDecision.Replace -> boxes.start(player, welcome)
             QueueDecision.Queue -> {}
-            QueueDecision.ShowInChat -> error("${player.name} is in another Typewriter dialogue")
+            QueueDecision.ShowInChat -> throw Display.Unavailable("${player.name} is in another Typewriter dialogue")
         }
     }
 

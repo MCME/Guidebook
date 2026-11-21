@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.typewriter
 
+import com.mcmiddleearth.guidebook.welcome.Display
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import org.bukkit.entity.Player
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -34,7 +35,7 @@ class TypewriterDisplayTest {
     fun `a player without a Typewriter session gets the Welcome in chat`() {
         typewriter.hasSession = false
 
-        assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
+        assertThrows(Display.Unavailable::class.java) { display.show(player, bree) }
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
@@ -42,7 +43,7 @@ class TypewriterDisplayTest {
     fun `without the Guidebook Welcome entry the Welcome goes to chat`() {
         welcomeEntries = 0
 
-        assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
+        assertThrows(Display.Unavailable::class.java) { display.show(player, bree) }
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
@@ -50,7 +51,7 @@ class TypewriterDisplayTest {
     fun `with more than one Guidebook Welcome entry the Welcome goes to chat`() {
         welcomeEntries = 2
 
-        assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
+        assertThrows(Display.Unavailable::class.java) { display.show(player, bree) }
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
@@ -58,7 +59,7 @@ class TypewriterDisplayTest {
     fun `a player in someone else's Typewriter dialogue gets the Welcome in chat`() {
         typewriter.inDialogue = true
 
-        assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
+        assertThrows(Display.Unavailable::class.java) { display.show(player, bree) }
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 

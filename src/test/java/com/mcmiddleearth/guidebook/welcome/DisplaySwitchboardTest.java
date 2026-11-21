@@ -136,6 +136,18 @@ class DisplaySwitchboardTest {
     }
 
     @Test
+    void chatShowsTheWelcomeTheChosenDisplayCantShowNow() {
+        switchboard.register("typewriter", (p, welcome) -> {
+            throw new Display.Unavailable("Bree's player is in another dialogue");
+        });
+
+        switchboard.show(player, bree);
+
+        assertEquals(List.of("bree"), chatted);
+        assertEquals(List.of(Level.FINE), logged);
+    }
+
+    @Test
     void aChosenDisplayFailingIsLoggedEveryTime() {
         switchboard.register("typewriter", (p, welcome) -> {
             throw new IllegalStateException("Typewriter isn't ready");
@@ -150,6 +162,7 @@ class DisplaySwitchboardTest {
     private Logger recordingLogger() {
         Logger logger = Logger.getAnonymousLogger();
         logger.setUseParentHandlers(false);
+        logger.setLevel(Level.ALL);
         logger.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {

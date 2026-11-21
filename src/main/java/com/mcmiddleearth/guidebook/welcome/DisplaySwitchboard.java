@@ -82,11 +82,14 @@ public final class DisplaySwitchboard implements Display {
             try {
                 display.show(player, welcome);
                 return;
+            } catch (Display.Unavailable ex) {
+                logger.fine("The display \"" + chosen + "\" can't show the Welcome to " + welcome.areaName()
+                        + " now, so it was shown with the Chat display: " + ex.getMessage());
             } catch (RuntimeException ex) {
                 logger.log(
                         Level.SEVERE,
                         "The display \"" + chosen + "\" failed to show the Welcome to " + welcome.areaName()
-                                + ", so it was shown in chat",
+                                + ", so it was shown with the Chat display",
                         ex);
             }
         }
