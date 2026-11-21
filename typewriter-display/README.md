@@ -31,10 +31,15 @@ From the [GitHub release](https://github.com/MCME/Guidebook/releases) (the `type
    display: typewriter
    ```
 
-4. Restart the server
+4. Set Typewriter's confirmation key to F, in `plugins/Typewriter/config.yml`:
 
-The footer shows Typewriter's confirmation key. To close the box with F, as this extension is
-designed for, set `confirmationKey: SWAP_HANDS` in `plugins/Typewriter/config.yml`.
+   ```yaml
+   confirmationKey: SWAP_HANDS
+   ```
+
+   Typewriter's default is sneak, which players press all the time while moving, so they'd skip
+   and close boxes without reading them. The footer names whichever key is set.
+5. Restart the server
 
 **Restart after any change**: installing, upgrading, swapping the Typewriter page or changing
 `display`. If the extension can't run (no Typewriter page, a duplicated entry, a Guidebook older
