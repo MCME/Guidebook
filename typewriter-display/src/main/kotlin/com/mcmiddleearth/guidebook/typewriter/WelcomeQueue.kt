@@ -1,8 +1,5 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// The Welcome queue: what happens to each Welcome a player is given while a box may already be open, and to each
-// way a box can end. It only answers, leaving Typewriter to its callers, so tests can play out every ending.
-
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -26,6 +23,9 @@ sealed interface QueueDecision {
  * One player's open box and the Welcomes waiting behind it. Idle while no box is open. A box is told apart by the very
  * [Welcome] it shows, not an equal one, since the same Area can be Welcomed again while its last box is still ending.
  * Synchronized, as Typewriter ends boxes off the main thread.
+ *
+ * It only decides what happens to each Welcome and each way a box ends, leaving Typewriter to its callers, so tests
+ * can play out every ending without a server.
  */
 class WelcomeQueue {
     /** The open box, or null when Idle. */

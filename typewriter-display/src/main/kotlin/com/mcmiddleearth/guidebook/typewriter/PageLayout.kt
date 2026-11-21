@@ -1,8 +1,5 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// How a Welcome's Description is cut into Pages and drawn as the box. It uses no Typewriter or Bukkit class, so tests
-// can lay out real Descriptions.
-
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.KeybindComponent
@@ -59,7 +56,10 @@ class Page(val lines: List<Component>, val number: Int, val total: Int) {
     }
 }
 
-/** The Pages of a Welcome whose [description] is already rendered. */
+/**
+ * The Pages of a Welcome whose [description] is already rendered. Page layout, here and in [drawBox], uses no
+ * Typewriter or Bukkit class, so tests can lay out real Descriptions without a server.
+ */
 fun layOutPages(description: Component): List<Page> {
     val text = StyledText.of(description)
     val pages = mutableListOf<List<Component>>()

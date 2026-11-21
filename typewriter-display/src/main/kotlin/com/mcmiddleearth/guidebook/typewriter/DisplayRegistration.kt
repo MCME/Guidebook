@@ -24,7 +24,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 class DisplayRegistration : Initializable {
 
     private val inspector = InstallInspector(
-        log = { logger.warning("The Typewriter display can't show Welcomes, so they're shown in chat. $it") },
+        log = { logger.warning("The Typewriter display can't show Welcomes, so they use the Chat display. $it") },
         welcomeEntries = ::findWelcomeEntries,
     )
     private var registered = false
@@ -32,14 +32,14 @@ class DisplayRegistration : Initializable {
     override suspend fun initialize() {
         val guidebook = Bukkit.getPluginManager().getPlugin(GUIDEBOOK) ?: return
         InstallInspector.versionProblem(guidebook.pluginMeta.version, InstallInspector.LOWEST_GUIDEBOOK_VERSION)?.let {
-            logger.warning("The Typewriter display isn't available, so Welcomes are shown in chat. $it")
+            logger.warning("The Typewriter display isn't available, so Welcomes use the Chat display. $it")
             return
         }
         if (inspector.problem() != null) return
         Bukkit.getPluginManager().registerEvents(QuitListener, guidebook)
         SwitchboardRegistrar.register(inspector)
         registered = true
-        // Guidebook's startup check runs before Typewriter loads extensions, so this is the line that says it worked
+        // The one line in the log that says the Typewriter display is working
         logger.info("The Typewriter display is registered with Guidebook, so Welcomes are shown in its box.")
     }
 

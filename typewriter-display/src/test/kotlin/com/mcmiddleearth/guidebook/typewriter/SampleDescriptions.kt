@@ -1,8 +1,6 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// Descriptions the box was validated with in the prototype: real MCME ones, and its sample Areas
-
-// Real MCME Descriptions, 193 to 272 characters: each fits on one Page
+// Real MCME Descriptions the box was validated with in the prototype, 193 to 272 characters: each fits on one Page
 const val MINAS_TIRITH = "<guide>Minas Tirith, or The White City, was one of two cities responsible for protecting " +
     "the Gondorian capital Osgiliath. When Osgiliath fell, Minas Tirith replaced it as the Capital of Gondor."
 
@@ -14,7 +12,7 @@ const val CAIR_ANDROS = "<guide>Cair Andros, the \"Ship of Long Foam\", was firs
     "ancient people who lived in the region. Since then the Kings and Stewards of Gondor have fortified the isle " +
     "many times against the forces of Mordor and the East."
 
-// A one-liner
+// The prototype's sample Areas. A one-liner
 const val BREE_GATE = "<guide>The West-gate of <gold>Bree</gold>. Mind the gatekeeper, he asks a lot of questions."
 
 // A long one, over several Pages, with heavy tooltip use

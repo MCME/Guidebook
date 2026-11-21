@@ -1,7 +1,5 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// Touches no Guidebook class, so it can tell an admin their Guidebook is too old for the classes the Display needs.
-
 import java.util.Properties
 
 /** One Guidebook Welcome entry found in a Typewriter page: its id, and the name of the Typewriter page holding it. */
@@ -11,6 +9,9 @@ data class FoundWelcomeEntry(val id: String, val typewriterPage: String)
  * Whether the Typewriter display is installed well enough to show Welcomes, asked when Typewriter loads the extension
  * and on every Welcome. [welcomeEntries] finds every Guidebook Welcome entry in the Typewriter pages, passed in so
  * tests can fake them. Each new problem goes to [log] once, so asking on every Welcome doesn't fill the log.
+ *
+ * It must use no Guidebook class: it checks Guidebook's version before anything else does, and a Guidebook older
+ * than [LOWEST_GUIDEBOOK_VERSION] may not have those classes, which would crash loading instead of logging one line.
  */
 class InstallInspector(
     private val log: (String) -> Unit = {},
