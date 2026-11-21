@@ -1,10 +1,8 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// SEAM: Welcome queue. What happens to each Welcome a player is given while a box may already be open, and to each
+// The Welcome queue: what happens to each Welcome a player is given while a box may already be open, and to each
 // way a box can end. Pure: no Typewriter or Bukkit, so the glue acts on what it answers. The rules are the spec's
 // "Welcome queue" state table.
-//
-// STAND-IN: every Welcome starts at once, and nothing is ever queued.
 
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import java.util.UUID
@@ -25,20 +23,65 @@ sealed interface QueueDecision {
     data object ShowInChat : QueueDecision
 }
 
-/** One player's open box and the Welcomes waiting behind it. */
+/**
+ * One player's open box and the Welcomes waiting behind it. Idle while no box is open. A box is told apart by the very
+ * [Welcome] it shows, not an equal one, since the same Area can be Welcomed again while its last box is still ending.
+ * Synchronized, as Typewriter ends boxes off the main thread.
+ */
 class WelcomeQueue {
+    /** The open box, or null when Idle. */
+    private var open: Welcome? = null
+    private var startedOn = 0
+    private val waiting = ArrayDeque<Welcome>()
 
     /**
      * Decides what to do with [welcome], given on server tick [tick]. [inOtherDialogue] is whether the player is in a
      * Typewriter dialogue, which is someone else's unless this queue has a box open.
      */
-    fun arrive(welcome: Welcome, tick: Int, inOtherDialogue: Boolean): QueueDecision = QueueDecision.Start
+    @Synchronized
+    fun arrive(welcome: Welcome, tick: Int, inOtherDialogue: Boolean): QueueDecision {
+        if (open == null) {
+            if (inOtherDialogue) return QueueDecision.ShowInChat
+            open(welcome, tick)
+            return QueueDecision.Start
+        }
+        if (tick == startedOn) {
+            waiting.addLast(welcome)
+            return QueueDecision.Queue
+        }
+        waiting.clear()
+        open(welcome, tick)
+        return QueueDecision.Replace
+    }
 
-    /** The player closed the box on [tick]: the queued Welcome to open next, if any. */
-    fun closedByPlayer(tick: Int): Welcome? = null
+    /** The player closed the box showing [welcome] on [tick]: the queued Welcome to open next, if any. */
+    @Synchronized
+    fun closedByPlayer(welcome: Welcome, tick: Int): Welcome? {
+        if (open !== welcome) return null
+        val next = waiting.removeFirstOrNull()
+        if (next == null) {
+            open = null
+        } else {
+            open(next, tick)
+        }
+        return next
+    }
 
-    /** The box ended some way other than the player closing it, such as another dialogue taking over. */
-    fun endedOtherwise() {}
+    /**
+     * The box showing [welcome] ended some way other than the player closing it, such as another dialogue taking over.
+     * A box this queue replaced ends this way too, and changes nothing.
+     */
+    @Synchronized
+    fun endedOtherwise(welcome: Welcome) {
+        if (open !== welcome) return
+        open = null
+        waiting.clear()
+    }
+
+    private fun open(welcome: Welcome, tick: Int) {
+        open = welcome
+        startedOn = tick
+    }
 }
 
 /** Every online player's Welcome queue. */
@@ -46,6 +89,9 @@ object WelcomeQueues {
     private val queues = ConcurrentHashMap<UUID, WelcomeQueue>()
 
     fun of(player: UUID): WelcomeQueue = queues.computeIfAbsent(player) { WelcomeQueue() }
+
+    /** The player's Welcome queue, without making one for a player who has quit. */
+    fun find(player: UUID): WelcomeQueue? = queues[player]
 
     fun forget(player: UUID) {
         queues.remove(player)

@@ -101,6 +101,7 @@ class GuidebookWelcomeMessenger(
     private var pageOpenedAt: Duration? = null
     private var lastSent: Duration? = null
     private var closedByPlayer = false
+    private var ended = false
 
     override fun init() {
         super.init()
@@ -131,15 +132,23 @@ class GuidebookWelcomeMessenger(
         player.sendMessage(player.chatHistory.composeDarkMessage(box))
     }
 
+    override fun end() {
+        ended = true
+        super.end()
+    }
+
     override fun dispose() {
         super.dispose()
         confirmation?.dispose()
         confirmation = null
-        val queue = WelcomeQueues.of(player.uniqueId)
+        // Typewriter restores the chat only when the dialogue ends. When another dialogue replaces this box (a new
+        // Welcome), only dispose runs, and the old box would stay up through the new Title
+        if (!ended) player.chatHistory.resendMessages(player)
+        val queue = WelcomeQueues.find(player.uniqueId) ?: return
         if (closedByPlayer) {
-            queue.closedByPlayer(Bukkit.getCurrentTick())?.let { TypewriterGlue.start(player, it) }
+            queue.closedByPlayer(welcome, Bukkit.getCurrentTick())?.let { TypewriterGlue.start(player, it) }
         } else {
-            queue.endedOtherwise()
+            queue.endedOtherwise(welcome)
         }
     }
 

@@ -7,6 +7,10 @@ import com.typewritermc.core.extension.Initializable
 import com.typewritermc.core.extension.annotations.Singleton
 import com.typewritermc.engine.paper.logger
 import org.bukkit.Bukkit
+import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerQuitEvent
 
 /**
  * Registers the Typewriter display with Guidebook once Typewriter has loaded its pages, and again after every
@@ -30,6 +34,7 @@ class DisplayRegistration : Initializable {
             return
         }
         if (installChecks.problem() != null) return
+        Bukkit.getPluginManager().registerEvents(QuitListener, guidebook)
         GuidebookSide.register(installChecks)
         registered = true
     }
@@ -37,7 +42,16 @@ class DisplayRegistration : Initializable {
     override suspend fun shutdown() {
         if (registered) GuidebookSide.unregister()
         registered = false
+        HandlerList.unregisterAll(QuitListener)
         WelcomeQueues.clear()
+    }
+
+    /** Forgets a player's Welcome queue when they quit. */
+    private object QuitListener : Listener {
+        @EventHandler
+        fun onQuit(event: PlayerQuitEvent) {
+            WelcomeQueues.forget(event.player.uniqueId)
+        }
     }
 }
 
