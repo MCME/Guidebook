@@ -1,6 +1,11 @@
 package com.mcmiddleearth.guidebook.typewriter
 
 import com.mcmiddleearth.guidebook.util.AreaText
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -127,5 +132,132 @@ class PageLayoutTest {
         }
     }
 
+    @Test
+    fun `the box is always 10 lines, with short text at the top under one blank line`() {
+        val box = boxLines(layOutPages(AreaText.render(numberedLines(2))).single())
+
+        assertEquals(10, box.size)
+        assertEquals(listOf("", "line 1", "line 2", "", "", "", "", ""), box.subList(1, 9))
+    }
+
+    @Test
+    fun `a full Page has no blank line under the header`() {
+        val box = boxLines(layOutPages(AreaText.render(numberedLines(8))).single())
+
+        assertEquals(10, box.size)
+        assertEquals((1..8).map { "line $it" }, box.subList(1, 9))
+    }
+
+    @Test
+    fun `the header names the Area and the footer says how to close a one-Page Welcome`() {
+        val box = boxLines(layOutPages(AreaText.render(BREE_GATE)).single())
+
+        assertEquals("Bree West-gate", box.first().trim())
+        assertEquals("Press F to close", box.last().trim())
+    }
+
+    @Test
+    fun `the footer counts the Pages, and a Page that carries on ends with an ellipsis`() {
+        val pages = layOutPages(AreaText.render(HELMS_DEEP))
+
+        val boxes = pages.map(::boxLines)
+
+        assertEquals(
+            listOf("Press F to continue (1/3)", "Press F to continue (2/3)", "Press F to close (3/3)"),
+            boxes.map { it.last().trim() },
+        )
+        assertEquals(listOf(true, true, false), boxes.map { it[8].endsWith("...") })
+    }
+
+    @Test
+    fun `the header is the Area name in bold, in the header colour`() {
+        val settings = LayoutSettings(headerColor = TextColor.color(0x123456))
+        val header = drawBox("Bree", layOutPages(AreaText.render(BREE_GATE)).single(), KEY, settings, TYPED)
+
+        val name = styledCharacters(header).filter { it.first in "Bree" }.take(4)
+        assertEquals(List(4) { TextColor.color(0x123456) }, name.map { it.second.color() })
+        assertEquals(List(4) { true }, name.map { it.second.hasDecoration(TextDecoration.BOLD) })
+    }
+
+    @Test
+    fun `the key is highlighted in the footer`() {
+        val box = drawBox("Bree", layOutPages(AreaText.render(BREE_GATE)).single(), KEY, LayoutSettings(), TYPED)
+
+        val key = styledCharacters(box).last { it.first == 'F' }
+        assertEquals(NamedTextColor.YELLOW, key.second.color())
+        assertEquals(true, key.second.hasDecoration(TextDecoration.BOLD))
+    }
+
+    @Test
+    fun `the header and footer borders are the same width`() {
+        val pages = layOutPages(AreaText.render(HELMS_DEEP))
+
+        for ((header, page, key) in listOf(
+            Triple("Bree", pages[0], KEY),
+            Triple("Helm's Deep", pages[2], KEY),
+            Triple("Minas Tirith", pages[1], Component.keybind("key.swapOffhand")),
+            // As long as a Title may be
+            Triple("W".repeat(32), pages[0], KEY),
+            // Longer, from an Area saved before the limit
+            Triple("The Ford of Bruinen, below the Last Homely House", pages[0], KEY),
+        )) {
+            val (top, bottom) = drawBox(header, page, key, LayoutSettings(), TYPED).let { box ->
+                val characters = styledCharacters(box)
+                characters.takeWhile { it.first != '\n' } to characters.takeLastWhile { it.first != '\n' }
+            }
+
+            assertEquals(pixelWidth(top), pixelWidth(bottom), header)
+        }
+    }
+
+    @Test
+    fun `typing takes the typing speed for each character but spaces`() {
+        val page = layOutPages(AreaText.render("ab cd\nef")).single()
+
+        assertEquals(Duration.ofMillis(60), page.typingDuration(LayoutSettings(typingSpeed = Duration.ofMillis(10))))
+    }
+
+    @Test
+    fun `typing a long Page takes no longer than the cap`() {
+        val page = layOutPages(AreaText.render(HELMS_DEEP)).first()
+
+        assertEquals(Duration.ofSeconds(4), page.typingDuration(LayoutSettings()))
+    }
+
+    @Test
+    fun `part-way through typing, the box shows the characters typed so far`() {
+        val settings = LayoutSettings(typingSpeed = Duration.ofMillis(10))
+        val page = layOutPages(AreaText.render("ab cd\nef gh")).single()
+
+        val typed = { elapsed: Long ->
+            plain(drawBox("Bree", page, KEY, settings, Duration.ofMillis(elapsed))).split("\n").subList(2, 4)
+        }
+
+        assertEquals(listOf("", ""), typed(0))
+        assertEquals(listOf("ab c", ""), typed(35))
+        assertEquals(listOf("ab cd", "e"), typed(50))
+        assertEquals(listOf("ab cd", "ef gh"), typed(80))
+    }
+
+    @Test
+    fun `the ellipsis appears once the Page is typed`() {
+        val page = layOutPages(AreaText.render(HELMS_DEEP)).first()
+
+        val lastLine = { elapsed: Duration -> plain(drawBox("Helm's Deep", page, KEY, LayoutSettings(), elapsed)).split("\n")[8] }
+
+        assertEquals(false, lastLine(Duration.ofMillis(3990)).endsWith("..."))
+        assertEquals(true, lastLine(Duration.ofSeconds(4)).endsWith("..."))
+    }
+
+    private fun boxLines(page: Page): List<String> =
+        plain(drawBox("Bree West-gate", page, KEY, LayoutSettings(), TYPED)).split("\n")
+
     private fun numberedLines(count: Int) = (1..count).joinToString("\n") { "line $it" }
+
+    private companion object {
+        val KEY: Component = Component.text("F")
+
+        // Long enough for any Page to be typed in full
+        val TYPED: Duration = Duration.ofMinutes(1)
+    }
 }
