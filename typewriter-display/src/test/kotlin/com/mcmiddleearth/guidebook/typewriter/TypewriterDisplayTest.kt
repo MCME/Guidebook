@@ -18,7 +18,10 @@ class TypewriterDisplayTest {
 
     private val typewriter = FakeTypewriter()
     private var welcomeEntries = 1
-    private val display = TypewriterDisplay(typewriter, InstallChecks { welcomeEntries }, WelcomeQueues) { 1 }
+    private val installChecks = InstallChecks {
+        List(welcomeEntries) { FoundWelcomeEntry("guidebookWelcome", "guidebook") }
+    }
+    private val display = TypewriterDisplay(typewriter, installChecks, WelcomeQueues) { 1 }
 
     @Test
     fun `a Welcome opens the Guidebook Welcome entry for the player`() {
@@ -38,6 +41,14 @@ class TypewriterDisplayTest {
     @Test
     fun `without the Guidebook Welcome entry the Welcome goes to chat`() {
         welcomeEntries = 0
+
+        assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
+        assertEquals(emptyList<Welcome>(), typewriter.started)
+    }
+
+    @Test
+    fun `with more than one Guidebook Welcome entry the Welcome goes to chat`() {
+        welcomeEntries = 2
 
         assertThrows(IllegalStateException::class.java) { display.show(player, bree) }
         assertEquals(emptyList<Welcome>(), typewriter.started)

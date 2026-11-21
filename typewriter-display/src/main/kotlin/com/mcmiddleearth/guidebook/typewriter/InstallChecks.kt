@@ -3,24 +3,39 @@ package com.mcmiddleearth.guidebook.typewriter
 // SEAM: Install checks. The one place that answers "may the Display run?", asked when Typewriter initializes the
 // extension and on every Welcome. The rules are the spec's "Registration" module.
 //
-// STAND-IN: only checks that a Guidebook Welcome entry exists.
+// Touches no Guidebook class, so it can tell an admin their Guidebook is too old for the classes the Display needs.
 
 import java.util.Properties
 
-/**
- * Whether the Typewriter display is installed well enough to show Welcomes. [countWelcomeEntries] counts the
- * Guidebook Welcome entries in Typewriter's pages, passed in so tests don't need Typewriter.
- */
-class InstallChecks(private val countWelcomeEntries: () -> Int) {
+/** One Guidebook Welcome entry found in Typewriter's pages: its id, and the name of the Typewriter page holding it. */
+data class FoundWelcomeEntry(val id: String, val typewriterPage: String)
 
-    /** Why the Display can't run, for the log, or null if it may. */
-    fun problem(): String? =
-        if (countWelcomeEntries() == 0) {
-            "No Typewriter page holds the Guidebook Welcome entry. Copy $TYPEWRITER_PAGE into Typewriter's pages " +
-                "folder and restart."
-        } else {
-            null
-        }
+/**
+ * Whether the Typewriter display is installed well enough to show Welcomes. [welcomeEntries] finds every Guidebook
+ * Welcome entry in Typewriter's pages, passed in so tests can fake them. Each new problem goes to [log] once, so
+ * asking on every Welcome doesn't fill the log.
+ */
+class InstallChecks(
+    private val log: (String) -> Unit = {},
+    private val welcomeEntries: () -> List<FoundWelcomeEntry>,
+) {
+    private var lastProblem: String? = null
+
+    /** Why the Display can't run, or null if it may. Logs the problem if it isn't the one found last time. */
+    fun problem(): String? {
+        val problem = entryProblem(welcomeEntries())
+        if (problem != null && problem != lastProblem) log(problem)
+        lastProblem = problem
+        return problem
+    }
+
+    private fun entryProblem(entries: List<FoundWelcomeEntry>): String? = when (entries.size) {
+        1 -> null
+        0 -> "No Typewriter page holds the Guidebook Welcome entry. Copy $TYPEWRITER_PAGE into Typewriter's " +
+            "pages folder and restart."
+        else -> "There's more than one Guidebook Welcome entry: " +
+            entries.joinToString { "${it.id} on Typewriter page ${it.typewriterPage}" } + ". Keep only one."
+    }
 
     companion object {
         /** The Typewriter page shipped with the extension, holding the Guidebook Welcome entry. */
