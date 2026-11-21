@@ -3,8 +3,9 @@ name: build
 on:
   push:
     branches: [master, development]
-    # Releases are tagged v<version>, like v1.1.4
-    tags: ['v*']
+    # Guidebook releases are tagged v<version>, like v1.1.4. The Typewriter display has its own version and
+    # releases, tagged typewriter-v<version> (ADR 0008)
+    tags: ['v*', 'typewriter-v*']
   pull_request:
   # Publishing is a deliberate act, so it is reachable from the Actions tab ("Run workflow")
   # rather than riding along with every push
@@ -64,6 +65,28 @@ jobs:
           path: ${{ steps.version.outputs.jar }}
           if-no-files-found: error
 
+      # Read from the extension.json Typewriter's module plugin wrote into the jar: Typewriter reads the same file
+      - name: Read versions from the Typewriter display's extension.json
+        id: typewriter
+        run: |
+          version=$(unzip -p typewriter-display/build/libs/typewriter-display-*.jar extension.json | jq -r .extension.version)
+          jar="typewriter-display/build/libs/typewriter-display-$version.jar"
+          if [ ! -f "$jar" ]; then
+            echo "::error::$jar was not built (extension.json says version '$version')"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "engine=$(unzip -p "$jar" extension.json | jq -r .extension.engineVersion)" >> "$GITHUB_OUTPUT"
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
+          echo "jarname=$(basename "$jar" .jar)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the Typewriter display's jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.typewriter.outputs.jarname }}
+          path: ${{ steps.typewriter.outputs.jar }}
+          if-no-files-found: error
+
       # Every check sits ahead of the publish: the releases repository refuses to redeploy a version
       # (409), so a check failing after publishing would leave the artifact on repo.mcmiddleearth.com
       # with no GitHub release, and a re-run would stop at the publish
@@ -119,3 +142,52 @@ jobs:
           gh release create "$GITHUB_REF_NAME" "$jar" "$jar.sha256" \
             --title "version ${{ steps.version.outputs.version }} for mc ${{ steps.version.outputs.minecraft }}" \
             --notes-file release-notes.md
+
+      # The Typewriter display's release. Nothing is published to Maven: no plugin compiles against it
+      - name: Check that the tag matches the Typewriter display's version
+        if: startsWith(github.ref, 'refs/tags/typewriter-v')
+        run: |
+          if [ "typewriter-v${{ steps.typewriter.outputs.version }}" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match the Typewriter display's version ${{ steps.typewriter.outputs.version }}"
+            exit 1
+          fi
+
+      # The template is at the top of typewriter-display/CHANGELOG.md. A server admin installs from these notes, so
+      # each of its lines must be filled in, and the Typewriter build must be the one the jar names
+      - name: Extract the Typewriter display's release notes
+        if: startsWith(github.ref, 'refs/tags/typewriter-v')
+        run: |
+          ver="${GITHUB_REF_NAME#typewriter-v}"
+          notes=typewriter-release-notes.md
+          awk -v ver="$ver" '/^## \[/{p = ($2 == "[" ver "]")} p' typewriter-display/CHANGELOG.md > "$notes"
+          if ! head -n 1 "$notes" | grep -qE '^## \[[^]]+\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::typewriter-display/CHANGELOG.md needs a dated section for $ver, headed '## [$ver] - YYYY-MM-DD'"
+            exit 1
+          fi
+          engine="${{ steps.typewriter.outputs.engine }}"
+          if ! grep -qF -- "- **Typewriter build:** \`$engine\`" "$notes"; then
+            echo "::error::the notes for $ver must name the Typewriter build the jar needs: - **Typewriter build:** \`$engine\`"
+            exit 1
+          fi
+          if ! grep -qE -- '^- \*\*Lowest Guidebook version:\*\* `[0-9]+\.[0-9]+\.[0-9]+`' "$notes"; then
+            echo "::error::the notes for $ver must name the lowest Guidebook version: - **Lowest Guidebook version:** \`x.y.z\`"
+            exit 1
+          fi
+          if ! grep -qE -- '^- \*\*Typewriter page:\*\* (replace|keep|new)' "$notes"; then
+            echo "::error::the notes for $ver must say whether to replace the Typewriter page: - **Typewriter page:** replace, keep or new"
+            exit 1
+          fi
+
+      # Not marked latest, so the repository's latest release stays Guidebook's own
+      - name: GitHub release of the Typewriter display
+        if: startsWith(github.ref, 'refs/tags/typewriter-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jar="${{ steps.typewriter.outputs.jar }}"
+          page=typewriter-display/guidebook.json
+          (cd "$(dirname "$jar")" && sha256sum "$(basename "$jar")" > "$(basename "$jar").sha256")
+          gh release create "$GITHUB_REF_NAME" "$jar" "$jar.sha256" "$page" \
+            --latest=false \
+            --title "Typewriter display ${{ steps.typewriter.outputs.version }} for Typewriter ${{ steps.typewriter.outputs.engine }}" \
+            --notes-file typewriter-release-notes.md
