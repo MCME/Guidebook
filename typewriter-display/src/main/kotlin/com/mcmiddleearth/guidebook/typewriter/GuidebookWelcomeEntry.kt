@@ -97,7 +97,7 @@ class GuidebookWelcomeMessenger(
     private val titleStep = TitleStep(welcome, entry.titleSettings())
 
     private var confirmation: Confirmation? = null
-    private var closedByPlayer = false
+    @Volatile private var closedByPlayer = false
     private var ended = false
 
     // Typewriter asks this before ending the dialogue on any advance, and sets it instead while it's false, so every
@@ -108,11 +108,18 @@ class GuidebookWelcomeMessenger(
             if (value && !pages.mayClose) pages.advance()
         }
 
+    // Typewriter applies these only when the dialogue advances past this entry: the key on the last Page, or any other
+    // advance once it's typed. Every other ending (another dialogue taking over, an interruption, quitting) skips them
+    override val modifiers: List<Modifier>
+        get() {
+            closedByPlayer = true
+            return super.modifiers
+        }
+
     override fun init() {
         super.init()
         confirmation = player.awaitConfirmation {
             if (pages.mayClose) {
-                closedByPlayer = true
                 state = MessengerState.FINISHED
             } else {
                 pages.advance()
