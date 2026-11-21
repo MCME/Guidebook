@@ -49,7 +49,8 @@ as `plugins/Guidebook/<world>/<area>.yml`. If you edit one by hand, run `/guideb
 
 ```sh
 ./gradlew build       # compile, test, and write the jar to build/libs/
-./gradlew runServer   # start a Paper test server in run/ with WorldEdit and PluginUtils
+./gradlew runServer   # start a Paper test server in run/ with WorldEdit, PluginUtils and the Typewriter display
+./gradlew runServer -PwithoutTypewriter   # the same, without Typewriter or the Typewriter display
 ```
 
 The Paper and Java versions are set in [`gradle/libs.versions.toml`](gradle/libs.versions.toml)
