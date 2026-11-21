@@ -19,7 +19,9 @@ from. It opens with these three lines, which CI checks before releasing:
 
 - **Typewriter build:** the exact build the jar loads on (`engineVersion` in
   [`build.gradle.kts`](build.gradle.kts)). CI refuses a release whose notes name another.
-- **Lowest Guidebook version:** the oldest Guidebook it works with, the minimum built into the jar.
+- **Lowest Guidebook version:** the oldest Guidebook it works with (`lowestGuidebookVersion` in
+  [`build.gradle.kts`](build.gradle.kts), built into the jar). CI refuses a release whose notes
+  name another.
 - **Typewriter page:** `replace` only when the release adds or renames a setting on the Guidebook
   Welcome entry, because replacing it loses staff's panel edits. Otherwise `keep`, or `new` on the
   first release.

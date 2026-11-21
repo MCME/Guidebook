@@ -100,6 +100,6 @@ It's a Kotlin Gradle subproject of Guidebook. From the repository root:
    [`CHANGELOG.md`](CHANGELOG.md) (`## [0.1.0] - 2026-11-21`), filling in the template there
 2. Merge into `master`, tag the merge commit `typewriter-v<version>` and push the tag
 
-CI checks that the tag matches the jar's version and that the notes name the Typewriter build the
-jar is for, the lowest Guidebook version and whether to replace the Typewriter page. It then creates
+CI checks that the tag matches the jar's version and that the notes name the Typewriter build and
+the lowest Guidebook version built into the jar, and whether to replace the Typewriter page. It then creates
 the GitHub release with the jar, its SHA-256 and `guidebook.json`. Nothing is published to Maven.
