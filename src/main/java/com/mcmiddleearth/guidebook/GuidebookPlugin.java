@@ -23,6 +23,7 @@ import com.mcmiddleearth.guidebook.webmap.NoWebMap;
 import com.mcmiddleearth.guidebook.webmap.WebMap;
 import com.mcmiddleearth.guidebook.webmap.dynmap.DynmapWebMap;
 import com.mcmiddleearth.guidebook.welcome.ChatDisplay;
+import com.mcmiddleearth.guidebook.welcome.ChosenDisplayNotice;
 import com.mcmiddleearth.guidebook.welcome.DisplaySwitchboard;
 import com.mcmiddleearth.guidebook.welcome.Watchman;
 import com.mcmiddleearth.guidebook.welcome.WatchmanListener;
@@ -129,7 +130,8 @@ public class GuidebookPlugin extends JavaPlugin {
                 (ticks, task) -> getServer().getScheduler().runTaskLater(this, task, ticks),
                 optedOut);
 
-        getServer().getPluginManager().registerEvents(new WatchmanListener(watchman, displaySwitchboard), this);
+        getServer().getPluginManager().registerEvents(new WatchmanListener(watchman), this);
+        getServer().getPluginManager().registerEvents(new ChosenDisplayNotice(displaySwitchboard, this), this);
         getServer()
                 .getScheduler()
                 .scheduleSyncRepeatingTask(

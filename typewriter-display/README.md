@@ -54,9 +54,9 @@ setting below to its default, losing staff's panel edits.
 ### Reloading
 
 Reloading Typewriter keeps the Typewriter display working. **Reloading Guidebook alone** (with a
-plugin manager) leaves it unregistered, so Welcomes are shown in chat, with a warning in the log,
-until Typewriter reloads or the server restarts. MCME restarts rather than reloading single
-plugins, so this isn't handled. `/guidebook reload` doesn't count: it only rereads Areas.
+plugin manager) leaves it unregistered, so Welcomes use the Chat display, with a warning in the log
+and for staff who join, until Typewriter reloads or the server restarts. MCME restarts rather than
+reloading single plugins, so this isn't handled. `/guidebook reload` doesn't count: it only rereads Areas.
 
 ## Settings
 

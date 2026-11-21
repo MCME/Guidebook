@@ -21,6 +21,8 @@ public final class DisplaySwitchboard implements Display {
     private final Display chat;
     private final Logger logger;
     private final Map<String, Display> registered = new HashMap<>();
+    // Set once the missing chosen Display is logged, so the log says so once each time it goes missing
+    private boolean missingLogged;
 
     /** @param chosen the name of the Display the server uses, from its config */
     public DisplaySwitchboard(String chosen, Display chat, Logger logger) {
@@ -36,6 +38,7 @@ public final class DisplaySwitchboard implements Display {
             throw new IllegalArgumentException("The Chat display is Guidebook's own, so its name can't be registered");
         }
         registered.put(normalise(name), display);
+        missingLogged = false;
     }
 
     /** Removes the Display registered as {@code name}, such as when its plugin disables. */
@@ -45,18 +48,37 @@ public final class DisplaySwitchboard implements Display {
         }
     }
 
-    /** Warns if the chosen Display isn't registered, which is worth saying once every plugin has enabled. */
-    public void warnIfChosenIsMissing() {
-        if (!registered.containsKey(chosen)) {
-            logger.warning("The display \"" + chosen + "\" chosen in config.yml isn't registered, so Welcomes are"
-                    + " shown in chat. Is the plugin that provides it installed and enabled?");
+    /**
+     * Whether the Display chosen in config.yml isn't registered right now, so every Welcome goes to the Chat display.
+     * Never true when the Chat display is the one chosen.
+     */
+    public boolean isChosenMissing() {
+        return !registered.containsKey(chosen);
+    }
+
+    /**
+     * Logs that the chosen Display isn't registered, once until it registers again. Checked when it matters, on a
+     * Welcome or a staff join, rather than at startup, because a Display's plugin may register after Guidebook enables.
+     */
+    public void logIfChosenIsMissing() {
+        if (isChosenMissing() && !missingLogged) {
+            logger.warning("The display \"" + chosen + "\" chosen in config.yml isn't registered, so Welcomes use the"
+                    + " Chat display. Is the plugin that provides it installed and enabled?");
+            missingLogged = true;
         }
+    }
+
+    /** The name of the Display chosen in config.yml. */
+    public String chosen() {
+        return chosen;
     }
 
     @Override
     public void show(Player player, Welcome welcome) {
-        Display display = registered.getOrDefault(chosen, chat);
-        if (display != chat) {
+        Display display = registered.get(chosen);
+        if (display == null) {
+            logIfChosenIsMissing();
+        } else if (display != chat) {
             try {
                 display.show(player, welcome);
                 return;

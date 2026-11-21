@@ -12,6 +12,8 @@ see the GitHub history.
   the Description in chat, as before. Another plugin can add a Display through
   `GuidebookPlugin#getDisplaySwitchboard()`. If the chosen one isn't registered or fails, Welcomes
   are shown in chat and the server log says why.
+- Staff (`guidebook.staff`) who join while the Display chosen in `config.yml` isn't running are
+  told so, and that Welcomes are using the Chat display.
 
 ### Changed
 

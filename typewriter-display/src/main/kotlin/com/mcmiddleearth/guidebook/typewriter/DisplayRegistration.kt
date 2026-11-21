@@ -39,6 +39,8 @@ class DisplayRegistration : Initializable {
         Bukkit.getPluginManager().registerEvents(QuitListener, guidebook)
         SwitchboardRegistrar.register(inspector)
         registered = true
+        // Guidebook's startup check runs before Typewriter loads extensions, so this is the line that says it worked
+        logger.info("The Typewriter display is registered with Guidebook, so Welcomes are shown in its box.")
     }
 
     override suspend fun shutdown() {
