@@ -51,17 +51,17 @@ class GuidebookWelcomeEntry(
     override val triggers: List<Ref<TriggerableEntry>> = emptyList(),
     override val speaker: Ref<SpeakerEntry> = emptyRef(),
     @Help("How long each character of the Description takes to type; spaces take no time")
-    val typingSpeed: Var<Duration> = ConstVar(Duration.ofMillis(20)),
+    val typingSpeed: Var<Duration> = ConstVar(LayoutSettings().typingSpeed),
     @Help("The most time typing one Page may take, so long Pages don't drag")
-    val pageTypingCap: Var<Duration> = ConstVar(Duration.ofSeconds(4)),
-    @Help("Colour of the Area name in the box's top border, the same for every Area, as hex (#e3c77d)")
-    val headerColor: String = "#e3c77d",
+    val pageTypingCap: Var<Duration> = ConstVar(LayoutSettings().pageTypingCap),
+    @Help("Colour of the Title in the box's top border, the same for every Area, as hex")
+    val headerColor: String = LayoutSettings().headerColor.asHexString(),
     @Help("Ticks between each character as the Title types in")
-    val titleTicksPerCharacter: Int = 2,
+    val titleTicksPerCharacter: Int = TitleSettings().ticksPerCharacter,
     @Help("Ticks the finished Title is held before the Subtitle appears")
-    val titleSubtitlePauseTicks: Int = 6,
+    val titleSubtitlePauseTicks: Int = TitleSettings().subtitlePauseTicks,
     @Help("Ticks after the Subtitle appears before the Description starts")
-    val descriptionDelayTicks: Int = 24,
+    val descriptionDelayTicks: Int = TitleSettings().descriptionDelayTicks,
 ) : DialogueEntry {
 
     override fun messenger(player: Player, context: InteractionContext): DialogueMessenger<*>? {
@@ -93,75 +93,48 @@ class GuidebookWelcomeMessenger(
 
     private val settings = entry.layoutSettings(player)
     private val header = AreaText.plainText(welcome.title())
-    private val pages = layOutPages(AreaText.render(welcome.description()))
+    private val pages = PageTurner(layOutPages(AreaText.render(welcome.description())), settings)
     private val titleStep = TitleStep(welcome, entry.titleSettings())
 
     private var confirmation: Confirmation? = null
-    private var page = 0
-    private var pageOpenedAt: Duration? = null
-    private var typingSkipped = false
-    private var ticksSinceTyped: Int? = null
-    private var now = Duration.ZERO
-    private var closedByPlayer = false
+    @Volatile private var closedByPlayer = false
     private var ended = false
 
     // Typewriter asks this before ending the dialogue on any advance, and sets it instead while it's false, so every
     // advance acts like the key: the box only closes once the last Page is typed
     override var animationComplete: Boolean
-        get() = page == pages.lastIndex && isPageTyped()
+        get() = pages.mayClose
         set(value) {
-            if (value && !animationComplete) advance()
+            if (value && !pages.mayClose) pages.advance()
+        }
+
+    // Typewriter applies these only when the dialogue advances past this entry: the key on the last Page, or any other
+    // advance once it's typed. Every other ending (another dialogue taking over, an interruption, quitting) skips them
+    override val modifiers: List<Modifier>
+        get() {
+            closedByPlayer = true
+            return super.modifiers
         }
 
     override fun init() {
         super.init()
         confirmation = player.awaitConfirmation {
-            if (animationComplete) {
-                closedByPlayer = true
+            if (pages.mayClose) {
                 state = MessengerState.FINISHED
             } else {
-                advance()
+                pages.advance()
             }
         }
     }
-
-    /** Finishes typing the Page, or turns to the next one once it's typed. */
-    private fun advance() {
-        if (!isPageTyped()) {
-            typingSkipped = true
-        } else if (page < pages.lastIndex) {
-            page++
-            pageOpenedAt = null
-            typingSkipped = false
-            ticksSinceTyped = null
-        }
-    }
-
-    private fun typingElapsed(): Duration {
-        if (typingSkipped) return pages[page].typingDuration(settings)
-        return pageOpenedAt?.let { now - it } ?: Duration.ZERO
-    }
-
-    private fun isPageTyped(): Boolean =
-        typingSkipped || (pageOpenedAt != null && typingElapsed() >= pages[page].typingDuration(settings))
 
     override fun tick(context: TickContext) {
         if (state != MessengerState.RUNNING) return
         titleStep.tick(player, context.playTime)
         if (context.playTime < titleStep.descriptionDelay) return
-        now = context.playTime
-        if (pageOpenedAt == null) pageOpenedAt = now
-
-        // As Typewriter's spoken dialogue does: every tick while typing, then twice per cycle, which also stops chat
-        // fading the box out
-        if (isPageTyped()) {
-            val ticks = ticksSinceTyped?.plus(1) ?: 0
-            ticksSinceTyped = ticks
-            if (ticks % RESEND_CYCLE_TICKS != 0 && ticks % RESEND_CYCLE_TICKS != RESEND_SECOND_TICK) return
-        }
+        if (!pages.tick(context.playTime)) return
 
         val key = "<confirmation_key>".asMiniWithResolvers(player)
-        val box = drawBox(header, pages[page], key, settings, typingElapsed())
+        val box = drawBox(header, pages.shown, key, settings, pages.typingElapsed)
         // Clears the chat, with the last few messages darkened above the box
         player.sendMessage(player.chatHistory.composeDarkMessage(box))
     }
@@ -180,14 +153,9 @@ class GuidebookWelcomeMessenger(
         if (!ended) player.chatHistory.resendMessages(player)
         val queue = WelcomeQueues.find(player.uniqueId) ?: return
         if (closedByPlayer) {
-            queue.closedByPlayer(welcome, Bukkit.getCurrentTick())?.let { TypewriterGlue.start(player, it) }
+            queue.closedByPlayer(welcome, Bukkit.getCurrentTick())?.let { TypewriterBoxOpener.start(player, it) }
         } else {
             queue.endedOtherwise(welcome)
         }
-    }
-
-    private companion object {
-        const val RESEND_CYCLE_TICKS = 40
-        const val RESEND_SECOND_TICK = 10
     }
 }

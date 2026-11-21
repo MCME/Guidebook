@@ -1,8 +1,7 @@
 package com.mcmiddleearth.guidebook.typewriter
 
 // The Welcome queue: what happens to each Welcome a player is given while a box may already be open, and to each
-// way a box can end. Pure: no Typewriter or Bukkit, so the glue acts on what it answers. The rules are the spec's
-// "Welcome queue" state table.
+// way a box can end. It only answers, leaving Typewriter to its callers, so tests can play out every ending.
 
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import java.util.UUID

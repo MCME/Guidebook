@@ -1,25 +1,23 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// SEAM: Title step. What a Welcome shows on screen when it opens, before the box: the Title typed in, then the
-// Subtitle. The rules are the Title timings in the spec's "dialogue entry and its messenger" module.
-
 import com.mcmiddleearth.guidebook.util.AreaText
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.TextComponent
-import net.kyori.adventure.text.format.Style
 import net.kyori.adventure.title.Title
 import java.time.Duration
 
-/** How the Title types in, from the settings on the Guidebook Welcome entry. */
+/** How the Title types in, from the settings on the Guidebook Welcome entry. Its defaults are the entry's. */
 data class TitleSettings(
     val ticksPerCharacter: Int = 2,
     val subtitlePauseTicks: Int = 6,
     val descriptionDelayTicks: Int = 24,
 )
 
-/** The on-screen part of opening one [welcome]: nothing at all when its Show title is off. */
+/**
+ * The on-screen part of opening one [welcome], before the box: the Title typed in, then the Subtitle. Nothing at all
+ * when its Show title is off.
+ */
 class TitleStep(welcome: Welcome, settings: TitleSettings) {
 
     private val frames: List<Frame> = if (welcome.showTitle()) frames(welcome, settings) else emptyList()
@@ -44,7 +42,7 @@ class TitleStep(welcome: Welcome, settings: TitleSettings) {
     private class Frame(val atTick: Long, val title: Title)
 
     private companion object {
-        /** How long the last frame stays and fades. Not settings: only the typing-in is tuned (spec). */
+        /** How long the last frame stays and fades. Fixed, as staff tune only how the Title types in. */
         const val LAST_FRAME_STAY_TICKS = 40L
         const val LAST_FRAME_FADE_TICKS = 10L
 
@@ -58,11 +56,10 @@ class TitleStep(welcome: Welcome, settings: TitleSettings) {
         fun frames(welcome: Welcome, settings: TitleSettings): List<Frame> {
             val perCharacter = settings.ticksPerCharacter.coerceAtLeast(1).toLong()
             val title = AreaText.render(welcome.title())
-            val runs = flatten(title)
-            val text = runs.joinToString("") { it.text }
+            val text = StyledText.of(title)
 
             // A space never gets a frame of its own, as it would look like a pause
-            val typed = (1..text.length).filter { !text[it - 1].isWhitespace() }.map { slice(runs, it) }
+            val typed = (1..text.length).filter { !text[it - 1].isWhitespace() }.map { text.slice(0, it) }
             val subtitleAt = (typed.size - 1).coerceAtLeast(0) * perCharacter + settings.subtitlePauseTicks.coerceAtLeast(0)
 
             val frames = typed.mapIndexed { i, shown ->
@@ -79,29 +76,10 @@ class TitleStep(welcome: Welcome, settings: TitleSettings) {
 
         fun times(stayTicks: Long, fadeOutTicks: Long): Title.Times =
             Title.Times.times(Duration.ZERO, ticks(stayTicks), ticks(fadeOutTicks))
-
-        /** A run of the Title's text in one style, so it can be cut at any character and keep its styling. */
-        class Run(val text: String, val style: Style)
-
-        fun flatten(component: Component, parent: Style = Style.empty(), out: MutableList<Run> = mutableListOf()): List<Run> {
-            val style = component.style().merge(parent, Style.Merge.Strategy.IF_ABSENT_ON_TARGET)
-            if (component is TextComponent && component.content().isNotEmpty()) out += Run(component.content(), style)
-            component.children().forEach { flatten(it, style, out) }
-            return out
-        }
-
-        /** The first [length] characters of [runs], each in its own style. */
-        fun slice(runs: List<Run>, length: Int): Component {
-            val builder = Component.text()
-            var offset = 0
-            for (run in runs) {
-                val end = (length - offset).coerceIn(0, run.text.length)
-                if (end > 0) builder.append(Component.text(run.text.substring(0, end), run.style))
-                offset += run.text.length
-            }
-            return builder.build()
-        }
     }
 }
 
-private fun ticks(ticks: Long): Duration = Duration.ofMillis(ticks * 50)
+/** How long [ticks] server ticks last when the server keeps up. */
+internal fun ticks(ticks: Long): Duration = Duration.ofMillis(ticks * MILLIS_PER_TICK)
+
+private const val MILLIS_PER_TICK = 50L

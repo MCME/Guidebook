@@ -13,15 +13,17 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
 
 /**
- * Registers the Typewriter display with Guidebook once Typewriter has loaded its pages, and again after every
- * Typewriter reload. Each reload loads fresh classes, so shutting down must unregister the Display from the last load.
+ * Registers the Typewriter display with Guidebook once Typewriter has loaded its Typewriter pages, and again after
+ * every Typewriter reload. Each reload loads fresh classes, so shutting down must unregister the Display from the last
+ * load.
  *
- * Guidebook's own classes are only reached through [GuidebookSide], once Guidebook's version is known to have them.
+ * Guidebook's own classes are only reached through [SwitchboardRegistrar], once Guidebook's version is known to have
+ * them.
  */
 @Singleton
 class DisplayRegistration : Initializable {
 
-    private val installChecks = InstallChecks(
+    private val inspector = InstallInspector(
         log = { logger.warning("The Typewriter display can't show Welcomes, so they're shown in chat. $it") },
         welcomeEntries = ::findWelcomeEntries,
     )
@@ -29,18 +31,18 @@ class DisplayRegistration : Initializable {
 
     override suspend fun initialize() {
         val guidebook = Bukkit.getPluginManager().getPlugin(GUIDEBOOK) ?: return
-        InstallChecks.versionProblem(guidebook.pluginMeta.version, InstallChecks.LOWEST_GUIDEBOOK_VERSION)?.let {
+        InstallInspector.versionProblem(guidebook.pluginMeta.version, InstallInspector.LOWEST_GUIDEBOOK_VERSION)?.let {
             logger.warning("The Typewriter display isn't available, so Welcomes are shown in chat. $it")
             return
         }
-        if (installChecks.problem() != null) return
+        if (inspector.problem() != null) return
         Bukkit.getPluginManager().registerEvents(QuitListener, guidebook)
-        GuidebookSide.register(installChecks)
+        SwitchboardRegistrar.register(inspector)
         registered = true
     }
 
     override suspend fun shutdown() {
-        if (registered) GuidebookSide.unregister()
+        if (registered) SwitchboardRegistrar.unregister()
         registered = false
         HandlerList.unregisterAll(QuitListener)
         WelcomeQueues.clear()
@@ -65,13 +67,16 @@ private fun findWelcomeEntries(): List<FoundWelcomeEntry> =
         }
         .toList()
 
-/** Every use of Guidebook's own classes in registering, kept apart so an older Guidebook never loads them. */
-private object GuidebookSide {
+/**
+ * Registers the Typewriter display on Guidebook's Display switchboard. Every use of Guidebook's own classes in
+ * registering is here, kept apart so an older Guidebook never loads them.
+ */
+private object SwitchboardRegistrar {
 
-    fun register(installChecks: InstallChecks) {
+    fun register(inspector: InstallInspector) {
         switchboard().register(
             TypewriterDisplay.NAME,
-            TypewriterDisplay(TypewriterGlue, installChecks, WelcomeQueues) { Bukkit.getCurrentTick() },
+            TypewriterDisplay(TypewriterBoxOpener, inspector, WelcomeQueues) { Bukkit.getCurrentTick() },
         )
     }
 

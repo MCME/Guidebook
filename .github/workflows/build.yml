@@ -65,8 +65,9 @@ jobs:
           path: ${{ steps.version.outputs.jar }}
           if-no-files-found: error
 
-      # Read from the extension.json Typewriter's module plugin wrote into the jar: Typewriter reads the same file
-      - name: Read versions from the Typewriter display's extension.json
+      # Read from the files in the jar rather than the build script: Typewriter reads the extension.json its module
+      # plugin wrote, and the extension reads the lowest Guidebook version from its build.properties
+      - name: Read versions from the Typewriter display's jar
         id: typewriter
         run: |
           version=$(unzip -p typewriter-display/build/libs/typewriter-display-*.jar extension.json | jq -r .extension.version)
@@ -77,6 +78,13 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "engine=$(unzip -p "$jar" extension.json | jq -r .extension.engineVersion)" >> "$GITHUB_OUTPUT"
+          properties=com/mcmiddleearth/guidebook/typewriter/build.properties
+          lowest=$(unzip -p "$jar" "$properties" | tr -d '\r' | sed -n 's/^lowestGuidebookVersion=//p')
+          if [ -z "$lowest" ]; then
+            echo "::error::$jar has no lowestGuidebookVersion in $properties"
+            exit 1
+          fi
+          echo "lowestguidebook=$lowest" >> "$GITHUB_OUTPUT"
           echo "jar=$jar" >> "$GITHUB_OUTPUT"
           echo "jarname=$(basename "$jar" .jar)" >> "$GITHUB_OUTPUT"
 
@@ -153,7 +161,8 @@ jobs:
           fi
 
       # The template is at the top of typewriter-display/CHANGELOG.md. A server admin installs from these notes, so
-      # each of its lines must be filled in, and the Typewriter build must be the one the jar names
+      # each of its lines must be filled in, and the Typewriter build and lowest Guidebook version must be the ones
+      # built into the jar
       - name: Extract the Typewriter display's release notes
         if: startsWith(github.ref, 'refs/tags/typewriter-v')
         run: |
@@ -169,8 +178,9 @@ jobs:
             echo "::error::the notes for $ver must name the Typewriter build the jar needs: - **Typewriter build:** \`$engine\`"
             exit 1
           fi
-          if ! grep -qE -- '^- \*\*Lowest Guidebook version:\*\* `[0-9]+\.[0-9]+\.[0-9]+`' "$notes"; then
-            echo "::error::the notes for $ver must name the lowest Guidebook version: - **Lowest Guidebook version:** \`x.y.z\`"
+          lowest="${{ steps.typewriter.outputs.lowestguidebook }}"
+          if ! grep -qF -- "- **Lowest Guidebook version:** \`$lowest\`" "$notes"; then
+            echo "::error::the notes for $ver must name the lowest Guidebook version built into the jar: - **Lowest Guidebook version:** \`$lowest\`"
             exit 1
           fi
           if ! grep -qE -- '^- \*\*Typewriter page:\*\* (replace|keep|new)' "$notes"; then

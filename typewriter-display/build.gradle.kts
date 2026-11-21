@@ -54,7 +54,7 @@ typewriter {
         description = "Types each Guidebook Welcome into a framed box over the chat, in Pages the player turns " +
             "and closes with a key."
         // Typewriter refuses an extension unless this names its running build exactly
-        engineVersion = "0.9.0-beta-177"
+        engineVersion = libs.versions.typewriter.get()
         channel = com.typewritermc.moduleplugin.ReleaseChannel.BETA
 
         paper {

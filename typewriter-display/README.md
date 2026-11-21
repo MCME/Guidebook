@@ -1,7 +1,7 @@
 # Guidebook's Typewriter display
 
 The Typewriter display types each [Guidebook](../README.md) Welcome into a framed box over the
-chat. The Area's name sits in the top border, the Description is typed out on Pages of 8 lines,
+chat. The Title, as plain text, sits in the top border, the Description is typed out on Pages of 8 lines,
 and the bottom border says which key turns the Page or closes the box. The Title types in on
 screen first. The box stays until the player closes it.
 
@@ -31,10 +31,15 @@ From the [GitHub release](https://github.com/MCME/Guidebook/releases) (the `type
    display: typewriter
    ```
 
-4. Restart the server
+4. Set Typewriter's confirmation key to F, in `plugins/Typewriter/config.yml`:
 
-The footer shows Typewriter's confirmation key. To close the box with F, as this extension is
-designed for, set `confirmationKey: SWAP_HANDS` in `plugins/Typewriter/config.yml`.
+   ```yaml
+   confirmationKey: SWAP_HANDS
+   ```
+
+   Typewriter's default is sneak, which players press all the time while moving, so they'd skip
+   and close boxes without reading them. The footer names whichever key is set.
+5. Restart the server
 
 **Restart after any change**: installing, upgrading, swapping the Typewriter page or changing
 `display`. If the extension can't run (no Typewriter page, a duplicated entry, a Guidebook older
@@ -100,6 +105,6 @@ It's a Kotlin Gradle subproject of Guidebook. From the repository root:
    [`CHANGELOG.md`](CHANGELOG.md) (`## [0.1.0] - 2026-11-21`), filling in the template there
 2. Merge into `master`, tag the merge commit `typewriter-v<version>` and push the tag
 
-CI checks that the tag matches the jar's version and that the notes name the Typewriter build the
-jar is for, the lowest Guidebook version and whether to replace the Typewriter page. It then creates
+CI checks that the tag matches the jar's version and that the notes name the Typewriter build and
+the lowest Guidebook version built into the jar, and whether to replace the Typewriter page. It then creates
 the GitHub release with the jar, its SHA-256 and `guidebook.json`. Nothing is published to Maven.

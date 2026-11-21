@@ -1,7 +1,7 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-// SEAM: Page layout. How a Welcome's Description is cut into Pages and drawn as the box. Pure: no Typewriter or
-// Bukkit, so its rules are tested without a server. The rules are the spec's "Page layout" module.
+// How a Welcome's Description is cut into Pages and drawn as the box. It uses no Typewriter or Bukkit class, so tests
+// can lay out real Descriptions.
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
@@ -13,7 +13,7 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import java.time.Duration
 
-/** How the box looks and types, from the settings on the Guidebook Welcome entry. */
+/** How the box looks and types, from the settings on the Guidebook Welcome entry. Its defaults are the entry's. */
 data class LayoutSettings(
     val typingSpeed: Duration = Duration.ofMillis(20),
     val pageTypingCap: Duration = Duration.ofSeconds(4),
@@ -85,11 +85,11 @@ fun layOutPages(description: Component): List<Page> {
 }
 
 /**
- * The box as the player sees it [elapsed] into typing [page]: the [header] naming the Area in the top border, the
- * Page's text, and in the bottom border what [key] does.
+ * The box as the player sees it [elapsed] into typing [page]: the [header] (the Title, as plain text) in the top
+ * border, the Page's text, and in the bottom border what [key] does.
  */
 fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings, elapsed: Duration): Component {
-    val name = Component.text()
+    val title = Component.text()
         .append(Component.text(" "))
         .append(Component.text(header, settings.headerColor, TextDecoration.BOLD))
         .append(Component.text(" "))
@@ -100,8 +100,8 @@ fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings
         .append(key.colorIfAbsent(NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
         .append(Component.text(" to ${page.footer} "))
         .build()
-    // Both borders come out the same width, however long the name or the prompt
-    val width = maxOf(BORDER_WIDTH_PX, realWidth(name) + 2 * MIN_RULE_PX, realWidth(prompt) + 2 * MIN_RULE_PX)
+    // Both borders come out the same width, however long the Title or the prompt
+    val width = maxOf(BORDER_WIDTH_PX, realWidth(title) + 2 * MIN_RULE_PX, realWidth(prompt) + 2 * MIN_RULE_PX)
 
     val text = page.revealedLines(elapsed, settings).toMutableList()
     if (page.carriesOn && elapsed >= page.typingDuration(settings)) {
@@ -111,7 +111,7 @@ fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings
     // Short text leaves blank lines below it, so the box is always the same height
     while (text.size < LINES_PER_PAGE) text += Component.empty()
 
-    return Component.join(JoinConfiguration.newlines(), listOf(framed(name, width)) + text + framed(prompt, width))
+    return Component.join(JoinConfiguration.newlines(), listOf(framed(title, width)) + text + framed(prompt, width))
 }
 
 // Default unfocused chat shows 10 lines: the box's header, its footer, and this many lines of text between them
@@ -126,7 +126,7 @@ private const val ELLIPSIS_WIDTH_PX = 3 * 6
 // The header and footer span about the chat's width, a few pixels short of it in case a character is measured narrow
 private const val BORDER_WIDTH_PX = LINE_WIDTH_PX - 8
 
-// The shortest rule either side of the header or footer, so a long Area name is still framed
+// The shortest rule either side of the header or footer, so a long Title is still framed
 private const val MIN_RULE_PX = 16
 
 /**
@@ -217,7 +217,7 @@ private fun breakLine(text: StyledText, start: Int, width: Int): LineBreak {
 }
 
 /** Text as a player sees it, one style per character, so it can be cut anywhere without losing hovers or clicks. */
-private class StyledText(private val runs: List<Run>) {
+internal class StyledText(private val runs: List<Run>) {
     class Run(val text: String, val style: Style)
 
     private val plain = runs.joinToString("") { it.text }
