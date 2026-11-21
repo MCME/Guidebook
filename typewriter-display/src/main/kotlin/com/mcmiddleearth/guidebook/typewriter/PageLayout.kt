@@ -17,24 +17,45 @@ data class LayoutSettings(
     val headerColor: TextColor = TextColor.color(0xE3C77D),
 )
 
-/** One screenful of a Welcome: its lines of text, each already broken to fit one chat line. */
-class Page(val lines: List<Component>)
+/**
+ * One screenful of a Welcome: its [lines] of text, each already broken to fit one chat line, and whether the
+ * Description [carriesOn] on the next Page.
+ */
+class Page(val lines: List<Component>, val carriesOn: Boolean)
 
 /** The Pages of a Welcome whose [description] is already rendered. */
 fun layOutPages(description: Component): List<Page> {
     val text = StyledText.of(description)
-    val lines = mutableListOf<Component>()
+    val pages = mutableListOf<Page>()
+    var lines = mutableListOf<Component>()
     var start = 0
-    do {
-        val line = breakLine(text, start, LINE_WIDTH_PX)
+    while (true) {
+        var line = breakLine(text, start, LINE_WIDTH_PX)
+        val more = line.endsOnNewline || line.next < text.length
+        if (lines.size == LINES_PER_PAGE - 1 && more) {
+            // The last line of a Page that carries on leaves room for the ellipsis it ends with
+            line = breakLine(text, start, LINE_WIDTH_PX - ELLIPSIS_WIDTH_PX)
+        }
         lines += text.slice(start, line.end)
         start = line.next
-    } while (line.endsOnNewline || line.next < text.length)
-    return listOf(Page(lines))
+        if (!line.endsOnNewline && line.next >= text.length) break
+        if (lines.size == LINES_PER_PAGE) {
+            pages += Page(lines, carriesOn = true)
+            lines = mutableListOf()
+        }
+    }
+    pages += Page(lines, carriesOn = false)
+    return pages
 }
+
+// Default unfocused chat shows 10 lines: the box's header, its footer, and this many lines of text between them
+private const val LINES_PER_PAGE = 8
 
 // Default chat is 320px wide, and the client never wraps a line again if none is measured wider than that
 private const val LINE_WIDTH_PX = 320
+
+private const val ELLIPSIS = "..."
+private const val ELLIPSIS_WIDTH_PX = 3 * 6
 
 /**
  * The widest a character can be in Minecraft's default font, including the 1px gap after it. Measuring narrow

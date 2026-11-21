@@ -73,5 +73,59 @@ class PageLayoutTest {
         assertEquals(original, laidOut.filterNot { it.first == ' ' })
     }
 
-    private fun plainOf(description: String): String = AreaText.plainText(description)
+    @Test
+    fun `exactly 8 lines fit on one Page`() {
+        val pages = layOutPages(AreaText.render(numberedLines(8)))
+
+        assertEquals(1, pages.size)
+        assertEquals((1..8).map { "line $it" }, pages.single().lines.map(::plain))
+        assertEquals(false, pages.single().carriesOn)
+    }
+
+    @Test
+    fun `a 9th line continues on a second Page`() {
+        val pages = layOutPages(AreaText.render(numberedLines(9)))
+
+        assertEquals(listOf((1..8).map { "line $it" }, listOf("line 9")), pages.map { it.lines.map(::plain) })
+        assertEquals(listOf(true, false), pages.map { it.carriesOn })
+    }
+
+    @Test
+    fun `the 8th line of a Page that carries on is broken about 3 characters shorter`() {
+        // 8 full lines of words, then more: the 8th line leaves room for "..."
+        val pages = layOutPages(AreaText.render(List(9 * 9) { "words" }.joinToString(" ")))
+
+        val firstPage = pages.first().lines.map(::plain)
+        // 9 words and their spaces are 53 characters, 318px. The 8th line has 3 characters less: room for 8
+        assertEquals(List(7) { List(9) { "words" }.joinToString(" ") }, firstPage.take(7))
+        assertEquals(List(8) { "words" }.joinToString(" "), firstPage[7])
+        assertEquals(true, pages.first().carriesOn)
+    }
+
+    @Test
+    fun `the last line of the last Page is full width`() {
+        // 8 lines that only just fit: none of them carries on, so the 8th isn't shortened
+        val pages = layOutPages(AreaText.render(List(8) { "a".repeat(53) }.joinToString("\n")))
+
+        assertEquals(1, pages.size)
+        assertEquals("a".repeat(53), plain(pages.single().lines[7]))
+    }
+
+    @Test
+    fun `a long Description runs over several Pages without losing any text`() {
+        val pages = layOutPages(AreaText.render(HELMS_DEEP))
+
+        assertEquals(3, pages.size)
+        val words = pages.flatMap { page -> page.lines.flatMap { plain(it).split(' ') } }
+        assertEquals(AreaText.plainText(HELMS_DEEP).split(' ', '\n'), words)
+    }
+
+    @Test
+    fun `real MCME Descriptions fit on one Page`() {
+        for (description in listOf(MINAS_TIRITH, MINAS_MORGUL, CAIR_ANDROS, BREE_GATE)) {
+            assertEquals(1, layOutPages(AreaText.render(description)).size, description)
+        }
+    }
+
+    private fun numberedLines(count: Int) = (1..count).joinToString("\n") { "line $it" }
 }
