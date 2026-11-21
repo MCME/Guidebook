@@ -43,4 +43,11 @@ class InstallChecksTest {
 
         assert("2.0.1" in problem && "2.1.0" in problem) { problem }
     }
+
+    @Test
+    fun `the lowest Guidebook version comes from the build`() {
+        val lowest = InstallChecks.LOWEST_GUIDEBOOK_VERSION
+
+        assert(lowest.matches(Regex("""\d+(\.\d+)*"""))) { lowest }
+    }
 }

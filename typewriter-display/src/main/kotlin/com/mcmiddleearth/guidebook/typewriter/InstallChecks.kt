@@ -5,6 +5,8 @@ package com.mcmiddleearth.guidebook.typewriter
 //
 // STAND-IN: only checks that a Guidebook Welcome entry exists.
 
+import java.util.Properties
+
 /**
  * Whether the Typewriter display is installed well enough to show Welcomes. [countWelcomeEntries] counts the
  * Guidebook Welcome entries in Typewriter's pages, passed in so tests don't need Typewriter.
@@ -23,6 +25,13 @@ class InstallChecks(private val countWelcomeEntries: () -> Int) {
     companion object {
         /** The Typewriter page shipped with the extension, holding the Guidebook Welcome entry. */
         const val TYPEWRITER_PAGE = "guidebook.json"
+
+        /** The lowest Guidebook version the Typewriter display works with, set in its build. */
+        val LOWEST_GUIDEBOOK_VERSION: String by lazy {
+            val properties = Properties()
+            InstallChecks::class.java.getResourceAsStream("build.properties")!!.use(properties::load)
+            properties.getProperty("lowestGuidebookVersion")
+        }
 
         /**
          * Why the [guidebook] version running can't run the Display, for the log, or null if it's [lowest] or newer.
