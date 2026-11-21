@@ -99,34 +99,68 @@ class GuidebookWelcomeMessenger(
     private var confirmation: Confirmation? = null
     private var page = 0
     private var pageOpenedAt: Duration? = null
-    private var lastSent: Duration? = null
+    private var typingSkipped = false
+    private var ticksSinceTyped: Int? = null
+    private var now = Duration.ZERO
     private var closedByPlayer = false
+
+    // Typewriter asks this before ending the dialogue on any advance, and sets it instead while it's false, so every
+    // advance acts like the key: the box only closes once the last Page is typed
+    override var animationComplete: Boolean
+        get() = page == pages.lastIndex && isPageTyped()
+        set(value) {
+            if (value && !animationComplete) advance()
+        }
 
     override fun init() {
         super.init()
         confirmation = player.awaitConfirmation {
-            if (page < pages.lastIndex) {
-                page++
-                pageOpenedAt = null
-            } else {
+            if (animationComplete) {
                 closedByPlayer = true
                 state = MessengerState.FINISHED
+            } else {
+                advance()
             }
         }
     }
+
+    /** Finishes typing the Page, or turns to the next one once it's typed. */
+    private fun advance() {
+        if (!isPageTyped()) {
+            typingSkipped = true
+        } else if (page < pages.lastIndex) {
+            page++
+            pageOpenedAt = null
+            typingSkipped = false
+            ticksSinceTyped = null
+        }
+    }
+
+    private fun typingElapsed(): Duration {
+        if (typingSkipped) return pages[page].typingDuration(settings)
+        return pageOpenedAt?.let { now - it } ?: Duration.ZERO
+    }
+
+    private fun isPageTyped(): Boolean =
+        typingSkipped || (pageOpenedAt != null && typingElapsed() >= pages[page].typingDuration(settings))
 
     override fun tick(context: TickContext) {
         if (state != MessengerState.RUNNING) return
         titleStep.tick(player, context.playTime)
         if (context.playTime < titleStep.descriptionDelay) return
-        val opened = pageOpenedAt ?: context.playTime.also { pageOpenedAt = it }
-        // Re-sent before chat fades it out
-        val sent = lastSent
-        if (sent != null && sent >= opened && context.playTime - sent < RESEND_EVERY) return
-        lastSent = context.playTime
+        now = context.playTime
+        if (pageOpenedAt == null) pageOpenedAt = now
+
+        // As Typewriter's spoken dialogue does: every tick while typing, then twice per cycle, which also stops chat
+        // fading the box out
+        if (isPageTyped()) {
+            val ticks = ticksSinceTyped?.plus(1) ?: 0
+            ticksSinceTyped = ticks
+            if (ticks % RESEND_CYCLE_TICKS != 0 && ticks % RESEND_CYCLE_TICKS != RESEND_SECOND_TICK) return
+        }
 
         val key = "<confirmation_key>".asMiniWithResolvers(player)
-        val box = drawBox(header, pages[page], key, settings, context.playTime - opened)
+        val box = drawBox(header, pages[page], key, settings, typingElapsed())
         // Clears the chat, with the last few messages darkened above the box
         player.sendMessage(player.chatHistory.composeDarkMessage(box))
     }
@@ -144,6 +178,7 @@ class GuidebookWelcomeMessenger(
     }
 
     private companion object {
-        val RESEND_EVERY: Duration = Duration.ofSeconds(2)
+        const val RESEND_CYCLE_TICKS = 40
+        const val RESEND_SECOND_TICK = 10
     }
 }
