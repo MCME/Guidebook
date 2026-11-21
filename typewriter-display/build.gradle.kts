@@ -8,6 +8,15 @@ plugins {
 group = "com.mcmiddleearth"
 version = "0.1.0-SNAPSHOT"
 
+// Built into the jar, so an older Guidebook gets one log line instead of a class-loading error. 2.1.0 is the first
+// Guidebook with Displays
+val lowestGuidebookVersion = "2.1.0"
+
+tasks.processResources {
+    inputs.property("lowestGuidebookVersion", lowestGuidebookVersion)
+    filesMatching("**/build.properties") { expand("lowestGuidebookVersion" to lowestGuidebookVersion) }
+}
+
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
