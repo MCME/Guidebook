@@ -123,7 +123,7 @@ tasks {
             val pluginUtils = libs.versions.pluginutils.get()
             url("https://repo.mcmiddleearth.com/releases/com/mcmiddleearth/PluginUtils/$pluginUtils/PluginUtils-$pluginUtils.jar")
             // For the Typewriter display: the Typewriter build it names, and the PacketEvents Typewriter needs
-            modrinth("typewriter", "0.9.0-beta-177")
+            modrinth("typewriter", libs.versions.typewriter.get())
             modrinth("packetevents", "2.14.0+spigot")
         }
 

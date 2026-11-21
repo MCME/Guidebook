@@ -18,8 +18,9 @@ from. It opens with these lines, the first three of which CI checks before relea
 ### Added / Changed / Fixed
 -->
 
-- **Typewriter build:** the exact build the jar loads on (`engineVersion` in
-  [`build.gradle.kts`](build.gradle.kts)). CI refuses a release whose notes name another.
+- **Typewriter build:** the exact build the jar loads on (`typewriter` in
+  [`libs.versions.toml`](../gradle/libs.versions.toml)). CI refuses a release whose notes name
+  another.
 - **Lowest Guidebook version:** the oldest Guidebook it works with (`lowestGuidebookVersion` in
   [`build.gradle.kts`](build.gradle.kts), built into the jar). CI refuses a release whose notes
   name another.
