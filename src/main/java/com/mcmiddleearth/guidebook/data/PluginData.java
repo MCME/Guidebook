@@ -75,11 +75,6 @@ public class PluginData {
         return store().newNameProblem(name);
     }
 
-    /** See {@link AreaStore#save}. */
-    public static void saveArea(InfoArea area) throws IOException {
-        store().save(area);
-    }
-
     /** See {@link AreaStore#reload}. */
     public static void loadData() {
         store().reload();

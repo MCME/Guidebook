@@ -118,10 +118,27 @@ public final class AreaStore {
         return oldFileGone;
     }
 
-    /** Writes the Area's file, then redraws it on the Web map, so a failed save leaves its marker as it was. */
-    public void save(InfoArea area) throws IOException {
-        files.write(area);
+    /**
+     * Gives the Area {@code details}, writes its file, and redraws the Web map. If the file can't be written, the Area
+     * gets its old details back, so players and the Web map never see an edit that isn't saved. The Area stays the
+     * same object, since the Watchman and open dialogs hold it.
+     *
+     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone} or {@link ChangeOutcome.NotWritten}
+     */
+    public ChangeOutcome edit(InfoArea area, AreaDetails details) {
+        if (!isCurrent(area)) {
+            return new ChangeOutcome.Gone();
+        }
+        AreaDetails oldDetails = AreaDetails.of(area);
+        area.setDetails(details);
+        try {
+            files.write(area);
+        } catch (IOException ex) {
+            area.setDetails(oldDetails);
+            return new ChangeOutcome.NotWritten(ex);
+        }
         drawAreas();
+        return new ChangeOutcome.Done();
     }
 
     /** The Area the typed name reaches, ignoring case; an Area with exactly that name wins. */
@@ -151,6 +168,14 @@ public final class AreaStore {
     /** Every Area by its exact name, for the static store until its callers move here. */
     Map<String, InfoArea> byName() {
         return Collections.unmodifiableMap(areas);
+    }
+
+    /**
+     * Whether the Area is the one the store holds under its name. A rename keeps the same Area, so it stays current,
+     * but a delete or a reload drops it.
+     */
+    private boolean isCurrent(InfoArea area) {
+        return areas.get(area.getName()) == area;
     }
 
     private void drawWebMap() {

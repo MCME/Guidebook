@@ -62,6 +62,17 @@ public final class GuidebookMessages {
         sendError(recipient, "There was an error. ", area(areaName), " was NOT " + done + ".");
     }
 
+    /**
+     * Says that the Area was deleted or reloaded while the staff member was {@code whileYou}, e.g. "edited it" or
+     * "decided", so their change to it was NOT {@code done}.
+     */
+    public static void sendGoneMeanwhile(CommandSender recipient, String areaName, String whileYou, String done) {
+        sendError(
+                recipient,
+                area(areaName),
+                " was deleted or reloaded while you " + whileYou + ". It was NOT " + done + ".");
+    }
+
     /** A line indented to follow an {@link #info} line, in the info colour. */
     public static Component infoIndented(Object... parts) {
         return line(INDENT, INFO, STRESSED, parts);

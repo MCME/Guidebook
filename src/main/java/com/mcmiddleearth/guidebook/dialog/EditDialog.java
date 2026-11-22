@@ -1,6 +1,8 @@
 package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
+import com.mcmiddleearth.guidebook.data.AreaDetails;
+import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
@@ -94,6 +96,11 @@ public final class EditDialog {
         /** The Description as saving stores it, without trailing whitespace. */
         String storedDescription() {
             return description.stripTrailing();
+        }
+
+        /** The details as saving stores them. */
+        AreaDetails details() {
+            return new AreaDetails(showTitle, title, subtitle, showBossBar, storedDescription(), enabled);
         }
 
         Values forNewArea() {
@@ -353,21 +360,26 @@ public final class EditDialog {
             return;
         }
         String areaName = area.getName();
-        // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
-        if (mode == Mode.EDIT && PluginData.getInfoAreaExact(areaName) != area) {
-            GuidebookMessages.sendError(
-                    player,
-                    GuidebookMessages.area(areaName),
-                    " was deleted or reloaded while you edited it. Your changes were NOT saved.");
-            player.closeDialog();
-            return;
-        }
         Optional<String> problem = problem(values);
         if (problem.isPresent()) {
             show(player, area, mode, values, Component.text(problem.get() + " Nothing was " + mode.done + "."));
             return;
         }
         player.closeDialog();
+        if (mode == Mode.EDIT) {
+            switch (GuidebookPlugin.getPluginInstance().getAreaStore().edit(area, values.details())) {
+                case ChangeOutcome.Done() -> sendDone(player, area, mode);
+                case ChangeOutcome.Gone() ->
+                    GuidebookMessages.sendGoneMeanwhile(player, areaName, "edited it", mode.done);
+                case ChangeOutcome.NotWritten(IOException cause) -> {
+                    Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, cause);
+                    GuidebookMessages.sendNotDone(player, areaName, mode.done);
+                }
+                // An edit keeps the name and the file
+                case ChangeOutcome.NameTaken _, ChangeOutcome.DoneButOldFileLeft _ -> {}
+            }
+            return;
+        }
         // The name was free when create ran, but it isn't reserved while the dialog is open
         if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
             GuidebookMessages.sendError(
@@ -388,18 +400,19 @@ public final class EditDialog {
             area.statusOff();
         }
         try {
-            if (mode == Mode.CREATE) {
-                PluginData.createInfoArea(area);
-            } else {
-                PluginData.saveArea(area);
-            }
+            PluginData.createInfoArea(area);
         } catch (IOException ex) {
             Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, ex);
             GuidebookMessages.sendNotDone(player, areaName, mode.done);
             return;
         }
+        sendDone(player, area, mode);
+    }
+
+    /** Says the Area was saved or created, then previews its Welcome, which only a saved Area may show. */
+    private static void sendDone(Player player, InfoArea area, Mode mode) {
         // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
-        GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName), " was " + mode.done + ":");
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was " + mode.done + ":");
         GuidebookPlugin.getPluginInstance().getWatchman().preview(player, area);
     }
 

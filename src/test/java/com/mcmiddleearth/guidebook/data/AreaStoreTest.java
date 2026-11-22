@@ -1,7 +1,10 @@
 package com.mcmiddleearth.guidebook.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mcmiddleearth.guidebook.webmap.Marker;
@@ -18,6 +21,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.bukkit.Location;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
 class AreaStoreTest {
@@ -111,6 +115,98 @@ class AreaStoreTest {
                         + " from Legacy markup to MiniMessage."),
                 messagesAt(Level.INFO));
         assertEquals(List.of("Couldn't read a", "Couldn't read b"), messagesAt(Level.SEVERE));
+    }
+
+    private static final AreaDetails NEW_DETAILS =
+            new AreaDetails(false, "<gold>Edoras", "Golden Hall", true, "Meduseld stands here.", false);
+
+    @Test
+    void anEditChangesTheAreaItsFileAndItsMarker() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        ChangeOutcome outcome = store.edit(edoras, NEW_DETAILS);
+
+        assertEquals(new ChangeOutcome.Done(), outcome);
+        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertEquals(NEW_DETAILS, AreaDetails.of(edoras));
+        YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
+        assertEquals("<gold>Edoras", file.getString("title"));
+        assertEquals("Golden Hall", file.getString("subtitle"));
+        assertEquals("Meduseld stands here.", file.getString("description"));
+        assertFalse(file.getBoolean("showTitle"));
+        assertTrue(file.getBoolean("showScoreboard"));
+        assertFalse(file.getBoolean("enabled"));
+        assertEquals("Edoras (Disabled)", layer.markerOf("edoras").orElseThrow().label());
+    }
+
+    @Test
+    void anEditWhoseWriteFailsLeavesTheAreaItsFileAndTheWebMapAsTheyWere() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        AreaDetails before = AreaDetails.of(edoras);
+        String fileBefore =
+                files.contents("middle-earth", "edoras").orElseThrow().saveToString();
+        Marker markerBefore = layer.markerOf("edoras").orElseThrow();
+
+        files.failNextWrite();
+        ChangeOutcome outcome = store.edit(edoras, NEW_DETAILS);
+
+        assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
+        assertEquals(before, AreaDetails.of(edoras));
+        assertEquals(
+                fileBefore,
+                files.contents("middle-earth", "edoras").orElseThrow().saveToString());
+        assertEquals(markerBefore, layer.markerOf("edoras").orElseThrow());
+    }
+
+    @Test
+    void anEditOfAnAreaReloadedMeanwhileIsGoneAndWritesNothing() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea stale = store.findExact("edoras").orElseThrow();
+        store.reload();
+
+        ChangeOutcome outcome = store.edit(stale, NEW_DETAILS);
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertEquals("", files.contents("middle-earth", "edoras").orElseThrow().getString("title"));
+        assertEquals("", store.findExact("edoras").orElseThrow().getTitle());
+    }
+
+    @Test
+    void anEditOfAnAreaDeletedMeanwhileIsGoneAndWritesNothing() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea deleted = store.findExact("edoras").orElseThrow();
+        store.delete(deleted);
+
+        ChangeOutcome outcome = store.edit(deleted, NEW_DETAILS);
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertTrue(files.contents("middle-earth", "edoras").isEmpty());
+        assertTrue(layer.markerOf("edoras").isEmpty());
+    }
+
+    // ADR 0007
+    @Test
+    void anEditRedrawsEveryAreaSoOneHoldingAnotherStaysAnOutline() throws IOException {
+        InfoArea city = InfoArea.create(
+                "city",
+                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
+                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
+        fileOf(city);
+        fileOf(sphereArea("tower", 50));
+        store.reload();
+
+        store.edit(store.findExact("city").orElseThrow(), NEW_DETAILS);
+
+        Marker cityMarker = layer.markerOf("city").orElseThrow();
+        assertEquals(0, cityMarker.style().fillOpacity());
+        assertEquals("Edoras (Disabled)", cityMarker.label());
+        assertTrue(fillOf("tower") > 0);
     }
 
     @Test

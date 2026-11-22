@@ -253,6 +253,15 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         config.set(LegacyMarkupConverter.MARKER, true);
     }
 
+    void setDetails(AreaDetails details) {
+        setShowTitle(details.showTitle());
+        setTitle(details.title());
+        setSubtitle(details.subtitle());
+        setShowBossBar(details.showBossBar());
+        setDescription(details.description());
+        status = details.enabled();
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
