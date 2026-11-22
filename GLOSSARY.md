@@ -65,6 +65,10 @@ What a player receives when they enter an Area: the Title, then the Description,
 The part of Guidebook that keeps watch over every Area, noticing players entering and leaving. A player who enters gets a Welcome when the Area is Enabled, the cooldown has passed, the player isn't Opted out, and no other plugin has cancelled it. The Watchman hands the Welcome to the Display to show.
 _Avoid_: Greeter, Welcoming
 
+**Leave**:
+A player inside an Area leaves it when they go more than 10 blocks beyond its Shape, or change world. For a prism, beyond is measured from its bounding box. Until then they keep its Boss bar and can't be Welcomed to it again.
+_Avoid_: exit
+
 **Display**:
 How a Welcome is shown to a player. The server uses one Display for every Area, falling back to the Chat display when the chosen one isn't available. Each Display owns its own look and settings.
 _Avoid_: style, renderer, frontend
