@@ -38,6 +38,8 @@ see the GitHub history.
   undid them.
 - A player inside a polygon Area who warps to another world now leaves it, instead of keeping its
   Boss bar and missing the Welcome when they come back.
+- Players are Welcomed into polygon Areas on exactly the blocks staff selected with WorldEdit.
+  Before, sloped edges could start a Welcome a block early or late.
 - An Area file holding no Shape Guidebook knows is now reported in the server log when loading,
   instead of being skipped silently.
 - An Area whose world isn't loaded can now be saved (edited or renamed), instead of failing.
