@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Location;
@@ -169,16 +170,30 @@ class AreaInsideTest {
         }
     }
 
+    // A world for PrismoidRegion, which only compares worlds with each other
+    private static final World PRISMOID_WORLD = (World) Proxy.newProxyInstance(
+            World.class.getClassLoader(),
+            new Class<?>[] {World.class},
+            (proxy, method, args) -> switch (method.getName()) {
+                case "equals" -> proxy == args[0];
+                case "hashCode" -> 0;
+                case "toString" -> "test world";
+                default -> null;
+            });
+
     @Test
     void aSlopedPrismIsInsideExactlyWherePrismoidRegionIs() {
-        World world = TestWorlds.named(WORLD);
         PrismoidRegion region = new PrismoidRegion(
-                new Location(world, 0, 64, 0), new ArrayList<>(TRIANGLE_XS), new ArrayList<>(TRIANGLE_ZS), 60, 70);
+                new Location(PRISMOID_WORLD, 0, 64, 0),
+                new ArrayList<>(TRIANGLE_XS),
+                new ArrayList<>(TRIANGLE_ZS),
+                60,
+                70);
         for (int x = -3; x <= 15; x++) {
             for (int y = 58; y <= 72; y++) {
                 for (int z = -3; z <= 18; z++) {
                     assertEquals(
-                            region.isInside(new Location(world, x, y, z)),
+                            region.isInside(new Location(PRISMOID_WORLD, x, y, z)),
                             triangle().isInside(at(x, y, z)),
                             "(" + x + ", " + y + ", " + z + ")");
                 }
