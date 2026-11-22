@@ -106,12 +106,17 @@ public final class AreaStore {
     }
 
     /**
-     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}.
+     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}, writes its
+     * file, and redraws the Web map. If the file can't be written, the Area goes back where it was. Moving it to
+     * another world deletes its file in the old world's folder.
      *
-     * @return false if the Area was moved to another world but its old world's file couldn't be deleted, so it would
-     *     load twice after a reload
+     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NotWritten}, or
+     *     {@link ChangeOutcome.DoneButOldFileLeft} if the old world's file couldn't be deleted
      */
-    public boolean move(InfoArea area, AreaGeometry geometry, Location warpPoint) throws IOException {
+    public ChangeOutcome move(InfoArea area, AreaGeometry geometry, Location warpPoint) {
+        if (!isCurrent(area)) {
+            return new ChangeOutcome.Gone();
+        }
         Region region = InfoArea.regionOf(geometry, warpPoint);
         Region oldRegion = area.getRegion();
         // Found before the move: the world comes from the region
@@ -122,13 +127,15 @@ public final class AreaStore {
             files.write(area);
         } catch (IOException ex) {
             area.setRegion(oldRegion);
-            throw ex;
+            return new ChangeOutcome.NotWritten(ex);
         }
         boolean oldFileGone =
                 Objects.equals(oldWorldName, area.getWorldName()) || files.delete(oldWorldName, area.getName());
         // The marker's id doesn't change, so this replaces it even in another world
         drawAreas();
-        return oldFileGone;
+        return oldFileGone
+                ? new ChangeOutcome.Done()
+                : new ChangeOutcome.DoneButOldFileLeft(oldWorldName, area.getName());
     }
 
     /**

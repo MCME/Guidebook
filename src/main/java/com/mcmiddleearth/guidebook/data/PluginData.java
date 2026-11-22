@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.bukkit.Location;
 
 /**
  * The plugin's {@link AreaStore}, reached statically until every caller reaches it through the plugin.
@@ -42,11 +41,6 @@ public class PluginData {
     /** See {@link AreaStore#rename}. */
     public static boolean renameInfoArea(InfoArea area, String newName) throws IOException {
         return store().rename(area, newName);
-    }
-
-    /** See {@link AreaStore#move}. */
-    public static boolean moveInfoArea(InfoArea area, AreaGeometry geometry, Location warpPoint) throws IOException {
-        return store().move(area, geometry, warpPoint);
     }
 
     /**

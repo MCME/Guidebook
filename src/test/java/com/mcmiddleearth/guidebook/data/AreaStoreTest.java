@@ -234,6 +234,114 @@ class AreaStoreTest {
         assertEquals(Set.of(AreaMarkers.id("Edoras")), layer.ids());
     }
 
+    /** Far from every test Area, and centred on {@link #movedWarpPoint()}, as a sphere is. */
+    private static final AreaGeometry.Sphere MOVED_TO = new AreaGeometry.Sphere(500, 70, 0, 8);
+
+    private static Location movedWarpPoint() {
+        return new Location(TestWorlds.named("middle-earth"), 500, 70, 0);
+    }
+
+    @Test
+    void aMoveGivesTheAreaItsNewShapeAndWarpPointAndUpdatesItsFileAndMarker() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        ChangeOutcome outcome = store.move(edoras, MOVED_TO, movedWarpPoint());
+
+        assertEquals(new ChangeOutcome.Done(), outcome);
+        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertEquals(MOVED_TO, edoras.getGeometry());
+        assertEquals(movedWarpPoint(), edoras.getLocation());
+        YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
+        assertEquals(500, file.getDouble("locationX"));
+        assertEquals(70, file.getDouble("locationY"));
+        assertEquals(
+                new Outline.Circle(500, 0, 8),
+                layer.markerOf("edoras").orElseThrow().outline());
+    }
+
+    @Test
+    void aMoveWhoseWriteFailsLeavesTheAreaItsFileAndTheWebMapAsTheyWere() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        String fileBefore =
+                files.contents("middle-earth", "edoras").orElseThrow().saveToString();
+        Marker markerBefore = layer.markerOf("edoras").orElseThrow();
+
+        files.failNextWrite();
+        ChangeOutcome outcome = store.move(edoras, MOVED_TO, movedWarpPoint());
+
+        assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
+        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), edoras.getGeometry());
+        assertEquals(new Location(TestWorlds.named("middle-earth"), 0, 64, 0), edoras.getLocation());
+        assertEquals(
+                fileBefore,
+                files.contents("middle-earth", "edoras").orElseThrow().saveToString());
+        assertEquals(markerBefore, layer.markerOf("edoras").orElseThrow());
+    }
+
+    @Test
+    void aMoveOfAnAreaReloadedMeanwhileIsGoneAndWritesNothing() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea stale = store.findExact("edoras").orElseThrow();
+        store.reload();
+
+        ChangeOutcome outcome = store.move(stale, MOVED_TO, movedWarpPoint());
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertEquals(0, files.contents("middle-earth", "edoras").orElseThrow().getDouble("locationX"));
+        assertEquals(
+                new Outline.Circle(0, 0, 5),
+                layer.markerOf("edoras").orElseThrow().outline());
+    }
+
+    @Test
+    void aMoveOfAnAreaDeletedMeanwhileIsGoneAndWritesNothing() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea deleted = store.findExact("edoras").orElseThrow();
+        store.delete(deleted);
+
+        ChangeOutcome outcome = store.move(deleted, MOVED_TO, movedWarpPoint());
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertTrue(files.contents("middle-earth", "edoras").isEmpty());
+        assertTrue(layer.markerOf("edoras").isEmpty());
+    }
+
+    @Test
+    void aMoveToAnotherWorldWhoseOldFileCantBeDeletedIsDoneWithThatFileLeftOver() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        Location inArda = new Location(TestWorlds.named("arda"), 500, 70, 0);
+
+        files.failNextDelete();
+        ChangeOutcome outcome = store.move(edoras, MOVED_TO, inArda);
+
+        assertEquals(new ChangeOutcome.DoneButOldFileLeft("middle-earth", "edoras"), outcome);
+        assertEquals("arda", edoras.getWorldName());
+        assertTrue(files.contents("arda", "edoras").isPresent());
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertEquals("arda", layer.markerOf("edoras").orElseThrow().world());
+    }
+
+    @Test
+    void aMoveToAnotherWorldDeletesTheOldWorldsFile() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+
+        ChangeOutcome outcome = store.move(
+                store.findExact("edoras").orElseThrow(), MOVED_TO, new Location(TestWorlds.named("arda"), 500, 70, 0));
+
+        assertEquals(new ChangeOutcome.Done(), outcome);
+        assertTrue(files.contents("arda", "edoras").isPresent());
+        assertTrue(files.contents("middle-earth", "edoras").isEmpty());
+    }
+
     // ADR 0007
     @Test
     void anEditRedrawsEveryAreaSoOneHoldingAnotherStaysAnOutline() throws IOException {
