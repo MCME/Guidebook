@@ -14,6 +14,7 @@ import io.papermc.paper.registry.data.dialog.type.DialogType;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -100,7 +101,7 @@ public final class ConfirmDialog {
                 GuidebookMessages.sendInfo(player, GuidebookMessages.area(name), " was deleted.");
             case ChangeOutcome.Gone() -> GuidebookMessages.sendGoneMeanwhile(player, name, "decided", "deleted");
             case ChangeOutcome.NotWritten(IOException cause) -> {
-                Logger.getLogger(ConfirmDialog.class.getName()).severe(cause.getMessage());
+                Logger.getLogger(ConfirmDialog.class.getName()).log(Level.SEVERE, null, cause);
                 GuidebookMessages.sendNotDone(player, name, "deleted");
             }
             case ChangeOutcome.NameTaken _, ChangeOutcome.DoneButOldFileLeft _ -> {}
