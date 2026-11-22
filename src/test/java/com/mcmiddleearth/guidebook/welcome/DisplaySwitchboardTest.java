@@ -10,6 +10,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 
@@ -157,6 +158,51 @@ class DisplaySwitchboardTest {
         switchboard.show(player, bree);
 
         assertEquals(List.of(Level.SEVERE, Level.SEVERE), logged);
+    }
+
+    @Test
+    void theChosenDisplayPreviewsTheDescription() {
+        switchboard.register("typewriter", previewing(List.of(Component.text("Page 1"), Component.text("Page 2"))));
+
+        assertEquals(
+                List.of(Component.text("Page 1"), Component.text("Page 2")),
+                switchboard.previewDescription(player, bree));
+    }
+
+    @Test
+    void theDescriptionPreviewsAsChatWhileTheChosenDisplayIsntRegistered() {
+        switchboard.register("other", previewing(List.of(Component.text("Page 1"))));
+
+        assertEquals(List.of(), switchboard.previewDescription(player, bree));
+    }
+
+    @Test
+    void theDescriptionPreviewsAsChatWhenTheChosenDisplayFailsToPreviewIt() {
+        switchboard.register("typewriter", new Display() {
+            @Override
+            public void show(Player p, Welcome welcome) {}
+
+            @Override
+            public List<Component> previewDescription(Player p, Welcome welcome) {
+                throw new IllegalStateException("Typewriter isn't ready");
+            }
+        });
+
+        assertEquals(List.of(), switchboard.previewDescription(player, bree));
+        assertEquals(List.of(Level.SEVERE), logged);
+    }
+
+    /** A Display that previews every Description as {@code screens}. */
+    private static Display previewing(List<Component> screens) {
+        return new Display() {
+            @Override
+            public void show(Player player, Welcome welcome) {}
+
+            @Override
+            public List<Component> previewDescription(Player player, Welcome welcome) {
+                return screens;
+            }
+        };
     }
 
     private Logger recordingLogger() {

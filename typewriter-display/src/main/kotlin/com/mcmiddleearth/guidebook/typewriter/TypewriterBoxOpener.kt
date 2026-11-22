@@ -8,6 +8,7 @@ import com.typewritermc.engine.paper.entry.dialogue.isInDialogue
 import com.typewritermc.engine.paper.entry.triggerFor
 import com.typewritermc.engine.paper.interaction.PlayerSessionManager
 import com.typewritermc.engine.paper.plugin
+import com.typewritermc.engine.paper.utils.asMiniWithResolvers
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
@@ -39,4 +40,9 @@ object TypewriterBoxOpener : BoxOpener {
             if (!player.isOnline || elapsed >= titleStep.descriptionDelay) task.cancel()
         }, 0L, 1L)
     }
+
+    override fun boxLook(player: Player) = BoxLook(
+        welcomeEntries().firstOrNull()?.layoutSettings(player) ?: LayoutSettings(),
+        "<confirmation_key>".asMiniWithResolvers(player),
+    )
 }

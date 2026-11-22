@@ -93,8 +93,7 @@ class GuidebookWelcomeMessenger(
 
     private val settings = entry.layoutSettings(player)
     private val header = AreaText.plainText(welcome.title())
-    // The box already says the Guidebook is speaking, so <guide> shows no "Guide:"
-    private val pages = PageTurner(layOutPages(AreaText.renderWithoutGuideLabel(welcome.description())), settings)
+    private val pages = PageTurner(descriptionPages(welcome), settings)
     private val titleStep = TitleStep(welcome, entry.titleSettings())
 
     private var confirmation: Confirmation? = null

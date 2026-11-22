@@ -2,6 +2,7 @@ package com.mcmiddleearth.guidebook.typewriter
 
 import com.mcmiddleearth.guidebook.welcome.Display
 import com.mcmiddleearth.guidebook.welcome.Welcome
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -111,6 +112,33 @@ class TypewriterDisplayTest {
         assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
+    @Test
+    fun `a Description is previewed as its boxes, one for each Page, fully typed and with no Guide label`() {
+        val lines = (1..9).joinToString("\n") { "Line $it." }
+        val long = Welcome("me-bree-gate", "Bree", "", "<guide>$lines", true)
+
+        val boxes = display.previewDescription(player, long).map { plain(it).lines() }
+
+        assertEquals(2, boxes.size)
+        assertEquals("Bree", boxes[0].first().trim())
+        assertEquals(listOf("Line 1.", "Line 8...."), listOf(boxes[0][1], boxes[0][8]))
+        assertEquals("Press F to continue (1/2)", boxes[0].last().trim())
+        assertEquals("Line 9.", boxes[1][2])
+        assertEquals("Press F to close (2/2)", boxes[1].last().trim())
+    }
+
+    @Test
+    fun `a Description of only the guide tag has no boxes to preview, as it gets none`() {
+        assertEquals(emptyList<Any>(), display.previewDescription(player, Welcome("me-weathertop", "Weathertop", "", "<guide>", true)))
+    }
+
+    @Test
+    fun `without the Guidebook Welcome entry the Description previews as chat`() {
+        welcomeEntries = 0
+
+        assertEquals(emptyList<Any>(), display.previewDescription(player, bree))
+    }
+
     private class FakeTypewriter : BoxOpener {
         var hasSession = true
         var inDialogue = false
@@ -128,5 +156,7 @@ class TypewriterDisplayTest {
         override fun showTitle(player: Player, welcome: Welcome) {
             titlesOnly += welcome
         }
+
+        override fun boxLook(player: Player) = BoxLook(LayoutSettings(), Component.text("F"))
     }
 }

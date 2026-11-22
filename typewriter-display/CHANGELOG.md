@@ -37,3 +37,5 @@ from. It opens with these lines, the first three of which CI checks before relea
 
 - The Typewriter display: each Welcome typed into a framed box over the chat, in Pages the player
   turns and closes with a key. Choose it with `display: typewriter` in Guidebook's `config.yml`.
+- The Edit dialog's Preview shows the Description as its boxes, one for each Page, so staff can
+  see where the Pages break before saving.

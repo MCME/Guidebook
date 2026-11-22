@@ -15,6 +15,8 @@ see the GitHub history.
   expected reason throws `Display.Unavailable`, which sends it to chat without logging a failure.
 - Staff (`guidebook.staff`) who join while the Display chosen in `config.yml` isn't running are
   told so, and that Welcomes are using the Chat display.
+- The Edit dialog's Preview shows the Description as the server's Display would. A Display shows
+  its own preview by overriding `Display#previewDescription`; by default it previews as chat.
 
 ### Changed
 

@@ -1,10 +1,12 @@
 package com.mcmiddleearth.guidebook.welcome;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
 /**
@@ -94,6 +96,25 @@ public final class DisplaySwitchboard implements Display {
             }
         }
         chat.show(player, welcome);
+    }
+
+    /** The chosen Display's preview, or none (so it previews as chat) when it isn't registered or fails to make one. */
+    @Override
+    public List<Component> previewDescription(Player player, Welcome welcome) {
+        Display display = registered.get(chosen);
+        if (display == null) {
+            return List.of();
+        }
+        try {
+            return display.previewDescription(player, welcome);
+        } catch (RuntimeException ex) {
+            logger.log(
+                    Level.SEVERE,
+                    "The display \"" + chosen + "\" failed to preview the Description of " + welcome.areaName()
+                            + ", so it was previewed as chat",
+                    ex);
+            return List.of();
+        }
     }
 
     private static String normalise(String name) {

@@ -1,5 +1,7 @@
 package com.mcmiddleearth.guidebook.typewriter
 
+import com.mcmiddleearth.guidebook.util.AreaText
+import com.mcmiddleearth.guidebook.welcome.Welcome
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.KeybindComponent
@@ -55,6 +57,9 @@ class Page(val lines: List<Component>, val number: Int, val total: Int) {
         }
     }
 }
+
+/** The Pages of [welcome]'s Description. The box already says the Guidebook is speaking, so <guide> shows no "Guide:". */
+fun descriptionPages(welcome: Welcome): List<Page> = layOutPages(AreaText.renderWithoutGuideLabel(welcome.description()))
 
 /**
  * The Pages of a Welcome whose [description] is already rendered. Page layout, here and in [drawBox], uses no

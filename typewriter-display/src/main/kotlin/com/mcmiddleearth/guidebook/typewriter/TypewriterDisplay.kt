@@ -1,7 +1,9 @@
 package com.mcmiddleearth.guidebook.typewriter
 
+import com.mcmiddleearth.guidebook.util.AreaText
 import com.mcmiddleearth.guidebook.welcome.Display
 import com.mcmiddleearth.guidebook.welcome.Welcome
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 
 /**
@@ -21,7 +23,13 @@ interface BoxOpener {
 
     /** Shows [player] only [welcome]'s Title step, with no box: for a Welcome whose Description is empty. */
     fun showTitle(player: Player, welcome: Welcome)
+
+    /** How [player]'s box looks: the settings on the Guidebook Welcome entry, and the key that turns its Pages. */
+    fun boxLook(player: Player): BoxLook
 }
+
+/** How a player's box looks: its [settings], and the [key] that turns its Pages as the footer names it. */
+class BoxLook(val settings: LayoutSettings, val key: Component)
 
 /**
  * The Typewriter display: types each Welcome into a box over the chat. When it can't now, it throws
@@ -49,6 +57,16 @@ class TypewriterDisplay(
             QueueDecision.Start, QueueDecision.Replace -> boxes.start(player, welcome)
             QueueDecision.Queue -> {}
             QueueDecision.ShowInChat -> throw Display.Unavailable("${player.name} is in another Typewriter dialogue")
+        }
+    }
+
+    /** The Description's boxes, one for each Page as it looks once typed. None for a Welcome that gets no box. */
+    override fun previewDescription(player: Player, welcome: Welcome): List<Component> {
+        if (isEmptyDescription(welcome.description()) || inspector.problem() != null) return emptyList()
+        val look = boxes.boxLook(player)
+        val header = AreaText.plainText(welcome.title())
+        return descriptionPages(welcome).map { page ->
+            drawBox(header, page, look.key, look.settings, page.typingDuration(look.settings))
         }
     }
 
