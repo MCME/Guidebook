@@ -16,7 +16,6 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
-import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.welcome.WelcomeArea;
 import com.mcmiddleearth.pluginutil.region.CuboidRegion;
 import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
@@ -25,16 +24,12 @@ import com.mcmiddleearth.pluginutil.region.SphericalRegion;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 
 /**
- * An Area, made with {@link #create} or read from its file with {@link #load}. Its Shape is whichever region it holds,
- * which a move can change.
+ * An Area, made with {@link #create} or read from its file by the Area file adapter. Its Shape is whichever region it
+ * holds, which a move can change.
  *
  * @author Eriol_Eandur
  */
@@ -45,7 +40,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
 
     private String areaName;
 
-    /** The world named in the Area's file, kept for when that world isn't loaded and the region has none. */
+    /** The name of the Area's world, kept for when that world isn't loaded and the region has none. */
     private String loadedWorldName;
 
     private boolean status;
@@ -65,22 +60,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         status = true;
     }
 
-    private InfoArea(String areaName, ConfigurationSection config) {
-        this(areaName);
-
-        if (config.contains("title")) {
-            setTitle((String) config.get("title"));
-            setSubtitle((String) config.get("subtitle"));
-            // Stored under its old name, from when it was a scoreboard
-            showBossBar = config.getBoolean("showScoreboard");
-            showTitle = config.getBoolean("showTitle");
-            status = config.getBoolean("enabled", true);
-        }
-        description = config.getString("description", "");
-        // An old cuboid file keeps its world under its center
-        loadedWorldName = config.getString("world", config.getString("center.world"));
-    }
-
     /** A new Area filling {@code geometry}, with its Warp point at {@code warpPoint}. */
     public static InfoArea create(String areaName, Location warpPoint, AreaGeometry geometry) {
         InfoArea area = new InfoArea(areaName);
@@ -89,63 +68,16 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
     }
 
     /**
-     * Reads the Area {@code areaName} from its file's contents.
-     *
-     * @return the Area, or empty if the file holds no Shape Guidebook knows
+     * The Area {@code areaName} as read from its file. Its world is named, because it may not be loaded: then
+     * {@code warpPoint} has no world.
      */
-    public static Optional<InfoArea> load(String areaName, ConfigurationSection config) {
-        Region region;
-        if (SphericalRegion.isValidConfig(config)) {
-            region = SphericalRegion.load(config);
-        } else if (PrismoidRegion.isValidConfig(config)) {
-            DevUtil.log("loadPrism " + config);
-            region = PrismoidRegion.load(config);
-        } else if (CuboidRegion.isValidConfig(config) || config.contains("xSize")) { // xSize is the old cuboid format
-            region = loadCuboid(config);
-        } else {
-            return Optional.empty();
-        }
-        return Optional.of(loaded(areaName, config, region));
-    }
-
-    /**
-     * The Area {@code areaName} with its file's contents and the region already read from them. Kept apart from
-     * reading the region, which looks its world up on the server, so tests can build Areas from file contents.
-     */
-    static InfoArea loaded(String areaName, ConfigurationSection config, Region region) {
-        InfoArea area = new InfoArea(areaName, config);
-        area.region = region;
+    static InfoArea loaded(
+            String areaName, String worldName, Location warpPoint, AreaGeometry geometry, AreaDetails details) {
+        InfoArea area = new InfoArea(areaName);
+        area.region = regionOf(geometry, warpPoint);
+        area.loadedWorldName = worldName;
+        area.setDetails(details);
         return area;
-    }
-
-    private static CuboidRegion loadCuboid(ConfigurationSection config) {
-        if (!config.contains("center")) {
-            DevUtil.log("loadCuboid " + config);
-            return CuboidRegion.load(config);
-        }
-        // The old format: a centre and the sizes along each axis
-        Location center = deserializeLocation(config.getConfigurationSection("center"));
-        int sizeX = config.getInt("xSize");
-        int sizeY = config.getInt("ySize");
-        int sizeZ = config.getInt("zSize");
-        Vector minPos = new Vector(
-                center.getBlockX() - sizeX / 2, center.getBlockY() - sizeY / 2, center.getBlockZ() - sizeZ / 2);
-        Vector maxPos = new Vector(
-                center.getBlockX() + sizeX / 2, center.getBlockY() + sizeY / 2, center.getBlockZ() + sizeZ / 2);
-        DevUtil.log("CreateCuboid " + center + "     " + minPos + "    " + maxPos);
-        return new CuboidRegion(center, minPos, maxPos);
-    }
-
-    private static Location deserializeLocation(ConfigurationSection data) {
-        if (data == null) {
-            return null;
-        }
-        World world = Bukkit.getWorld(data.getString("world"));
-        if (world == null) {
-            return null;
-        } else {
-            return new Location(world, (Double) data.get("x"), (Double) data.get("y"), (Double) data.get("z"));
-        }
     }
 
     public Region getRegion() {
@@ -227,22 +159,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
     @Override
     public boolean isEnabled() {
         return status;
-    }
-
-    public void save(ConfigurationSection config) {
-        /*if(region.getLocation()==null) {
-            GuidebookPlugin.getPluginInstance().getLogger().warning("Save region call with NULL location.");
-            return;
-        }*/
-        DevUtil.log("saveInfo " + config + " " + region.toString());
-        region.save(config);
-        config.set("description", description);
-        config.set("title", title);
-        config.set("subtitle", subtitle);
-        config.set("showScoreboard", showBossBar);
-        config.set("showTitle", showTitle);
-        config.set("enabled", status);
-        config.set(LegacyMarkupConverter.MARKER, true);
     }
 
     void setDetails(AreaDetails details) {

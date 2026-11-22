@@ -18,8 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Pins what an Area's file holds for each Shape, as written today, before Areas become plain geometry. Reading a file
- * needs a server, so these tests pin writing only.
+ * Pins what an Area's file holds for each Shape, as written today, before Areas become plain geometry. Reading the
+ * files back is {@link AreaFileReadTest}'s.
  */
 class AreaFileWriteTest {
 
@@ -43,7 +43,7 @@ class AreaFileWriteTest {
     }
 
     private YamlConfiguration written(InfoArea area) throws IOException {
-        new AreaFolder(dataFolder.toFile()).write(area);
+        new AreaFolder(dataFolder.toFile(), TestWorlds::named).write(area);
         File file = dataFolder.resolve(WORLD).resolve(area.getName() + ".yml").toFile();
         assertTrue(file.isFile(), "no file at " + file);
         return YamlConfiguration.loadConfiguration(file);

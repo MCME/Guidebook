@@ -3,11 +3,13 @@ package com.mcmiddleearth.guidebook.data;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.bukkit.Location;
+import java.util.Set;
+import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
@@ -18,10 +20,8 @@ final class InMemoryAreaFiles implements AreaFiles {
 
     private record Key(String world, String name) {}
 
-    /** What an Area's file holds, plus where its Shape is, since tests can't look a world up by its name. */
-    private record StoredFile(YamlConfiguration contents, AreaGeometry geometry, Location warpPoint) {}
-
-    private final Map<Key, StoredFile> files = new LinkedHashMap<>();
+    private final Map<Key, YamlConfiguration> files = new LinkedHashMap<>();
+    private final Set<String> unloadedWorlds = new HashSet<>();
     private boolean failNextWrite;
     private boolean failNextDelete;
     private Optional<File> nextBackup = Optional.empty();
@@ -30,14 +30,16 @@ final class InMemoryAreaFiles implements AreaFiles {
     @Override
     public Loaded loadAll() {
         List<InfoArea> areas = new ArrayList<>();
-        files.forEach((key, file) -> areas.add(InfoArea.loaded(
-                key.name(),
-                file.contents(),
-                InfoArea.regionOf(file.geometry(), file.warpPoint().clone()))));
+        files.forEach((key, contents) ->
+                AreaFileFormat.read(key.name(), contents, this::world).ifPresent(areas::add));
         Loaded loaded = new Loaded(areas, nextBackup, nextProblems);
         nextBackup = Optional.empty();
         nextProblems = List.of();
         return loaded;
+    }
+
+    private World world(String name) {
+        return unloadedWorlds.contains(name) ? null : TestWorlds.named(name);
     }
 
     @Override
@@ -47,10 +49,8 @@ final class InMemoryAreaFiles implements AreaFiles {
             throw new IOException("Told to fail this write");
         }
         YamlConfiguration contents = new YamlConfiguration();
-        area.save(contents);
-        files.put(
-                new Key(area.getWorldName(), area.getName()),
-                new StoredFile(contents, area.getGeometry(), area.getLocation().clone()));
+        AreaFileFormat.write(area, contents);
+        files.put(new Key(area.getWorldName(), area.getName()), contents);
     }
 
     @Override
@@ -64,19 +64,21 @@ final class InMemoryAreaFiles implements AreaFiles {
 
     /** Holds a file for an Area in a world that isn't loaded, as a server can find one on disk. */
     void holdInUnloadedWorld(String worldName, String areaName, AreaGeometry.Sphere sphere) {
+        unloadedWorlds.add(worldName);
         YamlConfiguration contents = new YamlConfiguration();
         contents.set("world", worldName);
+        contents.set("locationX", sphere.centerX());
+        contents.set("locationY", sphere.centerY());
+        contents.set("locationZ", sphere.centerZ());
+        contents.set("radius", sphere.radius());
         contents.set("title", "Title of " + areaName);
         contents.set("subtitle", "");
-        files.put(
-                new Key(worldName, areaName),
-                new StoredFile(
-                        contents, sphere, new Location(null, sphere.centerX(), sphere.centerY(), sphere.centerZ())));
+        files.put(new Key(worldName, areaName), contents);
     }
 
     /** What the file of the Area {@code areaName} in {@code worldName} holds, if there is one. */
     Optional<YamlConfiguration> contents(String worldName, String areaName) {
-        return Optional.ofNullable(files.get(new Key(worldName, areaName))).map(StoredFile::contents);
+        return Optional.ofNullable(files.get(new Key(worldName, areaName)));
     }
 
     void failNextWrite() {

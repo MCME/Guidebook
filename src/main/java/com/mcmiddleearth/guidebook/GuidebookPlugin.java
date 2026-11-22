@@ -65,7 +65,7 @@ public class GuidebookPlugin extends JavaPlugin {
         pluginInstance = this;
         useWebMap();
         areaStore = new AreaStore(
-                new AreaFolder(getDataFolder()),
+                new AreaFolder(getDataFolder(), Bukkit::getWorld),
                 webMap.layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true),
                 getLogger());
         areaStore.reload();
