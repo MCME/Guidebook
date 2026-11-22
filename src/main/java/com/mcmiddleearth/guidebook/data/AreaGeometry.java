@@ -67,11 +67,62 @@ public sealed interface AreaGeometry {
         };
     }
 
+    /**
+     * Whether a point is inside the Shape. A sphere measures from the point's exact position: it's inside when its
+     * distance from the centre is at most the radius. A cuboid or prism uses the block the point is in, edges
+     * included; a prism decides which blocks are inside by {@link PrismInside}.
+     */
+    default boolean contains(double x, double y, double z) {
+        return switch (this) {
+            case Sphere sphere -> sphere.distanceFromCentre(x, y, z) <= sphere.radius();
+            case Cuboid c -> blockBetween(x, y, z, c.minX(), c.minY(), c.minZ(), c.maxX(), c.maxY(), c.maxZ(), 0);
+            case Prism prism ->
+                new PrismInside(prism).contains((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+        };
+    }
+
+    /**
+     * Whether a point is within {@code distance} blocks of the Shape. A sphere measures from the point's exact
+     * position, up to its radius plus the distance. A cuboid uses the block the point is in, widened by the distance
+     * on every side; a prism does the same with its bounding box, not its polygon.
+     */
+    default boolean near(double x, double y, double z, int distance) {
+        return switch (this) {
+            case Sphere sphere -> sphere.distanceFromCentre(x, y, z) <= sphere.radius() + distance;
+            case Cuboid c ->
+                blockBetween(x, y, z, c.minX(), c.minY(), c.minZ(), c.maxX(), c.maxY(), c.maxZ(), distance);
+            case Prism p -> blockBetween(x, y, z, p.minX(), p.minY(), p.minZ(), p.maxX(), p.maxY(), p.maxZ(), distance);
+        };
+    }
+
+    /**
+     * Whether the block a point is in lies between two corners widened by {@code distance} on every side, edges
+     * included.
+     */
+    private static boolean blockBetween(
+            double x, double y, double z, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int distance) {
+        return between(x, minX, maxX, distance) && between(y, minY, maxY, distance) && between(z, minZ, maxZ, distance);
+    }
+
+    private static boolean between(double coordinate, int min, int max, int distance) {
+        double block = Math.floor(coordinate);
+        return block >= min - distance && block <= max + distance;
+    }
+
     private static String heights(int minY, int maxY) {
         return ", from y " + minY + " to " + maxY;
     }
 
-    record Sphere(int centerX, int centerY, int centerZ, int radius) implements AreaGeometry {}
+    record Sphere(int centerX, int centerY, int centerZ, int radius) implements AreaGeometry {
+
+        private double distanceFromCentre(double x, double y, double z) {
+            return Math.sqrt(square(x - centerX) + square(y - centerY) + square(z - centerZ));
+        }
+
+        private static double square(double d) {
+            return d * d;
+        }
+    }
 
     record Cuboid(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) implements AreaGeometry {}
 
