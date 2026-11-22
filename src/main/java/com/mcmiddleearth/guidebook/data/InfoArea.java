@@ -105,9 +105,17 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         } else {
             return Optional.empty();
         }
+        return Optional.of(loaded(areaName, config, region));
+    }
+
+    /**
+     * The Area {@code areaName} with its file's contents and the region already read from them. Kept apart from
+     * reading the region, which looks its world up on the server, so tests can build Areas from file contents.
+     */
+    static InfoArea loaded(String areaName, ConfigurationSection config, Region region) {
         InfoArea area = new InfoArea(areaName, config);
         area.region = region;
-        return Optional.of(area);
+        return area;
     }
 
     private static CuboidRegion loadCuboid(ConfigurationSection config) {

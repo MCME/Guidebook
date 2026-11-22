@@ -17,212 +17,76 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.guidebook.webmap.MarkerLayer;
-import com.mcmiddleearth.guidebook.webmap.NoWebMap;
-import com.mcmiddleearth.guidebook.webmap.WebMap;
-import com.mcmiddleearth.pluginutil.region.Region;
-import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
+ * The plugin's {@link AreaStore}, reached statically until every caller reaches it through the plugin.
+ *
  * @author Eriol_Eandur
  */
 public class PluginData {
 
-    private static final Map<String, InfoArea> infoAreas = new HashMap<>();
-
-    private static final AreaRegistry<InfoArea> registry = new AreaRegistry<>(infoAreas.values());
-
-    private static MarkerLayer webMapLayer = new NoWebMap().layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
-
-    private static final File dataFolder = GuidebookPlugin.getPluginInstance().getDataFolder();
-
-    static {
-        if (!GuidebookPlugin.getPluginInstance().getDataFolder().exists()) {
-            GuidebookPlugin.getPluginInstance().getDataFolder().mkdirs();
-        }
+    private static AreaStore store() {
+        return GuidebookPlugin.getPluginInstance().getAreaStore();
     }
 
-    public static InfoArea addInfoArea(String name, InfoArea newArea) {
-        return infoAreas.put(name, newArea);
-    }
-
-    /**
-     * Writes a new Area's file, then adds it and draws it, so an Area whose file couldn't be written is never added.
-     */
+    /** See {@link AreaStore#create}. */
     public static void createInfoArea(InfoArea area) throws IOException {
-        writeArea(area);
-        addInfoArea(area.getName(), area);
-        drawAreas();
+        store().create(area);
     }
 
+    /** See {@link AreaStore#delete}. */
     public static boolean deleteInfoArea(InfoArea area) {
-        boolean result = getDataFile(area, area.getName()).delete();
-        if (result) {
-            infoAreas.remove(area.getName());
-            eraseArea(area.getName());
-            drawAreas();
-        }
-        return result;
+        return store().delete(area);
     }
 
-    /**
-     * @return false if the Area was renamed but its old data file couldn't be deleted, so it would load under both
-     *     names after a reload
-     */
+    /** See {@link AreaStore#rename}. */
     public static boolean renameInfoArea(InfoArea area, String newName) throws IOException {
-        String oldName = area.getName();
-        // Found before the rename, while it still points at the old name's file
-        File oldDataFile = getDataFile(area, oldName);
-
-        infoAreas.remove(oldName);
-        area.setName(newName);
-        infoAreas.put(newName, area);
-        try {
-            writeArea(area);
-        } catch (IOException ex) {
-            infoAreas.remove(newName);
-            area.setName(oldName);
-            infoAreas.put(oldName, area);
-            throw ex;
-        }
-        boolean oldFileDeleted = oldDataFile.delete();
-        eraseArea(oldName);
-        drawAreas();
-        return oldFileDeleted;
+        return store().rename(area, newName);
     }
 
-    /**
-     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}.
-     *
-     * @return false if the Area was moved to another world but its old world's data file couldn't be deleted, so it
-     *     would load twice after a reload
-     */
+    /** See {@link AreaStore#move}. */
     public static boolean moveInfoArea(InfoArea area, AreaGeometry geometry, Location warpPoint) throws IOException {
-        Region region = InfoArea.regionOf(geometry, warpPoint);
-        Region oldRegion = area.getRegion();
-        // Found before the move: the world folder comes from the region
-        File oldDataFile = getDataFile(area, area.getName());
-
-        area.setRegion(region);
-        try {
-            writeArea(area);
-        } catch (IOException ex) {
-            area.setRegion(oldRegion);
-            throw ex;
-        }
-        boolean oldFileGone = oldDataFile.equals(getDataFile(area, area.getName())) || oldDataFile.delete();
-        // The marker's id doesn't change, so this replaces it even in another world
-        drawAreas();
-        return oldFileGone;
+        return store().move(area, geometry, warpPoint);
     }
 
     /**
      * @return the Area the typed name reaches (ignoring case, exact case wins), or null if there is none
      */
     public static InfoArea getInfoArea(String name) {
-        return registry.resolve(name).orElse(null);
+        return store().find(name).orElse(null);
     }
 
     /**
      * @return the Area with exactly this name, or null if there is none
      */
     public static InfoArea getInfoAreaExact(String name) {
-        return registry.resolveExact(name).orElse(null);
+        return store().findExact(name).orElse(null);
     }
 
     /**
      * @return why the name can't be given to a new or renamed Area, or empty if it can
      */
     public static Optional<String> newAreaNameProblem(String name) {
-        return registry.newNameProblem(name);
+        return store().newNameProblem(name);
     }
 
-    /** Writes the Area's file, then redraws it on the Web map, so a failed save leaves its marker as it was. */
+    /** See {@link AreaStore#save}. */
     public static void saveArea(InfoArea area) throws IOException {
-        writeArea(area);
-        drawAreas();
+        store().save(area);
     }
 
-    private static void writeArea(InfoArea area) throws IOException {
-        final String areaName = area.getName();
-        DevUtil.log("SaveData " + areaName);
-
-        FileConfiguration config = new YamlConfiguration();
-        area.save(config);
-
-        File dataFile = getDataFile(area, areaName);
-        dataFile.getParentFile().mkdir();
-        config.save(dataFile);
-    }
-
+    /** See {@link AreaStore#reload}. */
     public static void loadData() {
-        infoAreas.clear();
-        AreaFileLoader.Outcome outcome = AreaFileLoader.load(dataFolder, LocalDateTime.now());
-        Logger logger = GuidebookPlugin.getPluginInstance().getLogger();
-        outcome.backup()
-                .ifPresent(backup -> logger.info("Backed up the Guidebook folder to " + backup
-                        + " before converting Guidebook areas from Legacy markup to MiniMessage."));
-        outcome.problems().forEach(logger::severe);
-        for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
-            String areaName = loaded.name();
-            DevUtil.log("Load area " + areaName);
-            InfoArea.load(areaName, loaded.config()).ifPresent(area -> addInfoArea(areaName, area));
-        }
-        drawWebMap();
-    }
-
-    /** Draws every Area on this Web map from now on, starting with the Areas already loaded. */
-    public static void useWebMap(WebMap webMap) {
-        webMapLayer = webMap.layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
-        drawWebMap();
-    }
-
-    private static void drawWebMap() {
-        webMapLayer.clear();
-        infoAreas.values().stream()
-                .filter(area -> !area.getRegion().isValid())
-                .forEach(area -> GuidebookPlugin.getPluginInstance()
-                        .getLogger()
-                        .warning("Area " + area.getName()
-                                + " isn't drawn on the Web map because its world isn't loaded."));
-        drawAreas();
-    }
-
-    /**
-     * Draws every Area again, since a change to one can change whether another holds an Area and so is drawn unfilled.
-     * An Area whose world isn't loaded has nowhere to be drawn, so its marker is erased.
-     */
-    private static void drawAreas() {
-        List<InfoArea> drawn = infoAreas.values().stream()
-                .filter(area -> area.getRegion().isValid())
-                .toList();
-        drawn.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, drawn)));
-        infoAreas.values().stream()
-                .filter(area -> !area.getRegion().isValid())
-                .forEach(area -> eraseArea(area.getName()));
-    }
-
-    private static void eraseArea(String areaName) {
-        webMapLayer.remove(AreaMarkers.id(areaName));
-    }
-
-    private static File getDataFile(InfoArea area, String areaName) {
-        return new File(new File(dataFolder, area.getWorldName()), areaName + ".yml");
+        store().reload();
     }
 
     public static Map<String, InfoArea> getInfoAreas() {
-        return infoAreas;
+        return store().byName();
     }
 
     public static List<String> suggestAreaNames(String typed) {
@@ -230,10 +94,6 @@ public class PluginData {
     }
 
     public static List<AreaRegistry.Suggestion> suggestAreas(String typed) {
-        return registry.suggest(typed);
-    }
-
-    public static File getDataFolder() {
-        return dataFolder;
+        return store().suggest(typed);
     }
 }
