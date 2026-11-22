@@ -7,7 +7,6 @@ import com.mcmiddleearth.guidebook.webmap.Outline;
 import com.mcmiddleearth.guidebook.webmap.WebMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.dynmap.DynmapCommonAPI;
 import org.dynmap.DynmapCommonAPIListener;
 import org.dynmap.markers.AreaMarker;
@@ -134,7 +133,6 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
         // A marker that changed outline type can't be updated in place, so it's always drawn afresh
         private void draw(Marker marker) {
             erase(marker.id());
-            String popup = toHtml(marker.popup());
             MarkerStyle style = marker.style();
             switch (marker.outline()) {
                 case Outline.Circle circle -> {
@@ -149,7 +147,7 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
                             circle.radius(),
                             circle.radius(),
                             false);
-                    drawn.setDescription(popup);
+                    drawn.setDescription(marker.popup());
                     drawn.setLineStyle(style.lineWeight(), 1, style.lineRgb());
                     drawn.setFillStyle(style.fillOpacity(), style.fillRgb());
                 }
@@ -169,7 +167,7 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
                     // A Y range would make LiveAtlas draw the polygon as a hollow 3D shape, which from above is only
                     // an outline that can't be hovered or clicked inside, so it's drawn flat instead
                     drawn.setRangeY(FLAT_Y, FLAT_Y);
-                    drawn.setDescription(popup);
+                    drawn.setDescription(marker.popup());
                     drawn.setLineStyle(style.lineWeight(), 1, style.lineRgb());
                     drawn.setFillStyle(style.fillOpacity(), style.fillRgb());
                 }
@@ -186,23 +184,5 @@ public final class DynmapWebMap extends DynmapCommonAPIListener implements WebMa
                 area.deleteMarker();
             }
         }
-    }
-
-    // Dynmap shows a description as HTML. Each line is its own block, so a triple-click selects just that line
-    private static String toHtml(String plainText) {
-        return plainText
-                .lines()
-                .map(line -> line.isEmpty() ? "<br>" : escapeHtml(line))
-                .map(line -> "<div>" + line + "</div>")
-                .collect(Collectors.joining());
-    }
-
-    private static String escapeHtml(String plainText) {
-        return plainText
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#39;");
     }
 }
