@@ -71,15 +71,24 @@ public final class AreaStore {
         return new ChangeOutcome.Done();
     }
 
-    /** @return false if the Area's file couldn't be deleted, so the Area is kept */
-    public boolean delete(InfoArea area) {
-        boolean deleted = files.delete(area.getWorldName(), area.getName());
-        if (deleted) {
-            areas.remove(area.getName());
-            eraseArea(area.getName());
-            drawAreas();
+    /**
+     * Deletes the Area's file, then removes the Area, erases its marker and redraws the Web map, so an Area whose file
+     * couldn't be deleted is kept.
+     *
+     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone} or {@link ChangeOutcome.NotWritten}
+     */
+    public ChangeOutcome delete(InfoArea area) {
+        if (!isCurrent(area)) {
+            return new ChangeOutcome.Gone();
         }
-        return deleted;
+        if (!files.delete(area.getWorldName(), area.getName())) {
+            return new ChangeOutcome.NotWritten(new IOException("Couldn't delete the file of Area " + area.getName()
+                    + " in the folder of world " + area.getWorldName() + "."));
+        }
+        areas.remove(area.getName());
+        eraseArea(area.getName());
+        drawAreas();
+        return new ChangeOutcome.Done();
     }
 
     /**

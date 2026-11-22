@@ -1,7 +1,8 @@
 package com.mcmiddleearth.guidebook.dialog;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
+import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import io.papermc.paper.dialog.Dialog;
@@ -10,8 +11,10 @@ import io.papermc.paper.registry.data.dialog.DialogBase;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
@@ -84,23 +87,23 @@ public final class ConfirmDialog {
                 .type(DialogType.confirmation(confirm, cancel))));
     }
 
-    /** Deletes {@code area}, if it is still the Area registered under its name. */
+    /** Deletes {@code area} through the store, which refuses if it was deleted or reloaded meanwhile. */
     private static void delete(Audience audience, InfoArea area) {
         if (!(audience instanceof Player player)) {
             return;
         }
-        // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
-        if (PluginData.getInfoAreaExact(area.getName()) != area) {
-            GuidebookMessages.sendError(
-                    player,
-                    GuidebookMessages.area(area.getName()),
-                    " was deleted or reloaded while you decided. It was NOT deleted.");
-            return;
-        }
-        if (PluginData.deleteInfoArea(area)) {
-            GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was deleted.");
-        } else {
-            GuidebookMessages.sendError(player, "There was an error while deleting the data file from disk.");
+        String name = area.getName();
+        ChangeOutcome outcome =
+                GuidebookPlugin.getPluginInstance().getAreaStore().delete(area);
+        switch (outcome) {
+            case ChangeOutcome.Done() ->
+                GuidebookMessages.sendInfo(player, GuidebookMessages.area(name), " was deleted.");
+            case ChangeOutcome.Gone() -> GuidebookMessages.sendGoneMeanwhile(player, name, "decided", "deleted");
+            case ChangeOutcome.NotWritten(IOException cause) -> {
+                Logger.getLogger(ConfirmDialog.class.getName()).severe(cause.getMessage());
+                GuidebookMessages.sendNotDone(player, name, "deleted");
+            }
+            case ChangeOutcome.NameTaken _, ChangeOutcome.DoneButOldFileLeft _ -> {}
         }
     }
 }

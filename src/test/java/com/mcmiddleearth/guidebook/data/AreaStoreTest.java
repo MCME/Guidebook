@@ -431,6 +431,73 @@ class AreaStoreTest {
 
     // ADR 0007
     @Test
+    void aDeleteRemovesTheAreaItsFileAndItsMarkerAndRedrawsAnAreaThatHeldIt() throws IOException {
+        InfoArea city = InfoArea.create(
+                "city",
+                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
+                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
+        fileOf(city);
+        fileOf(sphereArea("tower", 50));
+        store.reload();
+        assertEquals(0, fillOf("city"));
+
+        ChangeOutcome outcome = store.delete(store.findExact("tower").orElseThrow());
+
+        assertEquals(new ChangeOutcome.Done(), outcome);
+        assertEquals(Set.of("city"), names());
+        assertTrue(files.contents("middle-earth", "tower").isEmpty());
+        assertTrue(layer.markerOf("tower").isEmpty());
+        assertTrue(fillOf("city") > 0);
+    }
+
+    @Test
+    void aDeleteWhoseFileCantBeDeletedKeepsTheAreaAndItsMarker() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        Marker markerBefore = layer.markerOf("edoras").orElseThrow();
+
+        files.failNextDelete();
+        ChangeOutcome outcome = store.delete(edoras);
+
+        assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
+        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertEquals(markerBefore, layer.markerOf("edoras").orElseThrow());
+    }
+
+    @Test
+    void aDeleteOfAnAreaReloadedMeanwhileIsGoneAndDeletesNoFile() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea stale = store.findExact("edoras").orElseThrow();
+        store.reload();
+
+        ChangeOutcome outcome = store.delete(stale);
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertTrue(store.findExact("edoras").isPresent());
+        assertTrue(layer.markerOf("edoras").isPresent());
+    }
+
+    @Test
+    void aDeleteOfAnAreaDeletedMeanwhileIsGoneAndLeavesANewAreaOfThatNameAlone() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea deleted = store.findExact("edoras").orElseThrow();
+        store.delete(deleted);
+        store.create(sphereArea("edoras", 100), NEW_DETAILS);
+
+        ChangeOutcome outcome = store.delete(deleted);
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertTrue(layer.markerOf("edoras").isPresent());
+    }
+
+    // ADR 0007
+    @Test
     void anEditRedrawsEveryAreaSoOneHoldingAnotherStaysAnOutline() throws IOException {
         InfoArea city = InfoArea.create(
                 "city",

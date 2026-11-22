@@ -32,11 +32,6 @@ public class PluginData {
         return GuidebookPlugin.getPluginInstance().getAreaStore();
     }
 
-    /** See {@link AreaStore#delete}. */
-    public static boolean deleteInfoArea(InfoArea area) {
-        return store().delete(area);
-    }
-
     /**
      * @return the Area the typed name reaches (ignoring case, exact case wins), or null if there is none
      */

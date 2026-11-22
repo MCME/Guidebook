@@ -17,7 +17,7 @@ public sealed interface ChangeOutcome {
     /** Another Area took the name meanwhile, so nothing was changed. */
     record NameTaken() implements ChangeOutcome {}
 
-    /** The Area's file couldn't be written, so the Area was left as it was. */
+    /** The Area's file couldn't be written, or deleted, so the Area was left as it was. */
     record NotWritten(IOException cause) implements ChangeOutcome {}
 
     /**
