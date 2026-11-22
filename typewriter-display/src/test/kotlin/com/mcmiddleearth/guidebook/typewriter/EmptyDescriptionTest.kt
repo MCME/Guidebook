@@ -27,8 +27,8 @@ class EmptyDescriptionTest {
     }
 
     @Test
-    fun `the guide tag alone is not empty, as it shows Guide`() {
-        assertFalse(isEmptyDescription("<guide>"))
+    fun `the guide tag alone is an empty Description, as the box leaves out its Guide label`() {
+        assertTrue(isEmptyDescription("<guide>"))
     }
 
     @Test

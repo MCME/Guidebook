@@ -102,13 +102,13 @@ class TypewriterDisplayTest {
     }
 
     @Test
-    fun `a Description of only the guide tag still gets a box`() {
+    fun `a Description of only the guide tag gets its Title and no box, as the box shows no Guide label`() {
         val guide = Welcome("me-weathertop", "Weathertop", "Amon Sûl", "<guide>", true)
 
         display.show(player, guide)
 
-        assertEquals(listOf(guide), typewriter.started)
-        assertEquals(emptyList<Welcome>(), typewriter.titlesOnly)
+        assertEquals(listOf(guide), typewriter.titlesOnly)
+        assertEquals(emptyList<Welcome>(), typewriter.started)
     }
 
     private class FakeTypewriter : BoxOpener {
