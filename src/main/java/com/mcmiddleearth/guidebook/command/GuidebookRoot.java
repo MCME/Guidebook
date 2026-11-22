@@ -6,7 +6,6 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
@@ -125,7 +124,7 @@ class GuidebookRoot {
     @Executes("edit")
     @Permission(STAFF)
     void editHere(@Executor Player player) {
-        List<InfoArea> here = PluginData.getInfoAreas().values().stream()
+        List<InfoArea> here = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
                 .filter(area -> area.isInside(player.getLocation()))
                 .toList();
         if (here.size() == 1) {
@@ -221,7 +220,7 @@ class GuidebookRoot {
     @Executes("reload")
     @Permission(STAFF)
     void reload(CommandSender sender) {
-        PluginData.loadData();
+        GuidebookPlugin.getPluginInstance().getAreaStore().reload();
         GuidebookMessages.sendInfo(sender, "All Guidebook areas reloaded from file.");
     }
 

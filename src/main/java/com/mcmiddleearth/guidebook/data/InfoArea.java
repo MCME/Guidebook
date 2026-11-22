@@ -152,7 +152,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         return this.region;
     }
 
-    public void setRegion(Region region) {
+    void setRegion(Region region) {
         this.region = region;
     }
 
@@ -229,14 +229,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         return status;
     }
 
-    public void statusOn() {
-        status = true;
-    }
-
-    public void statusOff() {
-        status = false;
-    }
-
     public void save(ConfigurationSection config) {
         /*if(region.getLocation()==null) {
             GuidebookPlugin.getPluginInstance().getLogger().warning("Save region call with NULL location.");
@@ -262,7 +254,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         status = details.enabled();
     }
 
-    public void setDescription(String description) {
+    void setDescription(String description) {
         this.description = description;
     }
 
@@ -271,7 +263,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         return title;
     }
 
-    public final void setTitle(String newTitle) {
+    final void setTitle(String newTitle) {
         /*Objective obj = scoreboard.getObjective(newTitle);
         if(obj!=null) {
             obj.unregister();
@@ -293,7 +285,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         return subtitle;
     }
 
-    public void setSubtitle(String subtitle) {
+    void setSubtitle(String subtitle) {
         this.subtitle = Objects.requireNonNullElse(subtitle, "");
     }
 
@@ -302,7 +294,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         return showTitle;
     }
 
-    public void setShowTitle(boolean showTitle) {
+    void setShowTitle(boolean showTitle) {
         this.showTitle = showTitle;
     }
 
@@ -311,7 +303,7 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         return showBossBar;
     }
 
-    public void setShowBossBar(boolean showBossBar) {
+    void setShowBossBar(boolean showBossBar) {
         this.showBossBar = showBossBar;
     }
 

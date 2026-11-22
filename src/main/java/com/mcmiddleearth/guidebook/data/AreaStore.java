@@ -204,11 +204,6 @@ public final class AreaStore {
         return Collections.unmodifiableCollection(areas.values());
     }
 
-    /** Every Area by its exact name, for the static store until its callers move here. */
-    Map<String, InfoArea> byName() {
-        return Collections.unmodifiableMap(areas);
-    }
-
     /**
      * Whether the Area is the one the store holds under its name. A rename keeps the same Area, so it stays current,
      * but a delete or a reload drops it.

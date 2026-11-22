@@ -6,7 +6,6 @@ import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PlacementCheck;
 import com.mcmiddleearth.guidebook.data.PlacementFinding;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.dialog.Dialog;
@@ -336,7 +335,11 @@ public final class PlacementDialog {
     private static void showSphere(Player player, Purpose purpose) {
         PlacementCheck.StaffPosition staff = positionOf(player);
         PlacementCheck.SphereClearance clearance = PlacementCheck.sphereClearance(
-                staff, PluginData.getInfoAreas().values(), purpose.movedAreaName(), RADIUS_MIN, RADIUS_MAX);
+                staff,
+                GuidebookPlugin.getPluginInstance().getAreaStore().all(),
+                purpose.movedAreaName(),
+                RADIUS_MIN,
+                RADIUS_MAX);
         int clear = clearance.largestClearRadius();
 
         List<DialogBody> body = new ArrayList<>();
@@ -421,7 +424,10 @@ public final class PlacementDialog {
 
     private static List<PlacementFinding> check(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
         return PlacementCheck.check(
-                proposal, positionOf(player), PluginData.getInfoAreas().values(), purpose.movedAreaName());
+                proposal,
+                positionOf(player),
+                GuidebookPlugin.getPluginInstance().getAreaStore().all(),
+                purpose.movedAreaName());
     }
 
     private static boolean hasBlocking(List<PlacementFinding> findings) {

@@ -1,7 +1,7 @@
 package com.mcmiddleearth.guidebook.command;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mojang.brigadier.Message;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -36,7 +36,8 @@ final class GuidebookCreate {
 
     @NameSuggestions
     static CompletableFuture<Suggestions> suggest(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        Collection<InfoArea> areas = PluginData.getInfoAreas().values();
+        Collection<InfoArea> areas =
+                GuidebookPlugin.getPluginInstance().getAreaStore().all();
         // Loaded worlds, and the worlds of Areas whose world isn't loaded
         TreeSet<String> worlds = new TreeSet<>();
         Bukkit.getWorlds().stream().map(World::getName).forEach(worlds::add);
