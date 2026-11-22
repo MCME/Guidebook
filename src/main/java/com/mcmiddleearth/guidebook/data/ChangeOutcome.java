@@ -3,8 +3,8 @@ package com.mcmiddleearth.guidebook.data;
 import java.io.IOException;
 
 /**
- * How a change to an Area through the {@link AreaStore} ended. A step returns only some of these, and its caller can
- * ignore the rest.
+ * How a change to an Area ended: made, refused, or made with an old file left over. Each change ends in only some of
+ * these.
  */
 public sealed interface ChangeOutcome {
 
