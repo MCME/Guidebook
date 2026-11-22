@@ -3,12 +3,10 @@ package com.mcmiddleearth.guidebook.data;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -21,7 +19,6 @@ final class InMemoryAreaFiles implements AreaFiles {
     private record Key(String world, String name) {}
 
     private final Map<Key, YamlConfiguration> files = new LinkedHashMap<>();
-    private final Set<String> unloadedWorlds = new HashSet<>();
     private boolean failNextWrite;
     private boolean failNextDelete;
     private Optional<File> nextBackup = Optional.empty();
@@ -39,7 +36,7 @@ final class InMemoryAreaFiles implements AreaFiles {
     }
 
     private World world(String name) {
-        return unloadedWorlds.contains(name) ? null : TestWorlds.named(name);
+        return TestWorlds.named(name);
     }
 
     @Override
@@ -60,20 +57,6 @@ final class InMemoryAreaFiles implements AreaFiles {
             return false;
         }
         return files.remove(new Key(worldName, areaName)) != null;
-    }
-
-    /** Holds a file for an Area in a world that isn't loaded, as a server can find one on disk. */
-    void holdInUnloadedWorld(String worldName, String areaName, AreaGeometry.Sphere sphere) {
-        unloadedWorlds.add(worldName);
-        YamlConfiguration contents = new YamlConfiguration();
-        contents.set("world", worldName);
-        contents.set("locationX", sphere.centerX());
-        contents.set("locationY", sphere.centerY());
-        contents.set("locationZ", sphere.centerZ());
-        contents.set("radius", sphere.radius());
-        contents.set("title", "Title of " + areaName);
-        contents.set("subtitle", "");
-        files.put(new Key(worldName, areaName), contents);
     }
 
     /** What the file of the Area {@code areaName} in {@code worldName} holds, if there is one. */

@@ -29,7 +29,17 @@ class AreaStoreTest {
     private final InMemoryAreaFiles files = new InMemoryAreaFiles();
     private final RecordingMarkerLayer layer = new RecordingMarkerLayer();
     private final List<LogRecord> logged = new ArrayList<>();
-    private final AreaStore store = new AreaStore(files, layer, recordingLogger());
+    private final AreaStore store =
+            new AreaStore(files, layer, worldName -> !worldName.equals(UNLOADED_WORLD), recordingLogger());
+
+    /** The one world the store is told isn't loaded. */
+    private static final String UNLOADED_WORLD = "old-world";
+
+    /** An Area in {@link #UNLOADED_WORLD}: a sphere of radius 5 centred on its Warp point at (0, 64, 0). */
+    private static InfoArea inUnloadedWorld(String name) {
+        return InfoArea.create(
+                name, new Location(TestWorlds.named(UNLOADED_WORLD), 0, 64, 0), new AreaGeometry.Sphere(0, 64, 0, 5));
+    }
 
     /** A real Area: a sphere of radius 5 centred on its Warp point at {@code x} in the world "middle-earth". */
     private static InfoArea sphereArea(String name, int x) {
@@ -63,14 +73,16 @@ class AreaStoreTest {
     }
 
     @Test
-    void anAreaWhoseWorldIsntLoadedIsErasedFromTheWebMapWithAWarning() throws IOException {
+    void anAreaWhoseWorldIsntLoadedIsLoadedFullyButErasedFromTheWebMapWithAWarning() throws IOException {
         fileOf(sphereArea("edoras", 0));
-        files.holdInUnloadedWorld("old-world", "barad-dur", new AreaGeometry.Sphere(0, 64, 0, 5));
+        fileOf(inUnloadedWorld("barad-dur"));
         layer.put(new Marker(AreaMarkers.id("barad-dur"), "old-world", "", "", new Outline.Circle(0, 0, 5), null));
 
         store.reload();
 
-        assertTrue(store.findExact("barad-dur").isPresent());
+        InfoArea baradDur = store.findExact("barad-dur").orElseThrow();
+        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), baradDur.getGeometry());
+        assertEquals(UNLOADED_WORLD, baradDur.getWorldName());
         assertEquals(Set.of(AreaMarkers.id("edoras")), layer.ids());
         assertEquals(
                 List.of("Area barad-dur isn't drawn on the Web map because its world isn't loaded."),
@@ -79,7 +91,7 @@ class AreaStoreTest {
 
     @Test
     void anAreaWhoseWorldIsntLoadedStaysOffTheWebMapWhenAnotherAreaChanges() throws IOException {
-        files.holdInUnloadedWorld("old-world", "barad-dur", new AreaGeometry.Sphere(0, 64, 0, 5));
+        fileOf(inUnloadedWorld("barad-dur"));
         store.reload();
 
         store.create(sphereArea("edoras", 0), NEW_DETAILS);

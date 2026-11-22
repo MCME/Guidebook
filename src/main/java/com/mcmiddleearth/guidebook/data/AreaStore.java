@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import org.bukkit.Location;
 
@@ -24,16 +25,20 @@ public final class AreaStore {
 
     private final AreaFiles files;
     private final MarkerLayer webMapLayer;
+    private final Predicate<String> worldLoaded;
     private final Logger logger;
 
     /**
      * Holds no Areas until {@link #reload()}.
      *
+     * @param worldLoaded whether the world of that name is loaded now. An Area whose world isn't has nowhere to be
+     *     drawn on the Web map; it's asked at each drawing, so a world loaded later shows its Areas at the next change
      * @param logger where load problems and Areas left off the Web map are logged
      */
-    public AreaStore(AreaFiles files, MarkerLayer webMapLayer, Logger logger) {
+    public AreaStore(AreaFiles files, MarkerLayer webMapLayer, Predicate<String> worldLoaded, Logger logger) {
         this.files = files;
         this.webMapLayer = webMapLayer;
+        this.worldLoaded = worldLoaded;
         this.logger = logger;
     }
 
@@ -219,7 +224,7 @@ public final class AreaStore {
     private void drawWebMap() {
         webMapLayer.clear();
         areas.values().stream()
-                .filter(area -> !area.getRegion().isValid())
+                .filter(area -> !isInLoadedWorld(area))
                 .forEach(area -> logger.warning(
                         "Area " + area.getName() + " isn't drawn on the Web map because its world isn't loaded."));
         drawAreas();
@@ -230,11 +235,14 @@ public final class AreaStore {
      * An Area whose world isn't loaded has nowhere to be drawn, so its marker is erased.
      */
     private void drawAreas() {
-        List<InfoArea> drawn = areas.values().stream()
-                .filter(area -> area.getRegion().isValid())
-                .toList();
+        List<InfoArea> drawn =
+                areas.values().stream().filter(this::isInLoadedWorld).toList();
         drawn.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, drawn)));
-        areas.values().stream().filter(area -> !area.getRegion().isValid()).forEach(area -> eraseArea(area.getName()));
+        areas.values().stream().filter(area -> !isInLoadedWorld(area)).forEach(area -> eraseArea(area.getName()));
+    }
+
+    private boolean isInLoadedWorld(InfoArea area) {
+        return worldLoaded.test(area.getWorldName());
     }
 
     private void eraseArea(String areaName) {
