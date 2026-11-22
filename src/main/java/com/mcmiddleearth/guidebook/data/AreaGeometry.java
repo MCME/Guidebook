@@ -1,5 +1,9 @@
 package com.mcmiddleearth.guidebook.data;
 
+import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Polygonal2DRegion;
+import java.util.ArrayList;
 import java.util.List;
 
 /** Where an Area's Shape is in its world, in block coordinates. */
@@ -70,14 +74,13 @@ public sealed interface AreaGeometry {
     /**
      * Whether a point is inside the Shape. A sphere measures from the point's exact position: it's inside when its
      * distance from the centre is at most the radius. A cuboid or prism uses the block the point is in, edges
-     * included; a prism decides which blocks are inside by {@link PrismInside}.
+     * included; a prism holds exactly the blocks WorldEdit's polygon selection holds.
      */
     default boolean contains(double x, double y, double z) {
         return switch (this) {
             case Sphere sphere -> sphere.distanceFromCentre(x, y, z) <= sphere.radius();
             case Cuboid c -> blockBetween(x, y, z, c.minX(), c.minY(), c.minZ(), c.maxX(), c.maxY(), c.maxZ(), 0);
-            case Prism prism ->
-                new PrismInside(prism).contains((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+            case Prism prism -> prism.containsBlock((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
         };
     }
 
@@ -147,6 +150,23 @@ public sealed interface AreaGeometry {
         /** The highest corner Z, or 0 for a polygon with no corners. */
         public int maxZ() {
             return zs.stream().mapToInt(Integer::intValue).max().orElse(0);
+        }
+
+        /**
+         * Whether a block is inside, by WorldEdit's own rule for a polygon selection, so the prism holds exactly the
+         * blocks staff selected.
+         */
+        boolean containsBlock(int x, int y, int z) {
+            return Polygonal2DRegion.contains(corners(), minY, maxY, BlockVector3.at(x, y, z));
+        }
+
+        /** The polygon's corners as WorldEdit takes them. */
+        List<BlockVector2> corners() {
+            List<BlockVector2> corners = new ArrayList<>(xs.size());
+            for (int i = 0; i < xs.size(); i++) {
+                corners.add(BlockVector2.at(xs.get(i), zs.get(i)));
+            }
+            return corners;
         }
     }
 }

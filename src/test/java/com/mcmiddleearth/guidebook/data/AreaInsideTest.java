@@ -4,18 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.List;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.junit.jupiter.api.Test;
 
 /**
  * When a player is inside an Area, and when they're near enough not to have Left it, for each Shape. These pinned the
  * rules PluginUtils' regions had, so the move to plain geometry kept them, except that a prism now compares the world
- * as the other Shapes do.
+ * as the other Shapes do, and holds exactly the blocks staff selected in WorldEdit.
  */
 class AreaInsideTest {
 
@@ -151,11 +146,11 @@ class AreaInsideTest {
     }
 
     @Test
-    void aSlopedPrismsEdgesFallOnTheBlocksPrismoidRegionChoosesToday() {
-        // Each row of z, the first and last x inside, as PrismoidRegion draws it today
+    void aSlopedPrismsEdgesFallOnTheBlocksWorldEditSelects() {
+        // Each row of z, the first and last x inside, as WorldEdit selects them
         int[][] rows = {
-            {0, 0, 1}, {1, 0, 4}, {2, 0, 7}, {3, 1, 10}, {4, 1, 12}, {5, 1, 11}, {6, 1, 10}, {7, 1, 10},
-            {8, 2, 9}, {9, 2, 8}, {10, 2, 7}, {11, 2, 6}, {12, 2, 5}, {13, 3, 5}, {14, 3, 4}, {15, 3, 3}
+            {0, 0, 0}, {1, 1, 3}, {2, 1, 6}, {3, 1, 9}, {4, 1, 12}, {5, 1, 11}, {6, 2, 10}, {7, 2, 9},
+            {8, 2, 8}, {9, 2, 7}, {10, 2, 7}, {11, 3, 6}, {12, 3, 5}, {13, 3, 4}, {14, 3, 3}, {15, 3, 3}
         };
         for (int[] row : rows) {
             int z = row[0];
@@ -167,37 +162,6 @@ class AreaInsideTest {
         for (int x = -2; x <= 14; x++) {
             assertFalse(triangle().isInside(at(x, 64, -1)));
             assertFalse(triangle().isInside(at(x, 64, 16)));
-        }
-    }
-
-    // A world for PrismoidRegion, which only compares worlds with each other
-    private static final World PRISMOID_WORLD = (World) Proxy.newProxyInstance(
-            World.class.getClassLoader(),
-            new Class<?>[] {World.class},
-            (proxy, method, args) -> switch (method.getName()) {
-                case "equals" -> proxy == args[0];
-                case "hashCode" -> 0;
-                case "toString" -> "test world";
-                default -> null;
-            });
-
-    @Test
-    void aSlopedPrismIsInsideExactlyWherePrismoidRegionIs() {
-        PrismoidRegion region = new PrismoidRegion(
-                new Location(PRISMOID_WORLD, 0, 64, 0),
-                new ArrayList<>(TRIANGLE_XS),
-                new ArrayList<>(TRIANGLE_ZS),
-                60,
-                70);
-        for (int x = -3; x <= 15; x++) {
-            for (int y = 58; y <= 72; y++) {
-                for (int z = -3; z <= 18; z++) {
-                    assertEquals(
-                            region.isInside(new Location(PRISMOID_WORLD, x, y, z)),
-                            triangle().isInside(at(x, y, z)),
-                            "(" + x + ", " + y + ", " + z + ")");
-                }
-            }
         }
     }
 

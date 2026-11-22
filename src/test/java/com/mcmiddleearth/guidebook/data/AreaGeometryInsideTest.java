@@ -110,11 +110,11 @@ class AreaGeometryInsideTest {
     }
 
     @Test
-    void aSlopedPrismsEdgesFallOnTheBlocksPrismoidRegionChoosesToday() {
-        // Each row of z, the first and last x inside, as AreaInsideTest pins them
+    void aSlopedPrismsEdgesFallOnTheBlocksWorldEditSelects() {
+        // Each row of z, the first and last x inside, as WorldEdit selects them
         int[][] rows = {
-            {0, 0, 1}, {1, 0, 4}, {2, 0, 7}, {3, 1, 10}, {4, 1, 12}, {5, 1, 11}, {6, 1, 10}, {7, 1, 10},
-            {8, 2, 9}, {9, 2, 8}, {10, 2, 7}, {11, 2, 6}, {12, 2, 5}, {13, 3, 5}, {14, 3, 4}, {15, 3, 3}
+            {0, 0, 0}, {1, 1, 3}, {2, 1, 6}, {3, 1, 9}, {4, 1, 12}, {5, 1, 11}, {6, 2, 10}, {7, 2, 9},
+            {8, 2, 8}, {9, 2, 7}, {10, 2, 7}, {11, 3, 6}, {12, 3, 5}, {13, 3, 4}, {14, 3, 3}, {15, 3, 3}
         };
         for (int[] row : rows) {
             int z = row[0];
@@ -138,21 +138,34 @@ class AreaGeometryInsideTest {
         assertFalse(TRIANGLE.contains(0, 71, 0));
     }
 
+    // Blocks where PluginUtils' rule, which Guidebook used before, disagreed with the blocks staff select in WorldEdit.
+    // The answers are WorldEdit's, read off its selection.
+
     @Test
-    void aPrismHoldsAPointExactlyWherePrismInsideHoldsItsBlock() {
-        for (AreaGeometry.Prism prism : List.of(SQUARE, TRIANGLE)) {
-            PrismInside rule = new PrismInside(prism);
-            for (int x = -3; x <= 15; x++) {
-                for (int y = 58; y <= 72; y++) {
-                    for (int z = -3; z <= 18; z++) {
-                        assertEquals(
-                                rule.contains(x, y, z),
-                                prism.contains(x + 0.5, y + 0.5, z + 0.5),
-                                "(" + x + ", " + y + ", " + z + ")");
-                    }
-                }
-            }
+    void aSlopedEdgeLeavesOutTheBlocksWorldEditLeavesOut() {
+        // The triangle (0, 0), (20, 7), (5, 18): PluginUtils counted each of these inside
+        AreaGeometry.Prism triangle = new AreaGeometry.Prism(List.of(0, 20, 5), List.of(0, 7, 18), 60, 70);
+        int[][] outside = {{1, 0}, {0, 1}, {12, 4}, {19, 8}, {15, 11}, {4, 16}, {7, 17}};
+        for (int[] block : outside) {
+            assertFalse(triangle.contains(block[0], 64, block[1]), "(" + block[0] + ", " + block[1] + ")");
         }
+        int[][] inside = {{0, 0}, {20, 7}, {5, 18}, {2, 4}, {18, 7}, {14, 11}, {6, 17}};
+        for (int[] block : inside) {
+            assertTrue(triangle.contains(block[0], 64, block[1]), "(" + block[0] + ", " + block[1] + ")");
+        }
+    }
+
+    @Test
+    void aSlopedEdgeHoldsTheBlocksWorldEditHolds() {
+        // The arrowhead (0, 0), (4, 14), (7, 0), (1, 3), notched at (1, 3): PluginUtils left these out
+        AreaGeometry.Prism arrowhead = new AreaGeometry.Prism(List.of(0, 4, 7, 1), List.of(0, 14, 0, 3), 60, 70);
+        int[][] inside = {{5, 1}, {3, 2}, {2, 7}, {5, 9}};
+        for (int[] block : inside) {
+            assertTrue(arrowhead.contains(block[0], 64, block[1]), "(" + block[0] + ", " + block[1] + ")");
+        }
+        // and counted these in, inside the notch
+        assertFalse(arrowhead.contains(0, 64, 1));
+        assertFalse(arrowhead.contains(1, 64, 2));
     }
 
     @Test
