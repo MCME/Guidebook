@@ -6,7 +6,6 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.WarpPoint;
 import com.mcmiddleearth.guidebook.data.WorldPoint;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
@@ -31,7 +30,6 @@ import net.strokkur.commands.paper.Executor;
 import net.strokkur.commands.paper.arguments.CustomArg;
 import net.strokkur.commands.permission.Permission;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -115,9 +113,7 @@ class GuidebookRoot {
                     sender, GuidebookMessages.area(area.getName()), " is in " + worldName + ", which isn't loaded.");
             return;
         }
-        WarpPoint warpPoint = area.getWarpPoint();
-        player.teleport(
-                new Location(world, warpPoint.x(), warpPoint.y(), warpPoint.z(), warpPoint.yaw(), warpPoint.pitch()));
+        player.teleport(area.getWarpPoint().toLocation(world));
         GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
     }
 
