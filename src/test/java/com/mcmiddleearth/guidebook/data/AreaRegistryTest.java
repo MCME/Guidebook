@@ -14,28 +14,36 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AreaRegistryTest {
 
-    record TestArea(String getName, String getTitle, boolean isEnabled, Shape getShape) implements AreaView {}
-
-    private static TestArea area(String name) {
-        return new TestArea(name, "Title of " + name, true, Shape.CUBOID);
+    private static InfoArea area(String name) {
+        return area(name, "Title of " + name, true, Shape.CUBOID);
     }
 
-    private static AreaRegistry<TestArea> registryOf(TestArea... areas) {
-        return new AreaRegistry<>(List.of(areas));
+    private static InfoArea area(String name, String title, boolean enabled, Shape shape) {
+        AreaGeometry geometry =
+                switch (shape) {
+                    case SPHERE -> new AreaGeometry.Sphere(0, 64, 0, 10);
+                    case CUBOID -> new AreaGeometry.Cuboid(0, 60, 0, 10, 70, 10);
+                    case PRISM -> new AreaGeometry.Prism(List.of(0, 10, 0), List.of(0, 0, 10), 60, 70);
+                };
+        return TestAreas.area(name, "world", geometry, new AreaDetails(false, title, "", false, "", enabled));
+    }
+
+    private static AreaRegistry registryOf(InfoArea... areas) {
+        return new AreaRegistry(List.of(areas));
     }
 
     @Test
     void resolvesANameIgnoringCase() {
-        TestArea minas = area("minas");
-        AreaRegistry<TestArea> registry = registryOf(area("edoras"), minas);
+        InfoArea minas = area("minas");
+        AreaRegistry registry = registryOf(area("edoras"), minas);
 
         assertEquals(minas, registry.resolve("Minas").orElseThrow());
     }
 
     @Test
     void anExactCaseMatchWinsOverAMatchIgnoringCase() {
-        TestArea lower = area("minas");
-        TestArea upper = area("Minas");
+        InfoArea lower = area("minas");
+        InfoArea upper = area("Minas");
 
         assertEquals(upper, registryOf(lower, upper).resolve("Minas").orElseThrow());
         assertEquals(lower, registryOf(upper, lower).resolve("minas").orElseThrow());
@@ -48,8 +56,8 @@ class AreaRegistryTest {
 
     @Test
     void resolvingExactlyFindsOnlyTheAreaWithThatExactName() {
-        TestArea lower = area("minas");
-        TestArea upper = area("Minas");
+        InfoArea lower = area("minas");
+        InfoArea upper = area("Minas");
 
         assertEquals(upper, registryOf(lower, upper).resolveExact("Minas").orElseThrow());
         assertTrue(registryOf(lower).resolveExact("MINAS").isEmpty());
@@ -69,7 +77,7 @@ class AreaRegistryTest {
 
     @Test
     void aNameInUseIgnoringCaseIsNotAvailable() {
-        AreaRegistry<TestArea> registry = registryOf(area("minas"), area("edoras"));
+        AreaRegistry registry = registryOf(area("minas"), area("edoras"));
 
         assertFalse(registry.isAvailable("minas"));
         assertFalse(registry.isAvailable("MINAS"));
@@ -99,7 +107,7 @@ class AreaRegistryTest {
                 registryOf(area("minas")).newNameProblem("MINAS"));
     }
 
-    private static Set<String> suggestedNames(AreaRegistry<TestArea> registry, String typed) {
+    private static Set<String> suggestedNames(AreaRegistry registry, String typed) {
         return registry.suggest(typed).stream()
                 .map(AreaRegistry.Suggestion::name)
                 .collect(Collectors.toSet());
@@ -108,7 +116,7 @@ class AreaRegistryTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "world", "world-gondor-minas", "gondor", "gondor-mi", "minas", "MINAS", "m"})
     void suggestsANameWhenAnyHyphenSegmentStartsWithTheTypedText(String typed) {
-        AreaRegistry<TestArea> registry = registryOf(area("world-gondor-minas"));
+        AreaRegistry registry = registryOf(area("world-gondor-minas"));
 
         assertEquals(Set.of("world-gondor-minas"), suggestedNames(registry, typed));
     }
@@ -116,14 +124,14 @@ class AreaRegistryTest {
     @ParameterizedTest
     @ValueSource(strings = {"ondor", "inas", "gondor-minas-x", "rohan"})
     void doesNotSuggestANameWhenTheTypedTextStartsMidSegment(String typed) {
-        AreaRegistry<TestArea> registry = registryOf(area("world-gondor-minas"));
+        AreaRegistry registry = registryOf(area("world-gondor-minas"));
 
         assertEquals(Set.of(), suggestedNames(registry, typed));
     }
 
     @Test
     void suggestsOnlyTheMatchingNames() {
-        AreaRegistry<TestArea> registry =
+        AreaRegistry registry =
                 registryOf(area("world-gondor-minas"), area("world-rohan-edoras"), area("world-gondor-osgiliath"));
 
         assertEquals(Set.of("world-gondor-minas", "world-gondor-osgiliath"), suggestedNames(registry, "gondor"));
@@ -131,8 +139,7 @@ class AreaRegistryTest {
 
     @Test
     void aSuggestionCarriesTheAreasTitleAndShape() {
-        AreaRegistry<TestArea> registry =
-                registryOf(new TestArea("world-gondor-minas", "Minas Tirith", true, Shape.PRISM));
+        AreaRegistry registry = registryOf(area("world-gondor-minas", "Minas Tirith", true, Shape.PRISM));
 
         assertEquals(
                 List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith", Shape.PRISM, false)),
@@ -141,8 +148,7 @@ class AreaRegistryTest {
 
     @Test
     void aDisabledAreaIsStillSuggestedAndMarkedDisabled() {
-        AreaRegistry<TestArea> registry =
-                registryOf(new TestArea("world-gondor-minas", "Minas Tirith", false, Shape.SPHERE));
+        AreaRegistry registry = registryOf(area("world-gondor-minas", "Minas Tirith", false, Shape.SPHERE));
 
         assertEquals(
                 List.of(new AreaRegistry.Suggestion("world-gondor-minas", "Minas Tirith", Shape.SPHERE, true)),

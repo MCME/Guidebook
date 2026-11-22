@@ -6,25 +6,25 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-public class AreaRegistry<A extends AreaView> {
+public class AreaRegistry {
 
     // The characters Brigadier allows in an unquoted word, so every name can be typed as one argument
     private static final Pattern VALID_NAME = Pattern.compile("[0-9A-Za-z_\\-.+]+");
 
-    private final Collection<A> areas;
+    private final Collection<InfoArea> areas;
 
-    public AreaRegistry(Collection<A> areas) {
+    public AreaRegistry(Collection<InfoArea> areas) {
         this.areas = areas;
     }
 
-    public Optional<A> resolve(String name) {
+    public Optional<InfoArea> resolve(String name) {
         return resolveExact(name)
                 .or(() -> areas.stream()
                         .filter(area -> area.getName().equalsIgnoreCase(name))
                         .findFirst());
     }
 
-    public Optional<A> resolveExact(String name) {
+    public Optional<InfoArea> resolveExact(String name) {
         return areas.stream().filter(area -> area.getName().equals(name)).findFirst();
     }
 

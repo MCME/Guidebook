@@ -2,7 +2,10 @@ package com.mcmiddleearth.guidebook.welcome;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.mcmiddleearth.guidebook.data.WorldPoint;
+import com.mcmiddleearth.guidebook.data.AreaDetails;
+import com.mcmiddleearth.guidebook.data.AreaGeometry;
+import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.data.TestAreas;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,68 +23,48 @@ import org.junit.jupiter.api.Test;
 
 class WatchmanTest {
 
-    /** An Area filling x from {@code minX} to {@code maxX}, near up to 10 blocks outside that. */
-    static final class TestArea implements WelcomeArea {
-        final String name;
-        final int minX;
-        final int maxX;
-        String title = "";
-        String subtitle = "";
-        String description = "<guide>A place.";
-        boolean showTitle;
-        boolean showBossBar;
-        boolean enabled = true;
+    /** An Area filling x from {@code minX} to {@code maxX} at every height and depth the test players use. */
+    static InfoArea area(String name, int minX, int maxX) {
+        return TestAreas.area(
+                name,
+                "middle-earth",
+                new AreaGeometry.Cuboid(minX, 0, -100, maxX, 128, 100),
+                new AreaDetails(false, "", "", false, "<guide>A place.", true));
+    }
 
-        TestArea(String name, int minX, int maxX) {
-            this.name = name;
-            this.minX = minX;
-            this.maxX = maxX;
-        }
+    static void setTitle(InfoArea area, String title) {
+        AreaDetails d = AreaDetails.of(area);
+        TestAreas.edit(
+                area,
+                new AreaDetails(d.showTitle(), title, d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
+    }
 
-        @Override
-        public String getName() {
-            return name;
-        }
+    static void setSubtitle(InfoArea area, String subtitle) {
+        AreaDetails d = AreaDetails.of(area);
+        TestAreas.edit(
+                area,
+                new AreaDetails(d.showTitle(), d.title(), subtitle, d.showBossBar(), d.description(), d.enabled()));
+    }
 
-        @Override
-        public String getTitle() {
-            return title;
-        }
+    static void setShowTitle(InfoArea area, boolean showTitle) {
+        AreaDetails d = AreaDetails.of(area);
+        TestAreas.edit(
+                area,
+                new AreaDetails(showTitle, d.title(), d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
+    }
 
-        @Override
-        public String getSubtitle() {
-            return subtitle;
-        }
+    static void setShowBossBar(InfoArea area, boolean showBossBar) {
+        AreaDetails d = AreaDetails.of(area);
+        TestAreas.edit(
+                area,
+                new AreaDetails(d.showTitle(), d.title(), d.subtitle(), showBossBar, d.description(), d.enabled()));
+    }
 
-        @Override
-        public String getDescription() {
-            return description;
-        }
-
-        @Override
-        public boolean isShowTitle() {
-            return showTitle;
-        }
-
-        @Override
-        public boolean isShowBossBar() {
-            return showBossBar;
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        @Override
-        public boolean isInside(WorldPoint point) {
-            return point.x() >= minX && point.x() <= maxX;
-        }
-
-        @Override
-        public boolean isNear(WorldPoint point) {
-            return point.x() >= minX - 10 && point.x() <= maxX + 10;
-        }
+    static void setEnabled(InfoArea area, boolean enabled) {
+        AreaDetails d = AreaDetails.of(area);
+        TestAreas.edit(
+                area,
+                new AreaDetails(d.showTitle(), d.title(), d.subtitle(), d.showBossBar(), d.description(), enabled));
     }
 
     /**
@@ -169,10 +152,10 @@ class WatchmanTest {
 
     @Test
     void aPlayerWalkingIntoAnAreaIsWelcomed() {
-        TestArea bree = new TestArea("bree", 0, 100);
-        bree.title = "Bree";
-        bree.subtitle = "The Prancing Pony";
-        bree.showTitle = true;
+        InfoArea bree = area("bree", 0, 100);
+        setTitle(bree, "Bree");
+        setSubtitle(bree, "The Prancing Pony");
+        setShowTitle(bree, true);
         TestPlayer player = new TestPlayer(-50);
 
         watchman.tick(List.of(bree), List.of(player.player));
@@ -187,7 +170,7 @@ class WatchmanTest {
                 shown);
     }
 
-    final TestArea bree = new TestArea("bree", 0, 100);
+    final InfoArea bree = area("bree", 0, 100);
 
     /** Moves the player to {@code x} and ticks over just Bree. */
     void moveTo(TestPlayer player, double x) {
@@ -306,7 +289,7 @@ class WatchmanTest {
 
     @Test
     void aDisabledAreaWelcomesNobody() {
-        bree.enabled = false;
+        setEnabled(bree, false);
         TestPlayer player = new TestPlayer(-50);
 
         moveTo(player, 50);
@@ -319,9 +302,9 @@ class WatchmanTest {
         TestPlayer player = new TestPlayer(-50);
         moveTo(player, 50);
 
-        bree.enabled = false;
+        setEnabled(bree, false);
         moveTo(player, 50);
-        bree.enabled = true;
+        setEnabled(bree, true);
         moveTo(player, 50);
 
         assertEquals(2, shown.size());
@@ -391,8 +374,8 @@ class WatchmanTest {
 
         @BeforeEach
         void showTheBossBar() {
-            bree.title = "<gold>Bree";
-            bree.showBossBar = true;
+            setTitle(bree, "<gold>Bree");
+            setShowBossBar(bree, true);
         }
 
         String bossBarText() {
@@ -403,7 +386,7 @@ class WatchmanTest {
 
         @Test
         void appearsAfterTheTitleOfAWelcome() {
-            bree.showTitle = true;
+            setShowTitle(bree, true);
 
             moveTo(player, 50);
 
@@ -444,7 +427,7 @@ class WatchmanTest {
             moveTo(player, 50);
             runLaterTasks();
 
-            bree.enabled = false;
+            setEnabled(bree, false);
             moveTo(player, 50);
 
             assertEquals(List.of(), player.bossBars);
@@ -455,7 +438,7 @@ class WatchmanTest {
             moveTo(player, 50);
             runLaterTasks();
 
-            bree.showBossBar = false;
+            setShowBossBar(bree, false);
             moveTo(player, 50);
 
             assertEquals(List.of(), player.bossBars);
@@ -466,7 +449,7 @@ class WatchmanTest {
             moveTo(player, 50);
             runLaterTasks();
 
-            bree.title = "Bree-land";
+            setTitle(bree, "Bree-land");
             moveTo(player, 50);
 
             assertEquals("Bree-land", bossBarText());

@@ -43,7 +43,7 @@ public final class AreaMarkers {
      *     unfilled, so the one inside can still be clicked
      * @return the Area's Area marker
      */
-    public static Marker toMarker(MarkableArea area, Collection<? extends MarkableArea> drawn) {
+    public static Marker toMarker(InfoArea area, Collection<InfoArea> drawn) {
         return new Marker(
                 id(area.getName()),
                 area.getWorldName(),
@@ -53,7 +53,7 @@ public final class AreaMarkers {
                 style(area, holdsAnother(area, drawn)));
     }
 
-    private static String label(MarkableArea area) {
+    private static String label(InfoArea area) {
         // An older file can hold an empty Title, and a marker with no label can't be told apart on hover
         String title = AreaText.isVisiblyBlank(area.getTitle()) ? area.getName() : AreaText.plainText(area.getTitle());
         // Said in words as well as colour, for staff who can't tell the colours apart
@@ -65,7 +65,7 @@ public final class AreaMarkers {
      * players see, and has no labels: a label read the same as the text it labelled. Missing text is spelled out
      * instead, so a gap stands out.
      */
-    private static String popup(MarkableArea area) {
+    private static String popup(InfoArea area) {
         // Nearly every Area is Enabled, so only a Disabled one says so, where it stands out
         String disabledMark = area.isEnabled()
                 ? ""
@@ -105,7 +105,7 @@ public final class AreaMarkers {
         return String.format("#%06x", rgb);
     }
 
-    private static MarkerStyle style(MarkableArea area, boolean holdsAnother) {
+    private static MarkerStyle style(InfoArea area, boolean holdsAnother) {
         if (holdsAnother) {
             return area.isEnabled() ? ENABLED_CONTAINER_STYLE : DISABLED_CONTAINER_STYLE;
         }
@@ -116,7 +116,7 @@ public final class AreaMarkers {
      * Whether another Area's footprint box lies within this Area's. Boxes are looser than Shapes, so a circle or prism
      * can count as holding an Area just outside it, which only costs it its fill.
      */
-    private static boolean holdsAnother(MarkableArea area, Collection<? extends MarkableArea> drawn) {
+    private static boolean holdsAnother(InfoArea area, Collection<InfoArea> drawn) {
         Footprint footprint = Footprint.of(area.getGeometry());
         return drawn.stream()
                 .filter(other -> other.getWorldName().equals(area.getWorldName()))

@@ -16,7 +16,6 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
-import com.mcmiddleearth.guidebook.welcome.WelcomeArea;
 import java.util.Objects;
 
 /**
@@ -25,7 +24,7 @@ import java.util.Objects;
  *
  * @author Eriol_Eandur
  */
-public final class InfoArea implements MarkableArea, WelcomeArea {
+public final class InfoArea {
 
     /** How far beyond its Shape a player inside the Area can go before they Leave it. */
     private static final int NEAR_DISTANCE = 10;
@@ -83,13 +82,16 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         };
     }
 
-    @Override
     public AreaGeometry getGeometry() {
         return geometry;
     }
 
+    // The Shape follows the geometry, since a move can give an Area another Shape
+    public Shape getShape() {
+        return geometry.shape();
+    }
+
     /** The name of the Area's world, even when that world isn't loaded. */
-    @Override
     public String getWorldName() {
         return worldName;
     }
@@ -99,18 +101,15 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
     }
 
     /** Whether the point is in this Area's world, named exactly as it is, and within its Shape. */
-    @Override
     public boolean isInside(WorldPoint point) {
         return worldName.equals(point.worldName()) && geometry.contains(point.x(), point.y(), point.z());
     }
 
     /** Whether the point is in this Area's world and no more than 10 blocks beyond its Shape. */
-    @Override
     public boolean isNear(WorldPoint point) {
         return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), NEAR_DISTANCE);
     }
 
-    @Override
     public boolean isEnabled() {
         return status;
     }
@@ -128,7 +127,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.description = description;
     }
 
-    @Override
     public String getTitle() {
         return title;
     }
@@ -145,12 +143,10 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         title = Objects.requireNonNullElse(newTitle, "");
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
 
-    @Override
     public String getSubtitle() {
         return subtitle;
     }
@@ -159,7 +155,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.subtitle = Objects.requireNonNullElse(subtitle, "");
     }
 
-    @Override
     public boolean isShowTitle() {
         return showTitle;
     }
@@ -168,7 +163,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.showTitle = showTitle;
     }
 
-    @Override
     public boolean isShowBossBar() {
         return showBossBar;
     }
@@ -177,7 +171,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.showBossBar = showBossBar;
     }
 
-    @Override
     public String getName() {
         return this.areaName;
     }

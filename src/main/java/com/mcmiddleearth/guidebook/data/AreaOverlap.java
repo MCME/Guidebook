@@ -17,16 +17,14 @@ final class AreaOverlap {
 
     /** The Overlap finding for {@code proposal}, or empty when it overlaps nothing. The moved Area is skipped. */
     static Optional<PlacementFinding.Overlap> overlapping(
-            PlacementCheck.Proposal proposal,
-            Collection<? extends MarkableArea> areas,
-            Optional<String> movedAreaName) {
+            PlacementCheck.Proposal proposal, Collection<InfoArea> areas, Optional<String> movedAreaName) {
         List<String> names = areas.stream()
                 .filter(area -> area.getWorldName().equals(proposal.world()))
                 .filter(area -> movedAreaName
                         .map(moved -> !moved.equalsIgnoreCase(area.getName()))
                         .orElse(true))
                 .filter(area -> overlap(proposal.geometry(), area.getGeometry()))
-                .map(MarkableArea::getName)
+                .map(InfoArea::getName)
                 .sorted()
                 .toList();
         return names.isEmpty() ? Optional.empty() : Optional.of(new PlacementFinding.Overlap(names));

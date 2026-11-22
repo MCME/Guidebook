@@ -19,31 +19,8 @@ class PlacementCheckOverlapTest {
 
     private static final String WORLD = "middle_earth";
 
-    record TestArea(String getName, String getWorldName, AreaGeometry getGeometry) implements MarkableArea {
-
-        @Override
-        public String getTitle() {
-            return getName;
-        }
-
-        @Override
-        public String getSubtitle() {
-            return "";
-        }
-
-        @Override
-        public String getDescription() {
-            return "";
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return true;
-        }
-    }
-
-    private static TestArea area(String name, AreaGeometry geometry) {
-        return new TestArea(name, WORLD, geometry);
+    private static InfoArea area(String name, AreaGeometry geometry) {
+        return TestAreas.area(name, WORLD, geometry);
     }
 
     private static AreaGeometry cuboid(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
@@ -55,11 +32,11 @@ class PlacementCheckOverlapTest {
     }
 
     /** The names the check reports overlapping when {@code proposed} is placed among {@code areas}, or none. */
-    private static List<String> overlapping(AreaGeometry proposed, TestArea... areas) {
+    private static List<String> overlapping(AreaGeometry proposed, InfoArea... areas) {
         return overlapping(proposed, Optional.empty(), areas);
     }
 
-    private static List<String> overlapping(AreaGeometry proposed, Optional<String> moved, TestArea... areas) {
+    private static List<String> overlapping(AreaGeometry proposed, Optional<String> moved, InfoArea... areas) {
         // The staff member stands in the proposal's world, so Another world never applies
         PlacementCheck.StaffPosition staff = new PlacementCheck.StaffPosition(WORLD, 0, 64, 0);
         return PlacementCheck.check(new PlacementCheck.Proposal(WORLD, proposed), staff, List.of(areas), moved).stream()
@@ -318,7 +295,7 @@ class PlacementCheckOverlapTest {
 
     @Test
     void anAreaInAnotherWorldNeverOverlaps() {
-        TestArea elsewhere = new TestArea("moria-gate", "moria", cuboid(0, 60, 0, 20, 80, 20));
+        InfoArea elsewhere = TestAreas.area("moria-gate", "moria", cuboid(0, 60, 0, 20, 80, 20));
 
         assertEquals(List.of(), overlapping(cuboid(0, 60, 0, 20, 80, 20), elsewhere));
     }

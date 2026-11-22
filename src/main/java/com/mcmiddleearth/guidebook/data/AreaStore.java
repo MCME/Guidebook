@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 public final class AreaStore {
 
     private final Map<String, InfoArea> areas = new HashMap<>();
-    private final AreaRegistry<InfoArea> registry = new AreaRegistry<>(areas.values());
+    private final AreaRegistry registry = new AreaRegistry(areas.values());
 
     private final AreaFiles files;
     private final MarkerLayer webMapLayer;

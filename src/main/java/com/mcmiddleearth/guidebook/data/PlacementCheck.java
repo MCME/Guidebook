@@ -32,8 +32,7 @@ public final class PlacementCheck {
     public record StaffPosition(String world, int x, int y, int z) {}
 
     /** Checks a placement for a new Area. */
-    public static List<PlacementFinding> check(
-            Proposal proposal, StaffPosition staff, Collection<? extends MarkableArea> areas) {
+    public static List<PlacementFinding> check(Proposal proposal, StaffPosition staff, Collection<InfoArea> areas) {
         return check(proposal, staff, areas, Optional.empty());
     }
 
@@ -45,10 +44,7 @@ public final class PlacementCheck {
      * @return the findings, in the order the dialog shows them
      */
     public static List<PlacementFinding> check(
-            Proposal proposal,
-            StaffPosition staff,
-            Collection<? extends MarkableArea> areas,
-            Optional<String> movedAreaName) {
+            Proposal proposal, StaffPosition staff, Collection<InfoArea> areas, Optional<String> movedAreaName) {
         List<PlacementFinding> findings = new ArrayList<>();
         if (!proposal.world().equals(staff.world())) {
             findings.add(new PlacementFinding.AnotherWorld(proposal.world(), staff.world()));
@@ -77,7 +73,7 @@ public final class PlacementCheck {
      */
     public static SphereClearance sphereClearance(
             StaffPosition staff,
-            Collection<? extends MarkableArea> areas,
+            Collection<InfoArea> areas,
             Optional<String> movedAreaName,
             int minRadius,
             int maxRadius) {
@@ -100,7 +96,7 @@ public final class PlacementCheck {
     }
 
     private static List<String> overlapped(
-            StaffPosition staff, Collection<? extends MarkableArea> areas, Optional<String> movedAreaName, int radius) {
+            StaffPosition staff, Collection<InfoArea> areas, Optional<String> movedAreaName, int radius) {
         return AreaOverlap.overlapping(Proposal.sphereAround(staff, radius), areas, movedAreaName)
                 .map(PlacementFinding.Overlap::areaNames)
                 .orElse(List.of());
