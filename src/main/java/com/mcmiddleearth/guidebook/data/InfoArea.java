@@ -27,7 +27,7 @@ import java.util.Objects;
 public final class InfoArea {
 
     /** How far beyond its Shape a player inside the Area can go before they Leave it. */
-    private static final int NEAR_DISTANCE = 10;
+    private static final int LEAVE_DISTANCE = 10;
 
     private AreaGeometry geometry;
     private String worldName;
@@ -105,9 +105,12 @@ public final class InfoArea {
         return worldName.equals(point.worldName()) && geometry.contains(point.x(), point.y(), point.z());
     }
 
-    /** Whether the point is in this Area's world and no more than 10 blocks beyond its Shape. */
+    /**
+     * Whether the point is in this Area's world and no more than {@link #LEAVE_DISTANCE} blocks beyond its Shape, so a
+     * player inside the Area who is there doesn't yet Leave it (see Leave in the glossary).
+     */
     public boolean isNear(WorldPoint point) {
-        return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), NEAR_DISTANCE);
+        return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), LEAVE_DISTANCE);
     }
 
     public boolean isEnabled() {
