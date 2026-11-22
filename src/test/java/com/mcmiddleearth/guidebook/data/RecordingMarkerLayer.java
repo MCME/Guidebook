@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /** A Web map layer that keeps the markers it was given, by id, so tests can see what is drawn. */
-final class RecordingMarkerLayer implements MarkerLayer {
+public final class RecordingMarkerLayer implements MarkerLayer {
 
     private final Map<String, Marker> markers = new LinkedHashMap<>();
 

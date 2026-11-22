@@ -4,7 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.mcmiddleearth.guidebook.data.AreaDetails;
 import com.mcmiddleearth.guidebook.data.AreaGeometry;
+import com.mcmiddleearth.guidebook.data.AreaStore;
+import com.mcmiddleearth.guidebook.data.ChangeOutcome;
+import com.mcmiddleearth.guidebook.data.InMemoryAreaFiles;
 import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.data.RecordingMarkerLayer;
 import com.mcmiddleearth.guidebook.data.TestAreas;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
@@ -12,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Logger;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
@@ -23,48 +28,47 @@ import org.junit.jupiter.api.Test;
 
 class WatchmanTest {
 
+    /** Holds every Area a test builds, so tests change Areas as a saved edit in the Edit dialog does. */
+    final AreaStore store = new AreaStore(
+            new InMemoryAreaFiles(), new RecordingMarkerLayer(), worldName -> true, Logger.getAnonymousLogger());
+
     /** An Area filling x from {@code minX} to {@code maxX} at every height and depth the test players use. */
-    static InfoArea area(String name, int minX, int maxX) {
-        return TestAreas.area(
-                name,
-                "middle-earth",
-                new AreaGeometry.Cuboid(minX, 0, -100, maxX, 128, 100),
-                new AreaDetails(false, "", "", false, "<guide>A place.", true));
+    InfoArea area(String name, int minX, int maxX) {
+        InfoArea area = TestAreas.area(name, "middle-earth", new AreaGeometry.Cuboid(minX, 0, -100, maxX, 128, 100));
+        assertEquals(
+                new ChangeOutcome.Done(),
+                store.create(area, new AreaDetails(false, "", "", false, "<guide>A place.", true)));
+        return area;
     }
 
-    static void setTitle(InfoArea area, String title) {
-        AreaDetails d = AreaDetails.of(area);
-        TestAreas.edit(
-                area,
-                new AreaDetails(d.showTitle(), title, d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
+    /** Gives the Area {@code details} through the Area store. */
+    void edit(InfoArea area, AreaDetails details) {
+        assertEquals(new ChangeOutcome.Done(), store.edit(area, details));
     }
 
-    static void setSubtitle(InfoArea area, String subtitle) {
+    void setTitle(InfoArea area, String title) {
         AreaDetails d = AreaDetails.of(area);
-        TestAreas.edit(
-                area,
-                new AreaDetails(d.showTitle(), d.title(), subtitle, d.showBossBar(), d.description(), d.enabled()));
+        edit(area, new AreaDetails(d.showTitle(), title, d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
     }
 
-    static void setShowTitle(InfoArea area, boolean showTitle) {
+    void setSubtitle(InfoArea area, String subtitle) {
         AreaDetails d = AreaDetails.of(area);
-        TestAreas.edit(
-                area,
-                new AreaDetails(showTitle, d.title(), d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
+        edit(area, new AreaDetails(d.showTitle(), d.title(), subtitle, d.showBossBar(), d.description(), d.enabled()));
     }
 
-    static void setShowBossBar(InfoArea area, boolean showBossBar) {
+    void setShowTitle(InfoArea area, boolean showTitle) {
         AreaDetails d = AreaDetails.of(area);
-        TestAreas.edit(
-                area,
-                new AreaDetails(d.showTitle(), d.title(), d.subtitle(), showBossBar, d.description(), d.enabled()));
+        edit(area, new AreaDetails(showTitle, d.title(), d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
     }
 
-    static void setEnabled(InfoArea area, boolean enabled) {
+    void setShowBossBar(InfoArea area, boolean showBossBar) {
         AreaDetails d = AreaDetails.of(area);
-        TestAreas.edit(
-                area,
-                new AreaDetails(d.showTitle(), d.title(), d.subtitle(), d.showBossBar(), d.description(), enabled));
+        edit(area, new AreaDetails(d.showTitle(), d.title(), d.subtitle(), showBossBar, d.description(), d.enabled()));
+    }
+
+    void setEnabled(InfoArea area, boolean enabled) {
+        AreaDetails d = AreaDetails.of(area);
+        edit(area, new AreaDetails(d.showTitle(), d.title(), d.subtitle(), d.showBossBar(), d.description(), enabled));
     }
 
     /**
@@ -152,7 +156,6 @@ class WatchmanTest {
 
     @Test
     void aPlayerWalkingIntoAnAreaIsWelcomed() {
-        InfoArea bree = area("bree", 0, 100);
         setTitle(bree, "Bree");
         setSubtitle(bree, "The Prancing Pony");
         setShowTitle(bree, true);

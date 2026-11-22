@@ -13,7 +13,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  * Area files kept in memory, so tests can see what was written and make a write or delete fail. Loading builds new
  * Areas from what was written, as reading the files again would.
  */
-final class InMemoryAreaFiles implements AreaFiles {
+public final class InMemoryAreaFiles implements AreaFiles {
 
     private record Key(String world, String name) {}
 

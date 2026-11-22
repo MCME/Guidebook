@@ -7,7 +7,8 @@ public final class TestAreas {
 
     /**
      * An Enabled Area filling {@code geometry} in the world {@code worldName}, with no Title, Subtitle or Description.
-     * Its Warp point is a sphere's centre, or another corner block of the Shape.
+     * Its Warp point is a sphere's centre, a cuboid's lowest corner (minX, minY, minZ), or a prism's first corner at
+     * its minY.
      */
     public static InfoArea area(String name, String worldName, AreaGeometry geometry) {
         return area(name, worldName, geometry, new AreaDetails(false, "", "", false, "", true));
@@ -16,11 +17,6 @@ public final class TestAreas {
     /** An Area filling {@code geometry} in the world {@code worldName}, with {@code details}. */
     public static InfoArea area(String name, String worldName, AreaGeometry geometry, AreaDetails details) {
         return InfoArea.loaded(name, worldName, warpPointOf(geometry), geometry, details);
-    }
-
-    /** Gives the Area {@code details}, as a saved edit in the Edit dialog does. */
-    public static void edit(InfoArea area, AreaDetails details) {
-        area.setDetails(details);
     }
 
     private static WarpPoint warpPointOf(AreaGeometry geometry) {
