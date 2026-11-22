@@ -1,9 +1,9 @@
 # Guidebook's Typewriter display
 
 A [Typewriter](https://typewritermc.com) extension that types each [Guidebook](../README.md)
-Welcome into a framed box over the chat: the Title in the top border, the Description on Pages of 8
-lines, and the key that turns the Page or closes the box in the bottom border. It's its own jar,
-released on `typewriter-v*` tags ([ADR 0008](../docs/adr/0008-welcomes-shown-through-a-display.md)).
+Welcome into a framed box over the chat: the Title in the top border ("Guide" for an Area with no
+Title), the Description on Pages of 8 lines, and the key that turns the Page or closes the box in
+the bottom border. It's its own jar, released on `typewriter-v*` tags ([ADR 0008](../docs/adr/0008-welcomes-shown-through-a-display.md)).
 Whenever it can't show a Welcome, that Welcome uses the Chat display instead.
 
 ## Trying it in this repo

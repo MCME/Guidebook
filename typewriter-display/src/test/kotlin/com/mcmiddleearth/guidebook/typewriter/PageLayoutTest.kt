@@ -157,6 +157,15 @@ class PageLayoutTest {
     }
 
     @Test
+    fun `an Area with no Title has Guide in the header`() {
+        val page = layOutPages(AreaText.render(BREE_GATE)).single()
+
+        for (title in listOf("", "  ")) {
+            assertEquals("Guide", plain(drawBox(title, page, KEY, LayoutSettings(), TYPED)).lines().first().trim())
+        }
+    }
+
+    @Test
     fun `the footer counts the Pages, and a Page that carries on ends with an ellipsis`() {
         val pages = layOutPages(AreaText.render(HELMS_DEEP))
 

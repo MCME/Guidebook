@@ -86,12 +86,13 @@ fun layOutPages(description: Component): List<Page> {
 
 /**
  * The box as the player sees it [elapsed] into typing [page]: the [header] (the Title, as plain text) in the top
- * border, the Page's text, and in the bottom border what [key] does.
+ * border, the Page's text, and in the bottom border what [key] does. An Area with no Title gets "Guide" there, so the
+ * box still says who is speaking.
  */
 fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings, elapsed: Duration): Component {
     val title = Component.text()
         .append(Component.text(" "))
-        .append(Component.text(header, settings.headerColor, TextDecoration.BOLD))
+        .append(Component.text(header.ifBlank { NO_TITLE_HEADER }, settings.headerColor, TextDecoration.BOLD))
         .append(Component.text(" "))
         .build()
     val prompt = Component.text()
@@ -113,6 +114,8 @@ fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings
 
     return Component.join(JoinConfiguration.newlines(), listOf(framed(title, width)) + text + framed(prompt, width))
 }
+
+private const val NO_TITLE_HEADER = "Guide"
 
 // Default unfocused chat shows 10 lines: the box's header, its footer, and this many lines of text between them
 private const val LINES_PER_PAGE = 8
