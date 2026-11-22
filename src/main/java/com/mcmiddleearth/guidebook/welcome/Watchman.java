@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.welcome;
 
+import com.mcmiddleearth.guidebook.data.WorldPoint;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import java.time.Duration;
 import java.time.Instant;
@@ -13,7 +14,6 @@ import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 /**
@@ -107,15 +107,15 @@ public final class Watchman {
         updateBossBars();
 
         for (Player player : players) {
-            Location location = player.getLocation();
+            WorldPoint point = WorldPoint.from(player.getLocation());
             for (WelcomeArea area : enabled) {
                 Set<UUID> playersInside = inside.computeIfAbsent(area, a -> new HashSet<>());
                 if (playersInside.contains(player.getUniqueId())) {
-                    if (!area.isNear(location)) {
+                    if (!area.isNear(point)) {
                         playersInside.remove(player.getUniqueId());
                         hideBossBar(area, player.getUniqueId());
                     }
-                } else if (area.isInside(location)) {
+                } else if (area.isInside(point)) {
                     playersInside.add(player.getUniqueId());
                     enter(player, area);
                 }
@@ -130,7 +130,7 @@ public final class Watchman {
     public void preview(Player player, WelcomeArea area) {
         // An Area just created or Enabled doesn't know yet that the player is inside. Marking them stops their next
         // move counting as an entry and giving them the Welcome again
-        if (area.isEnabled() && area.isInside(player.getLocation())) {
+        if (area.isEnabled() && area.isInside(WorldPoint.from(player.getLocation()))) {
             inside.computeIfAbsent(area, a -> new HashSet<>()).add(player.getUniqueId());
         }
         welcome(player, area);

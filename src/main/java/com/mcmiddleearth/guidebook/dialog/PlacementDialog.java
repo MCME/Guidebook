@@ -6,6 +6,7 @@ import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PlacementCheck;
 import com.mcmiddleearth.guidebook.data.PlacementFinding;
+import com.mcmiddleearth.guidebook.data.WarpPoint;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.dialog.Dialog;
@@ -90,7 +91,7 @@ public final class PlacementDialog {
         }
 
         /** Places the Area, once the check has found nothing blocking. */
-        void place(Player player, AreaGeometry geometry, Location warpPoint);
+        void place(Player player, AreaGeometry geometry, String worldName, WarpPoint warpPoint);
     }
 
     /** Creating the Area {@code areaName}, which continues into the Edit dialog's create mode. */
@@ -140,8 +141,8 @@ public final class PlacementDialog {
 
         // Built from where the player is now, but only added once they press Create in the Edit dialog
         @Override
-        public void place(Player player, AreaGeometry geometry, Location warpPoint) {
-            EditDialog.openToCreate(player, InfoArea.create(areaName, warpPoint, geometry));
+        public void place(Player player, AreaGeometry geometry, String worldName, WarpPoint warpPoint) {
+            EditDialog.openToCreate(player, InfoArea.create(areaName, worldName, warpPoint, geometry));
         }
     }
 
@@ -212,10 +213,10 @@ public final class PlacementDialog {
         }
 
         @Override
-        public void place(Player player, AreaGeometry geometry, Location warpPoint) {
+        public void place(Player player, AreaGeometry geometry, String worldName, WarpPoint warpPoint) {
             String name = area.getName();
             ChangeOutcome outcome =
-                    GuidebookPlugin.getPluginInstance().getAreaStore().move(area, geometry, warpPoint);
+                    GuidebookPlugin.getPluginInstance().getAreaStore().move(area, geometry, worldName, warpPoint);
             player.closeDialog();
             switch (outcome) {
                 case ChangeOutcome.Done() -> sendMoved(player, name);
@@ -419,7 +420,9 @@ public final class PlacementDialog {
             show(player, purpose, blocking);
             return;
         }
-        purpose.place(player, proposal.geometry(), player.getLocation().clone());
+        Location location = player.getLocation();
+        // In whole blocks, as the Area's file keeps it
+        purpose.place(player, proposal.geometry(), location.getWorld().getName(), WarpPoint.of(location));
     }
 
     private static List<PlacementFinding> check(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {

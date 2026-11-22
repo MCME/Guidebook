@@ -1,7 +1,6 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.webmap.MarkerLayer;
-import com.mcmiddleearth.pluginutil.region.Region;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
-import org.bukkit.Location;
 
 /**
  * Holds every Area, keeps each one's file up to date through {@link AreaFiles}, and draws every Area on the Web map
@@ -134,27 +132,27 @@ public final class AreaStore {
     }
 
     /**
-     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}, writes its
-     * file, and redraws the Web map. If the file can't be written, the Area goes back where it was. Moving it to
-     * another world deletes its file in the old world's folder.
+     * Gives the Area {@code geometry}, which may be another Shape, in the world {@code worldName}, with its Warp point
+     * at {@code warpPoint}, writes its file, and redraws the Web map. A sphere is centred on the Warp point. If the
+     * file can't be written, the Area goes back where it was. Moving it to another world deletes its file in the old
+     * world's folder.
      *
      * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NotWritten}, or
      *     {@link ChangeOutcome.DoneButOldFileLeft} if the old world's file couldn't be deleted
      */
-    public ChangeOutcome move(InfoArea area, AreaGeometry geometry, Location warpPoint) {
+    public ChangeOutcome move(InfoArea area, AreaGeometry geometry, String worldName, WarpPoint warpPoint) {
         if (!isCurrent(area)) {
             return new ChangeOutcome.Gone();
         }
-        Region region = InfoArea.regionOf(geometry, warpPoint);
-        Region oldRegion = area.getRegion();
-        // Found before the move: the world comes from the region
         String oldWorldName = area.getWorldName();
+        WarpPoint oldWarpPoint = area.getWarpPoint();
+        AreaGeometry oldGeometry = area.getGeometry();
 
-        area.setRegion(region);
+        area.place(worldName, warpPoint, geometry);
         try {
             files.write(area);
         } catch (IOException ex) {
-            area.setRegion(oldRegion);
+            area.place(oldWorldName, oldWarpPoint, oldGeometry);
             return new ChangeOutcome.NotWritten(ex);
         }
         boolean oldFileGone =

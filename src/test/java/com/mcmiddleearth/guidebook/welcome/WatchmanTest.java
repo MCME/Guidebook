@@ -2,6 +2,7 @@ package com.mcmiddleearth.guidebook.welcome;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.mcmiddleearth.guidebook.data.WorldPoint;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -72,15 +74,30 @@ class WatchmanTest {
         }
 
         @Override
-        public boolean isInside(Location location) {
-            return location.getX() >= minX && location.getX() <= maxX;
+        public boolean isInside(WorldPoint point) {
+            return point.x() >= minX && point.x() <= maxX;
         }
 
         @Override
-        public boolean isNear(Location location) {
-            return location.getX() >= minX - 10 && location.getX() <= maxX + 10;
+        public boolean isNear(WorldPoint point) {
+            return point.x() >= minX - 10 && point.x() <= maxX + 10;
         }
     }
+
+    /**
+     * The world every test player stands in, answering only its name. Kept here, because a {@link Location} holds its
+     * world only weakly.
+     */
+    static final World WORLD = (World) Proxy.newProxyInstance(
+            World.class.getClassLoader(), new Class<?>[] {World.class}, (proxy, method, args) -> {
+                return switch (method.getName()) {
+                    case "getName" -> "middle-earth";
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "toString" -> "test world";
+                    default -> null;
+                };
+            });
 
     /**
      * A player standing at an x coordinate, who keeps the Boss bars they're shown. Bukkit's Player is an interface, so
@@ -98,7 +115,7 @@ class WatchmanTest {
                     Player.class.getClassLoader(), new Class<?>[] {Player.class}, (proxy, method, args) -> {
                         return switch (method.getName()) {
                             case "getUniqueId" -> id;
-                            case "getLocation" -> new Location(null, this.x, 64, 0);
+                            case "getLocation" -> new Location(WORLD, this.x, 64, 0);
                             case "showBossBar" -> {
                                 if (!bossBars.contains((BossBar) args[0])) {
                                     bossBars.add((BossBar) args[0]);

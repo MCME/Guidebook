@@ -8,34 +8,36 @@ import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.junit.jupiter.api.Test;
 
 /**
- * When a player is inside an Area, and when they're near enough not to have Left it, for each Shape. These pin today's
- * rules, which come from PluginUtils' regions, so the move to plain geometry keeps them. The {@code AnotherWorld} tests
- * pin today's bug, a prism ignoring the world, and ticket 05 of area-geometry flips them.
+ * When a player is inside an Area, and when they're near enough not to have Left it, for each Shape. These pinned the
+ * rules PluginUtils' regions had, so the move to plain geometry kept them, except that a prism now compares the world
+ * as the other Shapes do.
  */
 class AreaInsideTest {
 
     private static final String WORLD = "middle-earth";
     private static final String OTHER_WORLD = "arda";
 
-    private static Location at(double x, double y, double z) {
-        return new Location(TestWorlds.named(WORLD), x, y, z);
+    private static WorldPoint at(double x, double y, double z) {
+        return new WorldPoint(WORLD, x, y, z);
     }
 
-    private static Location inOtherWorld(double x, double y, double z) {
-        return new Location(TestWorlds.named(OTHER_WORLD), x, y, z);
+    private static WorldPoint inOtherWorld(double x, double y, double z) {
+        return new WorldPoint(OTHER_WORLD, x, y, z);
     }
 
     private static InfoArea area(AreaGeometry geometry) {
-        return InfoArea.create("bree", at(0, 64, 0), geometry);
+        return InfoArea.create("bree", WORLD, new WarpPoint(0, 64, 0, 0, 0), geometry);
     }
 
     // Sphere: radius 5 centred on its Warp point at (100, 64, 200)
 
     private static InfoArea sphere() {
-        return InfoArea.create("bree", at(100, 64, 200), new AreaGeometry.Sphere(100, 64, 200, 5));
+        return InfoArea.create(
+                "bree", WORLD, new WarpPoint(100, 64, 200, 0, 0), new AreaGeometry.Sphere(100, 64, 200, 5));
     }
 
     @Test
@@ -169,16 +171,16 @@ class AreaInsideTest {
 
     @Test
     void aSlopedPrismIsInsideExactlyWherePrismoidRegionIs() {
-        PrismoidRegion region =
-                new PrismoidRegion(at(0, 64, 0), new ArrayList<>(TRIANGLE_XS), new ArrayList<>(TRIANGLE_ZS), 60, 70);
+        World world = TestWorlds.named(WORLD);
+        PrismoidRegion region = new PrismoidRegion(
+                new Location(world, 0, 64, 0), new ArrayList<>(TRIANGLE_XS), new ArrayList<>(TRIANGLE_ZS), 60, 70);
         for (int x = -3; x <= 15; x++) {
             for (int y = 58; y <= 72; y++) {
                 for (int z = -3; z <= 18; z++) {
-                    Location loc = at(x, y, z);
                     assertEquals(
-                            region.isInside(loc),
-                            triangle().isInside(loc),
-                            loc.toVector().toString());
+                            region.isInside(new Location(world, x, y, z)),
+                            triangle().isInside(at(x, y, z)),
+                            "(" + x + ", " + y + ", " + z + ")");
                 }
             }
         }
@@ -212,21 +214,25 @@ class AreaInsideTest {
         assertFalse(square().isInside(inOtherWorld(5, 64, 5)));
     }
 
-    // Today's bug: a prism ignores the world for near and for its corners
+    // PluginUtils' prism ignored the world for near and for its corners
 
     @Test
-    void aPrismIsNearAPlayerInAnotherWorldToday() {
-        // Ticket 05 flips this: a player in another world isn't near a prism
-        assertTrue(triangle().isNear(inOtherWorld(5, 64, 5)));
-        assertTrue(square().isNear(inOtherWorld(5, 64, 5)));
+    void aPrismIsNotNearAPlayerInAnotherWorld() {
+        assertFalse(triangle().isNear(inOtherWorld(5, 64, 5)));
+        assertFalse(square().isNear(inOtherWorld(5, 64, 5)));
     }
 
     @Test
-    void aPrismsCornerBlocksAreInsideForAPlayerInAnotherWorldToday() {
-        // Ticket 05 flips this: a player at a prism's corner in another world isn't inside it
-        assertTrue(triangle().isInside(inOtherWorld(0, 64, 0)));
-        assertTrue(triangle().isInside(inOtherWorld(12, 64, 4)));
-        assertTrue(triangle().isInside(inOtherWorld(3, 64, 15)));
-        assertTrue(square().isInside(inOtherWorld(10, 64, 10)));
+    void aPrismsCornerBlocksAreNotInsideForAPlayerInAnotherWorld() {
+        assertFalse(triangle().isInside(inOtherWorld(0, 64, 0)));
+        assertFalse(triangle().isInside(inOtherWorld(12, 64, 4)));
+        assertFalse(triangle().isInside(inOtherWorld(3, 64, 15)));
+        assertFalse(square().isInside(inOtherWorld(10, 64, 10)));
+    }
+
+    @Test
+    void anAreaComparesItsWorldsNameExactly() {
+        assertFalse(cuboid().isInside(new WorldPoint("Middle-Earth", 5, 65, 5)));
+        assertFalse(cuboid().isNear(new WorldPoint("Middle-Earth", 5, 65, 5)));
     }
 }

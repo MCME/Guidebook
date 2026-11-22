@@ -1,11 +1,8 @@
 package com.mcmiddleearth.guidebook.welcome;
 
-import org.bukkit.Location;
+import com.mcmiddleearth.guidebook.data.WorldPoint;
 
-/**
- * The parts of an Area that the Watchman needs.
- * A real Area's Shape needs a loaded world, so this lets the Watchman's tests use simple fake Areas instead.
- */
+/** The parts of an Area that the Watchman needs. */
 public interface WelcomeArea {
 
     String getName();
@@ -24,8 +21,8 @@ public interface WelcomeArea {
     boolean isEnabled();
 
     /** Whether a player here enters the Area. */
-    boolean isInside(Location location);
+    boolean isInside(WorldPoint point);
 
     /** Whether a player already inside the Area is still in it here, which reaches a little beyond its Shape. */
-    boolean isNear(Location location);
+    boolean isNear(WorldPoint point);
 }

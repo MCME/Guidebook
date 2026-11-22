@@ -17,31 +17,24 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.welcome.WelcomeArea;
-import com.mcmiddleearth.pluginutil.region.CuboidRegion;
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import com.mcmiddleearth.pluginutil.region.Region;
-import com.mcmiddleearth.pluginutil.region.SphericalRegion;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import org.bukkit.Location;
-import org.bukkit.util.Vector;
 
 /**
- * An Area, made with {@link #create} or read from its file by the Area file adapter. Its Shape is whichever region it
- * holds, which a move can change.
+ * An Area, made with {@link #create} or read from its file by the Area file adapter. Its Shape, world and Warp point
+ * are plain values, which a move can change; its world is named, and needn't be loaded.
  *
  * @author Eriol_Eandur
  */
 public final class InfoArea implements MarkableArea, WelcomeArea {
 
+    /** How far beyond its Shape a player inside the Area can go before they Leave it. */
     private static final int NEAR_DISTANCE = 10;
-    private Region region;
+
+    private AreaGeometry geometry;
+    private String worldName;
+    private WarpPoint warpPoint;
 
     private String areaName;
-
-    /** The name of the Area's world, kept for when that world isn't loaded and the region has none. */
-    private String loadedWorldName;
 
     private boolean status;
 
@@ -60,100 +53,61 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         status = true;
     }
 
-    /** A new Area filling {@code geometry}, with its Warp point at {@code warpPoint}. */
-    public static InfoArea create(String areaName, Location warpPoint, AreaGeometry geometry) {
+    /** A new Area filling {@code geometry} in the world {@code worldName}, with its Warp point at {@code warpPoint}. */
+    public static InfoArea create(String areaName, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
         InfoArea area = new InfoArea(areaName);
-        area.region = regionOf(geometry, warpPoint);
+        area.place(worldName, warpPoint, geometry);
         return area;
     }
 
-    /**
-     * The Area {@code areaName} as read from its file. Its world is named, because it may not be loaded: then
-     * {@code warpPoint} has no world.
-     */
+    /** The Area {@code areaName} as read from its file. Its world needn't be loaded. */
     static InfoArea loaded(
-            String areaName, String worldName, Location warpPoint, AreaGeometry geometry, AreaDetails details) {
-        InfoArea area = new InfoArea(areaName);
-        area.region = regionOf(geometry, warpPoint);
-        area.loadedWorldName = worldName;
+            String areaName, String worldName, WarpPoint warpPoint, AreaGeometry geometry, AreaDetails details) {
+        InfoArea area = create(areaName, worldName, warpPoint, geometry);
         area.setDetails(details);
         return area;
     }
 
-    public Region getRegion() {
-        return this.region;
-    }
-
-    void setRegion(Region region) {
-        this.region = region;
-    }
-
     /**
-     * The region filling {@code geometry}, with its Warp point at {@code warpPoint}. A sphere is centred on its Warp
-     * point, so its own centre is ignored.
+     * Gives the Area {@code geometry} in the world {@code worldName}, with its Warp point at {@code warpPoint}. A
+     * sphere is centred on its Warp point, so its own centre is ignored.
      */
-    static Region regionOf(AreaGeometry geometry, Location warpPoint) {
-        return switch (geometry) {
-            case AreaGeometry.Sphere sphere -> new SphericalRegion(warpPoint, sphere.radius());
-            case AreaGeometry.Cuboid cuboid ->
-                new CuboidRegion(
-                        warpPoint,
-                        new Vector(cuboid.minX(), cuboid.minY(), cuboid.minZ()),
-                        new Vector(cuboid.maxX(), cuboid.maxY(), cuboid.maxZ()));
-            case AreaGeometry.Prism prism ->
-                new PrismoidRegion(
-                        warpPoint,
-                        new ArrayList<>(prism.xs()),
-                        new ArrayList<>(prism.zs()),
-                        prism.minY(),
-                        prism.maxY());
+    void place(String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
+        this.worldName = worldName;
+        this.warpPoint = warpPoint;
+        this.geometry = switch (geometry) {
+            case AreaGeometry.Sphere sphere ->
+                new AreaGeometry.Sphere(warpPoint.x(), warpPoint.y(), warpPoint.z(), sphere.radius());
+            case AreaGeometry.Cuboid cuboid -> cuboid;
+            case AreaGeometry.Prism prism -> prism;
         };
     }
 
     @Override
     public AreaGeometry getGeometry() {
-        return switch (region) {
-            case SphericalRegion sphere -> {
-                Location center = sphere.getLocation();
-                yield new AreaGeometry.Sphere(
-                        center.getBlockX(), center.getBlockY(), center.getBlockZ(), sphere.getRadius());
-            }
-            case CuboidRegion cuboid -> {
-                Vector min = cuboid.getMinCorner();
-                Vector max = cuboid.getMaxCorner();
-                yield new AreaGeometry.Cuboid(
-                        min.getBlockX(),
-                        min.getBlockY(),
-                        min.getBlockZ(),
-                        max.getBlockX(),
-                        max.getBlockY(),
-                        max.getBlockZ());
-            }
-            case PrismoidRegion prism ->
-                new AreaGeometry.Prism(
-                        List.of(prism.getXPoints()), List.of(prism.getZPoints()), prism.getMinY(), prism.getMaxY());
-            default -> throw new IllegalStateException("Unsupported region " + region);
-        };
+        return geometry;
     }
 
     /** The name of the Area's world, even when that world isn't loaded. */
     @Override
     public String getWorldName() {
-        return region.isValid() ? region.getWorld().getName() : loadedWorldName;
+        return worldName;
     }
 
-    public Location getLocation() {
-        return region.getLocation();
+    public WarpPoint getWarpPoint() {
+        return warpPoint;
     }
 
+    /** Whether the point is in this Area's world, named exactly as it is, and within its Shape. */
     @Override
-    public boolean isNear(Location loc) {
-        return region.isNear(loc, NEAR_DISTANCE);
+    public boolean isInside(WorldPoint point) {
+        return worldName.equals(point.worldName()) && geometry.contains(point.x(), point.y(), point.z());
     }
 
+    /** Whether the point is in this Area's world and no more than 10 blocks beyond its Shape. */
     @Override
-    public boolean isInside(Location loc) {
-        return region.isInside(loc);
+    public boolean isNear(WorldPoint point) {
+        return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), NEAR_DISTANCE);
     }
 
     @Override

@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
@@ -27,16 +26,12 @@ final class InMemoryAreaFiles implements AreaFiles {
     @Override
     public Loaded loadAll() {
         List<InfoArea> areas = new ArrayList<>();
-        files.forEach((key, contents) ->
-                AreaFileFormat.read(key.name(), contents, this::world).ifPresent(areas::add));
+        files.forEach(
+                (key, contents) -> AreaFileFormat.read(key.name(), contents).ifPresent(areas::add));
         Loaded loaded = new Loaded(areas, nextBackup, nextProblems);
         nextBackup = Optional.empty();
         nextProblems = List.of();
         return loaded;
-    }
-
-    private World world(String name) {
-        return TestWorlds.named(name);
     }
 
     @Override

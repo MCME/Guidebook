@@ -2,9 +2,6 @@ package com.mcmiddleearth.guidebook.data;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 
 /**
@@ -17,18 +14,14 @@ final class AreaFileFormat {
     private AreaFileFormat() {}
 
     /**
-     * Reads the Area {@code areaName} from its file's contents.
+     * Reads the Area {@code areaName} from its file's contents. Its world needn't be loaded.
      *
-     * @param worlds looks a world up by its name, or gives null if it isn't loaded. The Area keeps its world's name
-     *     either way.
      * @return the Area, or empty if the file holds no Shape Guidebook knows
      */
-    static Optional<InfoArea> read(String areaName, ConfigurationSection file, Function<String, World> worlds) {
+    static Optional<InfoArea> read(String areaName, ConfigurationSection file) {
         // An old cuboid file keeps its world under its center
         String worldName = file.getString("world", file.getString("center.world"));
-        World world = worldName == null ? null : worlds.apply(worldName);
-        Location warpPoint = new Location(
-                world,
+        WarpPoint warpPoint = new WarpPoint(
                 file.getInt("locationX"),
                 file.getInt("locationY"),
                 file.getInt("locationZ"),
@@ -36,8 +29,8 @@ final class AreaFileFormat {
                 (float) file.getDouble("locationPitch"));
         AreaGeometry geometry;
         if (file.contains("radius")) {
-            geometry = new AreaGeometry.Sphere(
-                    warpPoint.getBlockX(), warpPoint.getBlockY(), warpPoint.getBlockZ(), file.getInt("radius"));
+            // Centred on the Warp point when the Area is given it
+            geometry = new AreaGeometry.Sphere(warpPoint.x(), warpPoint.y(), warpPoint.z(), file.getInt("radius"));
         } else if (file.contains("xPoints")) {
             geometry = new AreaGeometry.Prism(
                     file.getIntegerList("xPoints"),
@@ -48,8 +41,12 @@ final class AreaFileFormat {
             return Optional.empty();
         } else if (file.contains("center")) {
             // The old format: a centre and the sizes along each axis
-            warpPoint = new Location(
-                    world, file.getDouble("center.x"), file.getDouble("center.y"), file.getDouble("center.z"));
+            warpPoint = new WarpPoint(
+                    blockOf(file.getDouble("center.x")),
+                    blockOf(file.getDouble("center.y")),
+                    blockOf(file.getDouble("center.z")),
+                    0,
+                    0);
             geometry = oldCuboid(warpPoint, file.getInt("xSize"), file.getInt("ySize"), file.getInt("zSize"));
         } else {
             geometry = new AreaGeometry.Cuboid(
@@ -63,14 +60,19 @@ final class AreaFileFormat {
         return Optional.of(InfoArea.loaded(areaName, worldName, warpPoint, geometry, details(file)));
     }
 
-    private static AreaGeometry.Cuboid oldCuboid(Location center, int sizeX, int sizeY, int sizeZ) {
+    /** The block a coordinate is in, as Bukkit's {@code Location.getBlockX} gives it. */
+    private static int blockOf(double coordinate) {
+        return (int) Math.floor(coordinate);
+    }
+
+    private static AreaGeometry.Cuboid oldCuboid(WarpPoint center, int sizeX, int sizeY, int sizeZ) {
         return new AreaGeometry.Cuboid(
-                center.getBlockX() - sizeX / 2,
-                center.getBlockY() - sizeY / 2,
-                center.getBlockZ() - sizeZ / 2,
-                center.getBlockX() + sizeX / 2,
-                center.getBlockY() + sizeY / 2,
-                center.getBlockZ() + sizeZ / 2);
+                center.x() - sizeX / 2,
+                center.y() - sizeY / 2,
+                center.z() - sizeZ / 2,
+                center.x() + sizeX / 2,
+                center.y() + sizeY / 2,
+                center.z() + sizeZ / 2);
     }
 
     private static AreaDetails details(ConfigurationSection file) {
@@ -88,15 +90,15 @@ final class AreaFileFormat {
                 file.getBoolean("enabled", true));
     }
 
-    /** Writes the Area into {@code file}, with the Warp point in whole blocks. */
+    /** Writes the Area into {@code file}. */
     static void write(InfoArea area, ConfigurationSection file) {
-        Location warpPoint = area.getLocation();
+        WarpPoint warpPoint = area.getWarpPoint();
         file.set("world", area.getWorldName());
-        file.set("locationX", warpPoint.getBlockX());
-        file.set("locationY", warpPoint.getBlockY());
-        file.set("locationZ", warpPoint.getBlockZ());
-        file.set("locationYaw", warpPoint.getYaw());
-        file.set("locationPitch", warpPoint.getPitch());
+        file.set("locationX", warpPoint.x());
+        file.set("locationY", warpPoint.y());
+        file.set("locationZ", warpPoint.z());
+        file.set("locationYaw", warpPoint.yaw());
+        file.set("locationPitch", warpPoint.pitch());
         switch (area.getGeometry()) {
             case AreaGeometry.Sphere sphere -> file.set("radius", sphere.radius());
             case AreaGeometry.Cuboid cuboid -> {

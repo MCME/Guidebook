@@ -32,18 +32,19 @@ class AreaFileWriteTest {
     @TempDir
     Path dataFolder;
 
-    private static Location warpPoint(double x, double y, double z, float yaw, float pitch) {
-        return new Location(TestWorlds.named(WORLD), x, y, z, yaw, pitch);
+    /** The Warp point of a staff member standing here, as creating an Area takes it. */
+    private static WarpPoint warpPoint(double x, double y, double z, float yaw, float pitch) {
+        return WarpPoint.of(new Location(null, x, y, z, yaw, pitch));
     }
 
     private static InfoArea edoras(AreaGeometry geometry) {
-        InfoArea area = InfoArea.create("edoras", warpPoint(100, 64, -200, 90.5f, -12.25f), geometry);
+        InfoArea area = InfoArea.create("edoras", WORLD, warpPoint(100, 64, -200, 90.5f, -12.25f), geometry);
         area.setDetails(new AreaDetails(true, "<gold>Edoras", "<gray>Capital of Rohan", true, "Welcome", false));
         return area;
     }
 
     private YamlConfiguration written(InfoArea area) throws IOException {
-        new AreaFolder(dataFolder.toFile(), TestWorlds::named).write(area);
+        new AreaFolder(dataFolder.toFile()).write(area);
         File file = dataFolder.resolve(WORLD).resolve(area.getName() + ".yml").toFile();
         assertTrue(file.isFile(), "no file at " + file);
         return YamlConfiguration.loadConfiguration(file);
@@ -114,20 +115,23 @@ class AreaFileWriteTest {
         assertText(file);
     }
 
-    /** PluginUtils' {@code PrismoidRegion} turns a prism's corners round when they go the other way. */
+    /**
+     * PluginUtils' {@code PrismoidRegion} turned a prism's corners round when they went the other way. The polygon is
+     * the same either way.
+     */
     @Test
-    void aPrismWhoseCornersGoTheOtherWayIsWrittenWithThemReversed() throws IOException {
+    void aPrismWhoseCornersGoTheOtherWayIsWrittenWithThemInTheOrderGiven() throws IOException {
         YamlConfiguration file = written(
                 edoras(new AreaGeometry.Prism(List.of(80, 120, 120, 95), List.of(-230, -230, -170, -180), 50, 90)));
 
-        assertEquals(List.of(95, 120, 120, 80), file.getList("xPoints"));
-        assertEquals(List.of(-180, -170, -230, -230), file.getList("zPoints"));
+        assertEquals(List.of(80, 120, 120, 95), file.getList("xPoints"));
+        assertEquals(List.of(-230, -230, -170, -180), file.getList("zPoints"));
     }
 
     @Test
     void aFractionalWarpPointIsWrittenAsWholeBlocksKeepingYawAndPitch() throws IOException {
         InfoArea area = InfoArea.create(
-                "fangorn", warpPoint(10.7, 64.5, -3.2, -135.75f, 45.5f), new AreaGeometry.Sphere(10, 64, -4, 8));
+                "fangorn", WORLD, warpPoint(10.7, 64.5, -3.2, -135.75f, 45.5f), new AreaGeometry.Sphere(10, 64, -4, 8));
 
         YamlConfiguration file = written(area);
 

@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -18,16 +16,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public final class AreaFolder implements AreaFiles {
 
     private final File dataFolder;
-    private final Function<String, World> worlds;
 
-    /**
-     * Creates {@code dataFolder} if it doesn't exist yet.
-     *
-     * @param worlds looks a world up by its name, or gives null if it isn't loaded
-     */
-    public AreaFolder(File dataFolder, Function<String, World> worlds) {
+    /** Creates {@code dataFolder} if it doesn't exist yet. */
+    public AreaFolder(File dataFolder) {
         this.dataFolder = dataFolder;
-        this.worlds = worlds;
         if (!dataFolder.exists()) {
             dataFolder.mkdirs();
         }
@@ -41,7 +33,7 @@ public final class AreaFolder implements AreaFiles {
         for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
             String areaName = loaded.name();
             DevUtil.log("Load area " + areaName);
-            AreaFileFormat.read(areaName, loaded.config(), worlds)
+            AreaFileFormat.read(areaName, loaded.config())
                     .ifPresentOrElse(
                             areas::add,
                             () -> problems.add("Guidebook area " + areaName + " isn't loaded, because " + loaded.file()
