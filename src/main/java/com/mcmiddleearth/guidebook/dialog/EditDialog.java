@@ -2,9 +2,9 @@ package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.AreaDetails;
+import com.mcmiddleearth.guidebook.data.AreaStore;
 import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.welcome.Welcome;
@@ -366,47 +366,26 @@ public final class EditDialog {
             return;
         }
         player.closeDialog();
-        if (mode == Mode.EDIT) {
-            switch (GuidebookPlugin.getPluginInstance().getAreaStore().edit(area, values.details())) {
-                case ChangeOutcome.Done() -> sendDone(player, area, mode);
-                case ChangeOutcome.Gone() ->
-                    GuidebookMessages.sendGoneMeanwhile(player, areaName, "edited it", mode.done);
-                case ChangeOutcome.NotWritten(IOException cause) -> {
-                    Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, cause);
-                    GuidebookMessages.sendNotDone(player, areaName, mode.done);
-                }
-                // An edit keeps the name and the file
-                case ChangeOutcome.NameTaken _, ChangeOutcome.DoneButOldFileLeft _ -> {}
+        AreaStore store = GuidebookPlugin.getPluginInstance().getAreaStore();
+        ChangeOutcome outcome =
+                mode == Mode.EDIT ? store.edit(area, values.details()) : store.create(area, values.details());
+        switch (outcome) {
+            case ChangeOutcome.Done() -> sendDone(player, area, mode);
+            // Only an edit: a created Area isn't held until it's saved
+            case ChangeOutcome.Gone() -> GuidebookMessages.sendGoneMeanwhile(player, areaName, "edited it", mode.done);
+            // Only a create: the name was free when create ran, but it isn't reserved while the dialog is open
+            case ChangeOutcome.NameTaken() ->
+                GuidebookMessages.sendError(
+                        player,
+                        GuidebookMessages.area(areaName),
+                        " was created by someone else while you edited it. Nothing was created.");
+            case ChangeOutcome.NotWritten(IOException cause) -> {
+                Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, cause);
+                GuidebookMessages.sendNotDone(player, areaName, mode.done);
             }
-            return;
+            // Neither keeps an old file
+            case ChangeOutcome.DoneButOldFileLeft _ -> {}
         }
-        // The name was free when create ran, but it isn't reserved while the dialog is open
-        if (mode == Mode.CREATE && PluginData.newAreaNameProblem(areaName).isPresent()) {
-            GuidebookMessages.sendError(
-                    player,
-                    GuidebookMessages.area(areaName),
-                    " was created by someone else while you edited it. Nothing was created.");
-            return;
-        }
-
-        area.setShowTitle(values.showTitle());
-        area.setTitle(values.title());
-        area.setSubtitle(values.subtitle());
-        area.setShowBossBar(values.showBossBar());
-        area.setDescription(values.storedDescription());
-        if (values.enabled()) {
-            area.statusOn();
-        } else {
-            area.statusOff();
-        }
-        try {
-            PluginData.createInfoArea(area);
-        } catch (IOException ex) {
-            Logger.getLogger(EditDialog.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendNotDone(player, areaName, mode.done);
-            return;
-        }
-        sendDone(player, area, mode);
     }
 
     /** Says the Area was saved or created, then previews its Welcome, which only a saved Area may show. */

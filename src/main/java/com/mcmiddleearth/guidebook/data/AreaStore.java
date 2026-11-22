@@ -50,12 +50,25 @@ public final class AreaStore {
     }
 
     /**
-     * Writes a new Area's file, then adds it and draws it, so an Area whose file couldn't be written is never added.
+     * Gives a new, unregistered Area {@code details} and writes its file, then adds it and draws it, so an Area whose
+     * file couldn't be written is never added.
+     *
+     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.NameTaken} if another Area took the name meanwhile
+     *     (ignoring case), or {@link ChangeOutcome.NotWritten}
      */
-    public void create(InfoArea area) throws IOException {
-        files.write(area);
+    public ChangeOutcome create(InfoArea area, AreaDetails details) {
+        if (newNameProblem(area.getName()).isPresent()) {
+            return new ChangeOutcome.NameTaken();
+        }
+        area.setDetails(details);
+        try {
+            files.write(area);
+        } catch (IOException ex) {
+            return new ChangeOutcome.NotWritten(ex);
+        }
         areas.put(area.getName(), area);
         drawAreas();
+        return new ChangeOutcome.Done();
     }
 
     /** @return false if the Area's file couldn't be deleted, so the Area is kept */

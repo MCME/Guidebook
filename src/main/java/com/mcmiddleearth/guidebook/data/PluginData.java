@@ -34,11 +34,6 @@ public class PluginData {
         return GuidebookPlugin.getPluginInstance().getAreaStore();
     }
 
-    /** See {@link AreaStore#create}. */
-    public static void createInfoArea(InfoArea area) throws IOException {
-        store().create(area);
-    }
-
     /** See {@link AreaStore#delete}. */
     public static boolean deleteInfoArea(InfoArea area) {
         return store().delete(area);

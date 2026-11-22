@@ -82,7 +82,7 @@ class AreaStoreTest {
         files.holdInUnloadedWorld("old-world", "barad-dur", new AreaGeometry.Sphere(0, 64, 0, 5));
         store.reload();
 
-        store.create(sphereArea("edoras", 0));
+        store.create(sphereArea("edoras", 0), NEW_DETAILS);
 
         assertEquals(Set.of(AreaMarkers.id("edoras")), layer.ids());
     }
@@ -98,7 +98,7 @@ class AreaStoreTest {
         store.reload();
         assertTrue(fillOf("city") > 0);
 
-        store.create(sphereArea("tower", 50));
+        store.create(sphereArea("tower", 50), NEW_DETAILS);
 
         assertEquals(0, fillOf("city"));
         assertTrue(fillOf("tower") > 0);
@@ -188,6 +188,50 @@ class AreaStoreTest {
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertTrue(files.contents("middle-earth", "edoras").isEmpty());
         assertTrue(layer.markerOf("edoras").isEmpty());
+    }
+
+    @Test
+    void aCreateAddsTheAreaWithItsDetailsWritesItsFileAndDrawsItsMarker() {
+        store.reload();
+        InfoArea edoras = sphereArea("edoras", 0);
+
+        ChangeOutcome outcome = store.create(edoras, NEW_DETAILS);
+
+        assertEquals(new ChangeOutcome.Done(), outcome);
+        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertEquals(NEW_DETAILS, AreaDetails.of(edoras));
+        YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
+        assertEquals("<gold>Edoras", file.getString("title"));
+        assertFalse(file.getBoolean("enabled"));
+        assertEquals("Edoras (Disabled)", layer.markerOf("edoras").orElseThrow().label());
+    }
+
+    @Test
+    void aCreateWhoseWriteFailsAddsNothingAndDrawsNothing() {
+        store.reload();
+
+        files.failNextWrite();
+        ChangeOutcome outcome = store.create(sphereArea("edoras", 0), NEW_DETAILS);
+
+        assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
+        assertTrue(store.findExact("edoras").isEmpty());
+        assertTrue(files.contents("middle-earth", "edoras").isEmpty());
+        assertTrue(layer.ids().isEmpty());
+    }
+
+    @Test
+    void aCreateWhoseNameWasTakenMeanwhileIgnoringCaseWritesNothing() {
+        store.reload();
+        InfoArea mine = sphereArea("edoras", 0);
+        store.create(sphereArea("Edoras", 100), AreaDetails.of(sphereArea("Edoras", 100)));
+
+        ChangeOutcome outcome = store.create(mine, NEW_DETAILS);
+
+        assertEquals(new ChangeOutcome.NameTaken(), outcome);
+        assertEquals(Set.of("Edoras"), names());
+        assertTrue(files.contents("middle-earth", "edoras").isEmpty());
+        assertEquals("", files.contents("middle-earth", "Edoras").orElseThrow().getString("title"));
+        assertEquals(Set.of(AreaMarkers.id("Edoras")), layer.ids());
     }
 
     // ADR 0007
