@@ -17,7 +17,6 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,11 +35,6 @@ public class PluginData {
     /** See {@link AreaStore#delete}. */
     public static boolean deleteInfoArea(InfoArea area) {
         return store().delete(area);
-    }
-
-    /** See {@link AreaStore#rename}. */
-    public static boolean renameInfoArea(InfoArea area, String newName) throws IOException {
-        return store().rename(area, newName);
     }
 
     /**

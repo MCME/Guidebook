@@ -83,10 +83,18 @@ public final class AreaStore {
     }
 
     /**
-     * @return false if the Area was renamed but its old file couldn't be deleted, so it would load under both names
-     *     after a reload
+     * Gives the Area {@code newName}, writes its file under that name, and redraws the Web map with its marker under
+     * the new name. If the file can't be written, the Area keeps its old name. Then its old file is deleted. The Area
+     * stays the same object, so players standing in it aren't Welcomed again.
+     *
+     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.NameTaken} if an Area already has that name (ignoring
+     *     case), {@link ChangeOutcome.NotWritten}, or {@link ChangeOutcome.DoneButOldFileLeft} if the old file
+     *     couldn't be deleted, so the Area would load under both names
      */
-    public boolean rename(InfoArea area, String newName) throws IOException {
+    public ChangeOutcome rename(InfoArea area, String newName) {
+        if (newNameProblem(newName).isPresent()) {
+            return new ChangeOutcome.NameTaken();
+        }
         String oldName = area.getName();
         areas.remove(oldName);
         area.setName(newName);
@@ -97,12 +105,14 @@ public final class AreaStore {
             areas.remove(newName);
             area.setName(oldName);
             areas.put(oldName, area);
-            throw ex;
+            return new ChangeOutcome.NotWritten(ex);
         }
         boolean oldFileDeleted = files.delete(area.getWorldName(), oldName);
         eraseArea(oldName);
         drawAreas();
-        return oldFileDeleted;
+        return oldFileDeleted
+                ? new ChangeOutcome.Done()
+                : new ChangeOutcome.DoneButOldFileLeft(area.getWorldName(), oldName);
     }
 
     /**

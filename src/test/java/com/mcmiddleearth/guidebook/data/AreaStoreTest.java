@@ -342,6 +342,93 @@ class AreaStoreTest {
         assertTrue(files.contents("middle-earth", "edoras").isEmpty());
     }
 
+    @Test
+    void aRenameWritesTheNewFileDeletesTheOldOneAndRedrawsTheMarkerUnderTheNewName() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        ChangeOutcome outcome = store.rename(edoras, "meduseld");
+
+        assertEquals(new ChangeOutcome.Done(), outcome);
+        assertEquals("meduseld", edoras.getName());
+        assertTrue(files.contents("middle-earth", "meduseld").isPresent());
+        assertTrue(files.contents("middle-earth", "edoras").isEmpty());
+        assertTrue(layer.markerOf("meduseld").isPresent());
+        assertTrue(layer.markerOf("edoras").isEmpty());
+    }
+
+    @Test
+    void aRenameWhoseWriteFailsKeepsTheOldNameFileAndMarker() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        String fileBefore =
+                files.contents("middle-earth", "edoras").orElseThrow().saveToString();
+        Marker markerBefore = layer.markerOf("edoras").orElseThrow();
+
+        files.failNextWrite();
+        ChangeOutcome outcome = store.rename(edoras, "meduseld");
+
+        assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
+        assertEquals("edoras", edoras.getName());
+        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertTrue(store.find("meduseld").isEmpty());
+        assertEquals(
+                fileBefore,
+                files.contents("middle-earth", "edoras").orElseThrow().saveToString());
+        assertTrue(files.contents("middle-earth", "meduseld").isEmpty());
+        assertEquals(markerBefore, layer.markerOf("edoras").orElseThrow());
+        assertTrue(layer.markerOf("meduseld").isEmpty());
+    }
+
+    @Test
+    void aRenameToANameTakenIgnoringCaseChangesNothing() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        fileOf(sphereArea("Meduseld", 100));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        ChangeOutcome outcome = store.rename(edoras, "meduseld");
+
+        assertEquals(new ChangeOutcome.NameTaken(), outcome);
+        assertEquals("edoras", edoras.getName());
+        assertEquals(Set.of("edoras", "Meduseld"), names());
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertTrue(files.contents("middle-earth", "meduseld").isEmpty());
+        assertTrue(layer.markerOf("edoras").isPresent());
+    }
+
+    @Test
+    void aRenameWhoseOldFileCantBeDeletedIsDoneWithThatFileLeftOver() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        files.failNextDelete();
+        ChangeOutcome outcome = store.rename(edoras, "meduseld");
+
+        assertEquals(new ChangeOutcome.DoneButOldFileLeft("middle-earth", "edoras"), outcome);
+        assertEquals("meduseld", edoras.getName());
+        assertTrue(files.contents("middle-earth", "meduseld").isPresent());
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertTrue(layer.markerOf("edoras").isEmpty());
+    }
+
+    @Test
+    void aRenamedAreaIsTheSameAreaFoundUnderItsNewName() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        store.rename(edoras, "meduseld");
+
+        assertSame(edoras, store.findExact("meduseld").orElseThrow());
+        assertSame(edoras, store.find("MEDUSELD").orElseThrow());
+        assertTrue(store.findExact("edoras").isEmpty());
+        assertEquals(Set.of("meduseld"), names());
+    }
+
     // ADR 0007
     @Test
     void anEditRedrawsEveryAreaSoOneHoldingAnotherStaysAnOutline() throws IOException {

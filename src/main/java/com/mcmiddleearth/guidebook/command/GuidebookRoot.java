@@ -4,6 +4,7 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.STAFF;
 import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
+import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
@@ -159,26 +160,41 @@ class GuidebookRoot {
             @CustomArg(AreaArgument.class) InfoArea area,
             @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String newName) {
         String oldName = area.getName();
-        boolean oldFileDeleted;
-        try {
-            oldFileDeleted = PluginData.renameInfoArea(area, newName);
-        } catch (IOException ex) {
-            Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, ex);
-            GuidebookMessages.sendNotDone(sender, oldName, "renamed");
-            return;
+        ChangeOutcome outcome =
+                GuidebookPlugin.getPluginInstance().getAreaStore().rename(area, newName);
+        switch (outcome) {
+            case ChangeOutcome.Done() -> sendRenamed(sender, oldName, newName);
+            case ChangeOutcome.DoneButOldFileLeft _ -> {
+                sendRenamed(sender, oldName, newName);
+                GuidebookMessages.sendError(
+                        sender,
+                        "The old data file " + oldName + ".yml couldn't be deleted. Delete it before reloading,"
+                                + " or the area will load under both names.");
+            }
+            // The argument checks the name, so this only happens if it was taken in between
+            case ChangeOutcome.NameTaken() ->
+                GuidebookMessages.sendError(
+                        sender,
+                        "An Area already has the name ",
+                        GuidebookMessages.stressed(newName),
+                        ". ",
+                        GuidebookMessages.area(oldName),
+                        " was NOT renamed.");
+            case ChangeOutcome.NotWritten(IOException cause) -> {
+                Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, cause);
+                GuidebookMessages.sendNotDone(sender, oldName, "renamed");
+            }
+            case ChangeOutcome.Gone _ -> {}
         }
+    }
+
+    private static void sendRenamed(CommandSender sender, String oldName, String newName) {
         GuidebookMessages.sendInfo(
                 sender,
                 GuidebookMessages.area(oldName),
                 " has been renamed to ",
                 GuidebookMessages.stressed(newName),
                 ".");
-        if (!oldFileDeleted) {
-            GuidebookMessages.sendError(
-                    sender,
-                    "The old data file " + oldName + ".yml couldn't be deleted. Delete it before reloading,"
-                            + " or the area will load under both names.");
-        }
     }
 
     @Executes("delete")
