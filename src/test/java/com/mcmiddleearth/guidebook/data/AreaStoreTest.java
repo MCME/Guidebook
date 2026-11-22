@@ -104,6 +104,27 @@ class AreaStoreTest {
         assertTrue(fillOf("tower") > 0);
     }
 
+    // ADR 0007
+    @Test
+    void aMoveIntoAnotherAreasFootprintRedrawsThatAreaAsAnOutline() throws IOException {
+        InfoArea city = InfoArea.create(
+                "city",
+                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
+                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
+        fileOf(city);
+        fileOf(sphereArea("tower", 500));
+        store.reload();
+        assertTrue(fillOf("city") > 0);
+
+        store.move(
+                store.findExact("tower").orElseThrow(),
+                new AreaGeometry.Sphere(50, 64, 0, 5),
+                new Location(TestWorlds.named("middle-earth"), 50, 64, 0));
+
+        assertEquals(0, fillOf("city"));
+        assertTrue(fillOf("tower") > 0);
+    }
+
     @Test
     void reloadLogsTheBackupAndEachLoadProblem() {
         files.reportOnNextLoad(new File("Guidebook-legacy-backup"), List.of("Couldn't read a", "Couldn't read b"));
