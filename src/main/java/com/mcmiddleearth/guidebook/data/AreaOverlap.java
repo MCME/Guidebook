@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.data;
 
+import com.sk89q.worldedit.math.BlockVector2;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -175,12 +176,10 @@ final class AreaOverlap {
         }
     }
 
-    /**
-     * A block is inside by {@link PrismInside}'s copy of {@code PrismoidRegion}'s rule, edges and rounding included.
-     */
+    /** A block is inside by the prism's own rule, WorldEdit's, so it counts exactly the blocks staff selected. */
     private static final class PrismColumns implements Columns {
 
-        private final PrismInside inside;
+        private final List<BlockVector2> corners;
         private final int minY;
         private final int maxY;
         private final int minX;
@@ -189,7 +188,7 @@ final class AreaOverlap {
         private final int maxZ;
 
         PrismColumns(AreaGeometry.Prism prism) {
-            inside = new PrismInside(prism);
+            corners = prism.corners();
             minY = prism.minY();
             maxY = prism.maxY();
             minX = prism.minX();
@@ -221,7 +220,7 @@ final class AreaOverlap {
         // The rule doesn't depend on Y within the prism's height, so one block decides the whole column
         @Override
         public boolean range(int x, int z, long[] range) {
-            if (!inside.contains(x, minY, z)) {
+            if (!AreaGeometry.Prism.containsBlock(corners, minY, maxY, x, minY, z)) {
                 return false;
             }
             range[0] = minY;

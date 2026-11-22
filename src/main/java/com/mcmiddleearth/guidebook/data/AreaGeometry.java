@@ -157,7 +157,15 @@ public sealed interface AreaGeometry {
          * blocks staff selected.
          */
         boolean containsBlock(int x, int y, int z) {
-            return Polygonal2DRegion.contains(corners(), minY, maxY, BlockVector3.at(x, y, z));
+            return containsBlock(corners(), minY, maxY, x, y, z);
+        }
+
+        /**
+         * {@link #containsBlock(int, int, int)} for a caller that asks about many blocks and keeps the {@link
+         * #corners()}.
+         */
+        static boolean containsBlock(List<BlockVector2> corners, int minY, int maxY, int x, int y, int z) {
+            return Polygonal2DRegion.contains(corners, minY, maxY, BlockVector3.at(x, y, z));
         }
 
         /** The polygon's corners as WorldEdit takes them. */
