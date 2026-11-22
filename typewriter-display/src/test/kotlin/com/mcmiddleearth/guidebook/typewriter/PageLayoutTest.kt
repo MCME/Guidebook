@@ -22,18 +22,32 @@ class PageLayoutTest {
     }
 
     @Test
-    fun `a line breaks at the last space that fits in 320px, counting every character as 6px`() {
-        // 53 characters at 6px is 318px; one more would be 324px
-        val lines = linesOf("${"a".repeat(50)} bb ccc").single()
+    fun `a line breaks at the last space that fits in 304px`() {
+        // i is 2px in Minecraft's font: 152 of them are 304px, and the space after them 308px
+        val lines = linesOf("${"i".repeat(152)} i").single()
 
-        assertEquals(listOf("${"a".repeat(50)} bb", "ccc"), lines)
+        assertEquals(listOf("i".repeat(152), "i"), lines)
+    }
+
+    @Test
+    fun `each letter counts as wide as Minecraft's font draws it`() {
+        // a is 6px: 50 are 300px. í and the bullet marker are 3px: 101 are 303px
+        assertEquals(listOf("a".repeat(50), "a"), linesOf("${"a".repeat(50)} a").single())
+        assertEquals(listOf("í".repeat(101), "í"), linesOf("${"í".repeat(101)} í").single())
+        assertEquals(listOf("▸".repeat(101), "▸"), linesOf("${"▸".repeat(101)} ▸").single())
+    }
+
+    @Test
+    fun `a character the font's table doesn't list counts as the widest Unifont glyph, 9px`() {
+        // ❦ is drawn only by Unifont: 33 are 297px, and a space and another would make 310px
+        assertEquals(listOf("❦".repeat(33), "❦"), linesOf("${"❦".repeat(33)} ❦").single())
     }
 
     @Test
     fun `a word wider than a line is broken mid-word`() {
         val lines = linesOf("ab ${"c".repeat(60)}").single()
 
-        assertEquals(listOf("ab", "c".repeat(53), "c".repeat(7)), lines)
+        assertEquals(listOf("ab", "c".repeat(50), "c".repeat(10)), lines)
     }
 
     @Test
@@ -44,19 +58,11 @@ class PageLayoutTest {
     }
 
     @Test
-    fun `bold characters count 7px`() {
-        // 45 bold characters are 315px; the space after them would make 322px
-        val lines = linesOf("<bold>${"a".repeat(42)} bb c").single()
+    fun `bold adds 1px to each character`() {
+        // 43 bold a are 301px; the bold space after them would make 306px
+        val lines = linesOf("<bold>${"a".repeat(43)} b").single()
 
-        assertEquals(listOf("${"a".repeat(42)} bb", "c"), lines)
-    }
-
-    @Test
-    fun `@ and ~ count 7px, and 8px in bold`() {
-        // 44 at 7px is 308px, then 1 at 6px and a space fill the 320px
-        assertEquals(listOf("${"@".repeat(44)}a", "b"), linesOf("${"@".repeat(44)}a b").single())
-        // 39 bold at 8px is 312px, then 1 bold at 7px is 319px
-        assertEquals(listOf("${"~".repeat(39)}a", "b"), linesOf("<bold>${"~".repeat(39)}a b").single())
+        assertEquals(listOf("a".repeat(43), "b"), lines)
     }
 
     @Test
@@ -96,12 +102,12 @@ class PageLayoutTest {
     }
 
     @Test
-    fun `the 8th line of a Page that carries on is broken about 3 characters shorter`() {
-        // 8 full lines of words, then more: the 8th line leaves room for "..."
+    fun `the 8th line of a Page that carries on leaves room for the ellipsis`() {
+        // 8 full lines of words, then more: the 8th line leaves room for "...", 6px
         val pages = layOutPages(AreaText.render(List(9 * 9) { "words" }.joinToString(" ")))
 
         val firstPage = pages.first().lines.map(::plain)
-        // 9 words and their spaces are 53 characters, 318px. The 8th line has 3 characters less: room for 8
+        // "words" is 30px, so 9 words and their spaces are 302px. With 6px kept for "...", only 8 fit
         assertEquals(List(7) { List(9) { "words" }.joinToString(" ") }, firstPage.take(7))
         assertEquals(List(8) { "words" }.joinToString(" "), firstPage[7])
         assertEquals(true, pages.first().carriesOn)
@@ -110,10 +116,10 @@ class PageLayoutTest {
     @Test
     fun `the last line of the last Page is full width`() {
         // 8 lines that only just fit: none of them carries on, so the 8th isn't shortened
-        val pages = layOutPages(AreaText.render(List(8) { "a".repeat(53) }.joinToString("\n")))
+        val pages = layOutPages(AreaText.render(List(8) { "a".repeat(50) }.joinToString("\n")))
 
         assertEquals(1, pages.size)
-        assertEquals("a".repeat(53), plain(pages.single().lines[7]))
+        assertEquals("a".repeat(50), plain(pages.single().lines[7]))
     }
 
     @Test
@@ -146,6 +152,17 @@ class PageLayoutTest {
 
         assertEquals(10, box.size)
         assertEquals((1..8).map { "line $it" }, box.subList(1, 9))
+    }
+
+    @Test
+    fun `the text sits 4px inside the borders, and blank lines stay empty`() {
+        val box = drawBox("Bree", layOutPages(AreaText.render(numberedLines(2))).single(), KEY, LayoutSettings(), TYPED)
+
+        val lines = plain(box).split("\n")
+        val firstLine = styledCharacters(box).dropWhile { it.first != '\n' }.drop(1).dropWhile { it.first != '\n' }.drop(1)
+        assertEquals(4, pixelWidth(firstLine.takeWhile { it.first == ' ' }))
+        assertEquals("line 1", lines[2].trimStart())
+        assertEquals("", lines[1])
     }
 
     @Test
@@ -239,7 +256,7 @@ class PageLayoutTest {
         val page = layOutPages(AreaText.render("ab cd\nef gh")).single()
 
         val typed = { elapsed: Long ->
-            plain(drawBox("Bree", page, KEY, settings, Duration.ofMillis(elapsed))).split("\n").subList(2, 4)
+            plain(drawBox("Bree", page, KEY, settings, Duration.ofMillis(elapsed))).split("\n").subList(2, 4).map(String::trim)
         }
 
         assertEquals(listOf("", ""), typed(0))
@@ -258,8 +275,9 @@ class PageLayoutTest {
         assertEquals(true, lastLine(Duration.ofSeconds(4)).endsWith("..."))
     }
 
+    // Without the inset, a space before each line of text
     private fun boxLines(page: Page): List<String> =
-        plain(drawBox("Bree West-gate", page, KEY, LayoutSettings(), TYPED)).split("\n")
+        plain(drawBox("Bree West-gate", page, KEY, LayoutSettings(), TYPED)).split("\n").map { it.removePrefix(" ") }
 
     private fun numberedLines(count: Int) = (1..count).joinToString("\n") { "line $it" }
 

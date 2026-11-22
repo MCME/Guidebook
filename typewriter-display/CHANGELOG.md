@@ -39,3 +39,5 @@ from. It opens with these lines, the first three of which CI checks before relea
   turns and closes with a key. Choose it with `display: typewriter` in Guidebook's `config.yml`.
 - The Edit dialog's Preview shows the Description as its boxes, one for each Page, so staff can
   see where the Pages break before saving.
+- The box's text is broken into lines by each letter's width in Minecraft's font, and sits 4px
+  inside the borders.

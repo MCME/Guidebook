@@ -11,15 +11,16 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 fun plain(component: Component): String = PlainTextComponentSerializer.plainText().serialize(component)
 
 /**
- * How wide the characters are on screen in Minecraft's default font, each with the 1px gap after it, bold adding 1px.
- * Keys are shown by their default binding, F for swapping hands.
+ * How wide the characters are on screen in Minecraft's 26.3 default font, each with the 1px gap after it, bold adding
+ * 1px: ASCII as read off the font's bitmap, which is all the tests measure. Keys are shown by their default binding, F
+ * for swapping hands.
  */
 fun pixelWidth(characters: List<Pair<Char, Style>>): Int = characters.sumOf { (character, style) ->
     val width = when (character) {
         '!', '\'', ',', '.', ':', ';', 'i', '|' -> 2
         '`', 'l' -> 3
-        ' ', 'I', '[', ']', 't' -> 4
-        '"', '(', ')', '*', '<', '>', 'f', 'k', '{', '}' -> 5
+        ' ', 'I', '[', ']', 't', '"', '(', ')', '*', '{', '}' -> 4
+        '<', '>', 'f', 'k' -> 5
         '@', '~' -> 7
         else -> 6
     }

@@ -118,7 +118,7 @@ class TypewriterDisplayTest {
         val lines = (1..9).joinToString("\n") { "Line $it." }
         val long = Welcome("me-bree-gate", "Bree", "", "<guide>$lines", true)
 
-        val boxes = display.previewDescription(player, long).map { plain(it).lines().map(String::trimEnd) }
+        val boxes = display.previewDescription(player, long).map { plain(it).lines().map(String::trim) }
 
         assertEquals(2, boxes.size)
         assertEquals("Bree", boxes[0].first().trim())
@@ -133,6 +133,18 @@ class TypewriterDisplayTest {
         val short = Welcome("me-bree-gate", "Bree", "", "<guide>The <bold>West-gate</bold> of Bree.\nIt shuts at night.", true)
 
         val box = display.previewDescription(player, short).single()
+
+        val widths = splitLines(styledCharacters(box)).map(::pixelWidth)
+        assertEquals(List(widths.size) { widths.first() }, widths)
+    }
+
+    @Test
+    fun `a line too close to the borders for spaces to pad exactly still comes out as wide as them`() {
+        // 44 a, then " aa aaf": 301px, so with the 4px inset the gap to the 312px borders is 7px, which no mix of 4px
+        // and 5px spaces makes
+        val close = Welcome("me-bree-gate", "Bree", "", "${"a".repeat(44)} aa aaf", true)
+
+        val box = display.previewDescription(player, close).single()
 
         val widths = splitLines(styledCharacters(box)).map(::pixelWidth)
         assertEquals(List(widths.size) { widths.first() }, widths)

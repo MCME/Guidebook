@@ -71,11 +71,11 @@ fun layOutPages(description: Component): List<Page> {
     var lines = mutableListOf<Component>()
     var start = 0
     while (true) {
-        var line = breakLine(text, start, LINE_WIDTH_PX)
+        var line = breakLine(text, start, TEXT_WIDTH_PX)
         val more = line.endsOnNewline || line.next < text.length
         if (lines.size == LINES_PER_PAGE - 1 && more) {
             // The last line of a Page that carries on leaves room for the ellipsis it ends with
-            line = breakLine(text, start, LINE_WIDTH_PX - ELLIPSIS_WIDTH_PX)
+            line = breakLine(text, start, TEXT_WIDTH_PX - ELLIPSIS_WIDTH_PX)
         }
         lines += text.slice(start, line.end)
         start = line.next
@@ -117,17 +117,19 @@ fun drawBox(
         .append(Component.text(" to ${page.footer} "))
         .build()
     // Both borders come out the same width, however long the Title or the prompt
-    val width = maxOf(BORDER_WIDTH_PX, realWidth(title) + 2 * MIN_RULE_PX, realWidth(prompt) + 2 * MIN_RULE_PX)
+    val width = maxOf(BORDER_WIDTH_PX, width(title) + 2 * MIN_RULE_PX, width(prompt) + 2 * MIN_RULE_PX)
 
     val text = page.revealedLines(elapsed, settings).toMutableList()
     if (page.carriesOn && elapsed >= page.typingDuration(settings)) {
         text[text.lastIndex] = text.last().append(Component.text(ELLIPSIS))
     }
+    val inset = spaces(INSET_PX, Style.empty())
+    text.replaceAll { line -> Component.text().append(inset).append(line).build() }
     if (text.size < LINES_PER_PAGE) text.add(0, Component.empty())
     // Short text leaves blank lines below it, so the box is always the same height
     while (text.size < LINES_PER_PAGE) text += Component.empty()
     if (fillLines) {
-        text.replaceAll { line -> line.append(spaces((width - realWidth(line)).coerceAtLeast(0), Style.empty())) }
+        text.replaceAll { line -> paddedTo(width, line) }
     }
 
     return Component.join(JoinConfiguration.newlines(), listOf(framed(title, width)) + text + framed(prompt, width))
@@ -142,30 +144,18 @@ private const val LINES_PER_PAGE = 8
 private const val LINE_WIDTH_PX = 320
 
 private const val ELLIPSIS = "..."
-private const val ELLIPSIS_WIDTH_PX = 3 * 6
+private val ELLIPSIS_WIDTH_PX = width(Component.text(ELLIPSIS))
 
 // The header and footer span about the chat's width, a few pixels short of it in case a character is measured narrow
 private const val BORDER_WIDTH_PX = LINE_WIDTH_PX - 8
 
+// The text sits this far inside each end of the borders
+private const val INSET_PX = 4
+
+private const val TEXT_WIDTH_PX = BORDER_WIDTH_PX - 2 * INSET_PX
+
 // The shortest rule either side of the header or footer, so a long Title is still framed
 private const val MIN_RULE_PX = 16
-
-/**
- * The widest a character can be in Minecraft's default font, including the 1px gap after it. Measuring narrow
- * letters (i, l, t...) as wide means a line can never come out wider than measured.
- */
-private fun widestWidth(character: Char, bold: Boolean): Int =
-    (if (character == '@' || character == '~') 7 else 6) + (if (bold) 1 else 0)
-
-/** How wide a character is in Minecraft's default font, including the 1px gap after it. Bold adds 1px. */
-private fun realWidth(character: Char, bold: Boolean): Int = (if (bold) 1 else 0) + when (character) {
-    '!', '\'', ',', '.', ':', ';', 'i', '|' -> 2
-    '`', 'l' -> 3
-    ' ', 'I', '[', ']', 't' -> 4
-    '"', '(', ')', '*', '<', '>', 'f', 'k', '{', '}' -> 5
-    '@', '~' -> 7
-    else -> 6
-}
 
 // The client shows a key by its name on the player's keyboard; these are Minecraft's default bindings
 private val KEY_NAMES = mapOf(
@@ -176,7 +166,7 @@ private val KEY_NAMES = mapOf(
     "key.use" to "Right Button",
 )
 
-private fun realWidth(component: Component, parent: Style = Style.empty()): Int {
+private fun width(component: Component, parent: Style = Style.empty()): Int {
     val style = component.style().merge(parent, Style.Merge.Strategy.IF_ABSENT_ON_TARGET)
     val bold = style.hasDecoration(TextDecoration.BOLD)
     val own = when (component) {
@@ -184,12 +174,12 @@ private fun realWidth(component: Component, parent: Style = Style.empty()): Int 
         is KeybindComponent -> KEY_NAMES[component.keybind()] ?: "?"
         else -> ""
     }
-    return own.sumOf { realWidth(it, bold) } + component.children().sumOf { realWidth(it, style) }
+    return own.sumOf { DefaultFont.width(it, bold) } + component.children().sumOf { width(it, style) }
 }
 
 /** [content] between two rules, filling [width] in all. */
 private fun framed(content: Component, width: Int): Component {
-    val fill = width - realWidth(content)
+    val fill = width - width(content)
     return Component.text()
         .append(rule(fill / 2))
         .append(content)
@@ -202,11 +192,32 @@ private fun rule(width: Int): Component =
     spaces(width, Style.style(NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH))
 
 /**
- * Spaces in [style] filling [width] pixels: 4px each, or 5px in bold. Mixing the two makes any width from 12px exact;
- * a narrower one comes out up to 3px short.
+ * [line] padded with spaces to [width] pixels. A gap spaces can't make exactly (see [boldSpaces]) is made up by widening
+ * a few of the line's own spaces between words to bold, 1px each, which nobody can see. A line without enough of them
+ * comes out up to 3px short.
  */
+private fun paddedTo(width: Int, line: Component): Component {
+    val gap = width - width(line)
+    if (gap <= 0) return line
+    val text = StyledText.of(line)
+    val firstLetter = (0 until text.length).firstOrNull { text[it] != ' ' } ?: text.length
+    val between = (text.length - 1 downTo firstLetter).filter { text[it] == ' ' && !text.isBold(it) }
+    val widened = (0..minOf(MAX_WIDENED_SPACES, between.size)).firstOrNull { boldSpaces(gap - it) != null } ?: 0
+    return text.withBoldSpaces(between.take(widened).toSet()).append(spaces(gap - widened, Style.empty()))
+}
+
+// Every gap is 0 to 3px from one spaces make exactly
+private const val MAX_WIDENED_SPACES = 3
+
+/**
+ * How many of the spaces filling [width] pixels are bold, or null if no mix of 4px and 5px spaces makes it: that's 1,
+ * 2, 3, 6, 7 and 11px. A width spaces can't make comes out up to 3px short.
+ */
+private fun boldSpaces(width: Int): Int? = (0..3).firstOrNull { width - 5 * it >= 0 && (width - 5 * it) % 4 == 0 }
+
+/** Spaces in [style] filling [width] pixels: 4px each, or 5px in bold, mixed as [boldSpaces] says. */
 private fun spaces(width: Int, style: Style): Component {
-    val bold = if (width >= 12) width % 4 else 0
+    val bold = boldSpaces(width) ?: 0
     val plain = (width - 5 * bold) / 4
     return Component.text()
         .append(Component.text(" ".repeat(plain), style))
@@ -227,7 +238,7 @@ private fun breakLine(text: StyledText, start: Int, width: Int): LineBreak {
     for (i in start until text.length) {
         val character = text[i]
         if (character == '\n') return LineBreak(i, i + 1, endsOnNewline = true)
-        used += widestWidth(character, text.isBold(i))
+        used += DefaultFont.width(character, text.isBold(i))
         if (used > width) {
             return when {
                 character == ' ' -> LineBreak(i, i + 1, endsOnNewline = false)
@@ -254,6 +265,24 @@ internal class StyledText(private val runs: List<Run>) {
     fun count(predicate: (Char) -> Boolean): Int = plain.count(predicate)
 
     fun isBold(index: Int): Boolean = bold[index]
+
+    /** The whole text, with the spaces at [indices] made bold so each is 1px wider. */
+    fun withBoldSpaces(indices: Set<Int>): Component {
+        val builder = Component.text()
+        var offset = 0
+        for (run in runs) {
+            var from = 0
+            for (i in run.text.indices) {
+                if (offset + i !in indices) continue
+                if (from < i) builder.append(Component.text(run.text.substring(from, i), run.style))
+                builder.append(Component.text(" ", run.style.decorate(TextDecoration.BOLD)))
+                from = i + 1
+            }
+            if (from < run.text.length) builder.append(Component.text(run.text.substring(from), run.style))
+            offset += run.text.length
+        }
+        return builder.build()
+    }
 
     fun slice(from: Int, to: Int): Component {
         val builder = Component.text()
