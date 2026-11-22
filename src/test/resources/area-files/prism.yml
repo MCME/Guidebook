@@ -1,0 +1,26 @@
+# A prism Area as Guidebook writes it today: the corners of its footprint and its height, with its Warp point inside.
+world: middle-earth
+locationX: 100
+locationY: 64
+locationZ: -200
+locationYaw: 90.5
+locationPitch: -12.25
+xPoints:
+- 95
+- 120
+- 120
+- 80
+zPoints:
+- -180
+- -170
+- -230
+- -230
+minY: 50
+maxY: 90
+description: Welcome
+title: <gold>Edoras
+subtitle: <gray>Capital of Rohan
+showScoreboard: true
+showTitle: true
+enabled: true
+minimessage: true

@@ -1,0 +1,20 @@
+# A cuboid Area as Guidebook writes it today: its corners, with its Warp point inside.
+world: middle-earth
+locationX: 100
+locationY: 64
+locationZ: -200
+locationYaw: 90.5
+locationPitch: -12.25
+minCornerX: 80
+minCornerY: 50
+minCornerZ: -230
+maxCornerX: 120
+maxCornerY: 90
+maxCornerZ: -170
+description: Welcome
+title: <gold>Edoras
+subtitle: <gray>Capital of Rohan
+showScoreboard: true
+showTitle: true
+enabled: true
+minimessage: true
