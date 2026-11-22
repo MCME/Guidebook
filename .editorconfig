@@ -8,6 +8,8 @@ indent_style = space
 insert_final_newline = true
 
 [*.java]
+# The same limit Palantir formats code to, and Checkstyle holds comments to
+max_line_length = 120
 # Formatting is done by Palantir (Spotless + IntelliJ plugin); these only stop IntelliJ adding wildcard imports
 ij_java_class_count_to_use_import_on_demand = 999
 ij_java_names_count_to_use_import_on_demand = 999

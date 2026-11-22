@@ -7,7 +7,7 @@ import java.util.Optional;
 
 /**
  * Judges a proposed placement of an Area before anything is written, for the Placement dialog. It knows nothing about
- * Paper, WorldEdit or Dialogs, so it works without a running server.
+ * Paper, WorldEdit or Dialogs, so its tests can check placements with plain numbers.
  */
 public final class PlacementCheck {
 

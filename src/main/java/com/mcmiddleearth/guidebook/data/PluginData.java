@@ -25,20 +25,14 @@ import com.mcmiddleearth.pluginutil.region.Region;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 
 /**
  * @author Eriol_Eandur
@@ -51,18 +45,12 @@ public class PluginData {
 
     private static MarkerLayer webMapLayer = new NoWebMap().layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true);
 
-    private static Set<UUID> excludedPlayers = new HashSet<>();
-
     private static final File dataFolder = GuidebookPlugin.getPluginInstance().getDataFolder();
 
     static {
         if (!GuidebookPlugin.getPluginInstance().getDataFolder().exists()) {
             GuidebookPlugin.getPluginInstance().getDataFolder().mkdirs();
         }
-    }
-
-    public static boolean isExcluded(Player player) {
-        return excludedPlayers.contains(player.getUniqueId());
     }
 
     public static InfoArea addInfoArea(String name, InfoArea newArea) {
@@ -79,7 +67,6 @@ public class PluginData {
     }
 
     public static boolean deleteInfoArea(InfoArea area) {
-        area.clearPlayers();
         boolean result = getDataFile(area, area.getName()).delete();
         if (result) {
             infoAreas.remove(area.getName());
@@ -161,25 +148,6 @@ public class PluginData {
         return registry.newNameProblem(name);
     }
 
-    public static void include(Player player) {
-        excludedPlayers.remove(player.getUniqueId());
-    }
-
-    public static void exclude(Player player) {
-        excludedPlayers.add(player.getUniqueId());
-    }
-
-    public static void saveExcluded() throws IOException {
-        FileConfiguration config = GuidebookPlugin.getPluginInstance().getConfig();
-        ArrayList<String> tempList = new ArrayList<>();
-        for (UUID id : excludedPlayers) {
-            tempList.add(id.toString());
-        }
-        config.set("excludedPlayers", tempList);
-        GuidebookPlugin.getPluginInstance().saveConfig();
-        Logger.getGlobal().info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    }
-
     /** Writes the Area's file, then redraws it on the Web map, so a failed save leaves its marker as it was. */
     public static void saveArea(InfoArea area) throws IOException {
         writeArea(area);
@@ -199,16 +167,6 @@ public class PluginData {
     }
 
     public static void loadData() {
-        FileConfiguration config = GuidebookPlugin.getPluginInstance().getConfig();
-        excludedPlayers = new HashSet<UUID>();
-        List<String> tempList = new ArrayList<>();
-        tempList = config.getStringList("excludedPlayers");
-        for (String id : tempList) {
-            excludedPlayers.add(UUID.fromString(id));
-        }
-        for (InfoArea area : infoAreas.values()) {
-            area.clearPlayers();
-        }
         infoAreas.clear();
         AreaFileLoader.Outcome outcome = AreaFileLoader.load(dataFolder, LocalDateTime.now());
         Logger logger = GuidebookPlugin.getPluginInstance().getLogger();
@@ -218,9 +176,8 @@ public class PluginData {
         outcome.problems().forEach(logger::severe);
         for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
             String areaName = loaded.name();
-            config = loaded.config();
             DevUtil.log("Load area " + areaName);
-            InfoArea.load(areaName, config).ifPresent(area -> addInfoArea(areaName, area));
+            InfoArea.load(areaName, loaded.config()).ifPresent(area -> addInfoArea(areaName, area));
         }
         drawWebMap();
     }
@@ -262,17 +219,6 @@ public class PluginData {
 
     private static File getDataFile(InfoArea area, String areaName) {
         return new File(new File(dataFolder, area.getWorldName()), areaName + ".yml");
-    }
-
-    public static void disable() {
-        try {
-            saveExcluded();
-        } catch (IOException ex) {
-            Logger.getLogger(PluginData.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        for (InfoArea area : infoAreas.values()) {
-            area.clearPlayers();
-        }
     }
 
     public static Map<String, InfoArea> getInfoAreas() {

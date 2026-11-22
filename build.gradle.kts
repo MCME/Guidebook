@@ -3,6 +3,7 @@ plugins {
     `maven-publish`
     alias(libs.plugins.run.paper)
     alias(libs.plugins.spotless)
+    checkstyle
 }
 
 group = "com.mcmiddleearth"
@@ -83,6 +84,27 @@ spotless {
 tasks {
     test {
         useJUnitPlatform()
+        // Every failure in full, and a total at the end, so one run says what passed and why anything failed
+        testLogging {
+            events("failed")
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        }
+        addTestListener(object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {}
+
+            override fun beforeTest(testDescriptor: TestDescriptor) {}
+
+            override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
+
+            override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+                if (suite.parent == null) {
+                    println(
+                        "${result.testCount} tests: ${result.successfulTestCount} passed, " +
+                            "${result.failedTestCount} failed, ${result.skippedTestCount} skipped",
+                    )
+                }
+            }
+        })
     }
 
     // Dynamically adding the version and api-version to the paper plugin.yml

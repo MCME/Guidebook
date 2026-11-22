@@ -1,6 +1,9 @@
 package com.mcmiddleearth.guidebook.data;
 
-/** The parts of an Area that its Area marker shows, so an Area can be turned into a marker without a running server. */
+/**
+ * The parts of an Area that its Area marker shows.
+ * A real Area's Shape needs a loaded world, so this lets the Area marker tests use simple fake Areas instead.
+ */
 public interface MarkableArea extends AreaView {
 
     String getSubtitle();

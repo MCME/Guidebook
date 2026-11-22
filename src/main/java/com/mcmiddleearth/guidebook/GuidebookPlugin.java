@@ -17,17 +17,20 @@
 package com.mcmiddleearth.guidebook;
 
 import com.mcmiddleearth.guidebook.command.GuidebookRootBrigadier;
-import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
-import com.mcmiddleearth.guidebook.listener.PlayerListener;
+import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.webmap.NoWebMap;
 import com.mcmiddleearth.guidebook.webmap.WebMap;
 import com.mcmiddleearth.guidebook.webmap.dynmap.DynmapWebMap;
+import com.mcmiddleearth.guidebook.welcome.ChatDisplay;
+import com.mcmiddleearth.guidebook.welcome.DisplaySwitchboard;
+import com.mcmiddleearth.guidebook.welcome.Watchman;
+import com.mcmiddleearth.guidebook.welcome.WatchmanListener;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import java.time.InstantSource;
 import java.util.List;
+import java.util.UUID;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -38,9 +41,15 @@ public class GuidebookPlugin extends JavaPlugin {
     private static final long INITIAL_DELAY_TICKS = 0L;
     private static final long INTERVAL_TICKS = 20L;
 
+    private static final String DISPLAY_KEY = "display";
+    private static final String OPTED_OUT_KEY = "excludedPlayers";
+
     private static GuidebookPlugin pluginInstance;
 
     private WebMap webMap = new NoWebMap();
+
+    private DisplaySwitchboard displaySwitchboard;
+    private Watchman watchman;
 
     public static GuidebookPlugin getPluginInstance() {
         return pluginInstance;
@@ -53,8 +62,7 @@ public class GuidebookPlugin extends JavaPlugin {
         useWebMap();
         PluginData.loadData();
 
-        this.initializePlayerMoveRunnable();
-        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        startWatchman();
 
         // Register the command with the description and aliases declared as annotations
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -66,8 +74,28 @@ public class GuidebookPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        PluginData.disable();
+        if (watchman != null) {
+            watchman.close();
+            getConfig()
+                    .set(
+                            OPTED_OUT_KEY,
+                            watchman.optedOut().stream()
+                                    .map(UUID::toString)
+                                    .sorted()
+                                    .toList());
+            saveConfig();
+        }
         webMap.close();
+    }
+
+    /** Where another plugin registers its own Display (ADR 0008). */
+    public DisplaySwitchboard getDisplaySwitchboard() {
+        return displaySwitchboard;
+    }
+
+    /** Notices players entering Areas and gives them their Welcomes. */
+    public Watchman getWatchman() {
+        return watchman;
     }
 
     private void useWebMap() {
@@ -80,35 +108,33 @@ public class GuidebookPlugin extends JavaPlugin {
         PluginData.useWebMap(webMap);
     }
 
-    public void initializePlayerMoveRunnable() {
+    private void startWatchman() {
+        // Written to config.yml on the next save, so staff can see where to choose another Display
+        getConfig().addDefault(DISPLAY_KEY, DisplaySwitchboard.CHAT);
+        getConfig().options().copyDefaults(true);
+        displaySwitchboard = new DisplaySwitchboard(
+                getConfig().getString(DISPLAY_KEY, DisplaySwitchboard.CHAT), new ChatDisplay(this), getLogger());
+
+        List<UUID> optedOut = getConfig().getStringList(OPTED_OUT_KEY).stream()
+                .map(UUID::fromString)
+                .toList();
+        watchman = new Watchman(
+                displaySwitchboard,
+                (player, areaName) -> {
+                    GuidebookSendEvent event = new GuidebookSendEvent(player, areaName);
+                    event.callEvent();
+                    return event.isCancelled();
+                },
+                InstantSource.system(),
+                (ticks, task) -> getServer().getScheduler().runTaskLater(this, task, ticks),
+                optedOut);
+
+        getServer().getPluginManager().registerEvents(new WatchmanListener(watchman, displaySwitchboard), this);
         getServer()
                 .getScheduler()
                 .scheduleSyncRepeatingTask(
                         this,
-                        () -> {
-                            List<InfoArea> enabledAreas = PluginData.getInfoAreas().values().stream()
-                                    .filter(InfoArea::isEnabled)
-                                    .toList();
-
-                            for (Player player : Bukkit.getOnlinePlayers()) {
-                                Location playerLocation = player.getLocation();
-
-                                for (InfoArea area : enabledAreas) {
-                                    boolean isInside = area.containsPlayer(player);
-
-                                    if (!isInside) {
-                                        if (area.isInside(playerLocation)) {
-                                            area.onRegionEnter(player);
-                                        }
-                                        continue;
-                                    }
-
-                                    if (!area.isNear(playerLocation)) {
-                                        area.onRegionLeave(player);
-                                    }
-                                }
-                            }
-                        },
+                        () -> watchman.tick(PluginData.getInfoAreas().values(), Bukkit.getOnlinePlayers()),
                         INITIAL_DELAY_TICKS,
                         INTERVAL_TICKS);
     }
