@@ -11,7 +11,12 @@ see the GitHub history.
 - `display` in `config.yml` chooses how Welcomes are shown. `chat` (the default) is the Title then
   the Description in chat, as before. Another plugin can add a Display through
   `GuidebookPlugin#getDisplaySwitchboard()`. If the chosen one isn't registered or fails, Welcomes
-  are shown in chat and the server log says why.
+  are shown in chat and the server log says why. A Display that can't show a Welcome for an
+  expected reason throws `Display.Unavailable`, which sends it to chat without logging a failure.
+- Staff (`guidebook.staff`) who join while the Display chosen in `config.yml` isn't running are
+  told so, and that Welcomes are using the Chat display.
+- The Edit dialog's Preview shows the Description as the server's Display would. A Display shows
+  its own preview by overriding `Display#previewDescription`; by default it previews as chat.
 
 ### Changed
 

@@ -1,5 +1,7 @@
 package com.mcmiddleearth.guidebook.welcome;
 
+import java.util.List;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
 /**
@@ -12,5 +14,29 @@ import org.bukkit.entity.Player;
 @FunctionalInterface
 public interface Display {
 
+    /**
+     * Shows {@code welcome} to {@code player}. Throwing {@link Unavailable} hands it to the Chat display quietly; any
+     * other exception does too, but is logged as a failure.
+     */
     void show(Player player, Welcome welcome);
+
+    /**
+     * The Description of {@code welcome} as this Display would show it to {@code player}, one Component per screen,
+     * without showing it. Empty, the default, means it looks as the Chat display shows it.
+     */
+    default List<Component> previewDescription(Player player, Welcome welcome) {
+        return List.of();
+    }
+
+    /**
+     * A Display can't show a Welcome right now, for an expected reason such as the player being busy, so the Chat
+     * display shows it instead. Expected in normal play, so it's not logged as a failure.
+     */
+    final class Unavailable extends RuntimeException {
+
+        /** @param reason why, for the server log's fine-grained level */
+        public Unavailable(String reason) {
+            super(reason);
+        }
+    }
 }

@@ -111,6 +111,19 @@ class AreaTextTest {
     }
 
     @Test
+    void withoutTheGuideLabelTheGuideOpeningIsOnlyTheWhite() {
+        Component rendered = AreaText.renderWithoutGuideLabel("<guide>You stand upon <date>T.A. 3019</date>.");
+
+        assertEquals(
+                StyledCharacters.of(Component.text()
+                        .append(Component.text("You stand upon ", NamedTextColor.WHITE))
+                        .append(Component.text("T.A. 3019", NamedTextColor.YELLOW))
+                        .append(Component.text(".", NamedTextColor.WHITE))
+                        .build()),
+                StyledCharacters.of(rendered));
+    }
+
+    @Test
     void aColourAfterTheGuideOpeningOverridesTheWhite() {
         Component rendered = AreaText.render("<guide><gray>Ruins");
 

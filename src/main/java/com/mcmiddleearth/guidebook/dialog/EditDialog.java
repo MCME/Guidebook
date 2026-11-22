@@ -5,6 +5,7 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.welcome.Welcome;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -88,6 +89,11 @@ public final class EditDialog {
                     Boolean.TRUE.equals(response.getBoolean(SHOW_BOSS_BAR)),
                     Objects.requireNonNullElse(response.getText(DESCRIPTION), ""),
                     ENABLED.equals(response.getText(STATUS)));
+        }
+
+        /** The Description as saving stores it, without trailing whitespace. */
+        String storedDescription() {
+            return description.stripTrailing();
         }
 
         Values forNewArea() {
@@ -290,7 +296,16 @@ public final class EditDialog {
         List<DialogBody> body = new ArrayList<>();
         addPreview(body, "Title", values.title(), values.showTitle() ? null : "not shown: Show title is off");
         addPreview(body, "Subtitle", values.subtitle(), values.showTitle() ? null : "not shown: Show title is off");
-        addPreview(body, "Description", values.description(), null);
+        Welcome asSaved = new Welcome(
+                area.getName(), values.title(), values.subtitle(), values.storedDescription(), values.showTitle());
+        List<Component> screens =
+                GuidebookPlugin.getPluginInstance().getDisplaySwitchboard().previewDescription(player, asSaved);
+        if (screens.isEmpty()) {
+            addPreview(body, "Description", values.description(), null);
+        } else {
+            addHeading(body, "Description", null);
+            screens.forEach(screen -> body.add(DialogBody.plainMessage(screen, PREVIEW_WIDTH)));
+        }
         // Opened empty: filling it in is left to staff, who can paste any text they want to try out
         ActionButton webUi = ActionButton.builder(Component.text("Open the WebUI", GuidebookMessages.INFO))
                 .tooltip(Component.text("Opens the Adventure WebUI, an external site for writing and previewing "
@@ -316,16 +331,21 @@ public final class EditDialog {
 
     /** Adds a grey label, with {@code note} if it isn't null, and then {@code text} rendered at chat width. */
     private static void addPreview(List<DialogBody> body, String label, String text, String note) {
-        Component heading = Component.text(label, NamedTextColor.GRAY);
-        if (note != null) {
-            heading = heading.append(Component.text(" (" + note + ")", NamedTextColor.DARK_GRAY));
-        }
-        body.add(DialogBody.plainMessage(heading, PREVIEW_WIDTH));
+        addHeading(body, label, note);
         body.add(DialogBody.plainMessage(
                 AreaText.isVisiblyBlank(text)
                         ? Component.text("(empty)", NamedTextColor.DARK_GRAY)
                         : AreaText.render(text),
                 PREVIEW_WIDTH));
+    }
+
+    /** Adds a grey label, with {@code note} if it isn't null. */
+    private static void addHeading(List<DialogBody> body, String label, String note) {
+        Component heading = Component.text(label, NamedTextColor.GRAY);
+        if (note != null) {
+            heading = heading.append(Component.text(" (" + note + ")", NamedTextColor.DARK_GRAY));
+        }
+        body.add(DialogBody.plainMessage(heading, PREVIEW_WIDTH));
     }
 
     private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
@@ -361,7 +381,7 @@ public final class EditDialog {
         area.setTitle(values.title());
         area.setSubtitle(values.subtitle());
         area.setShowBossBar(values.showBossBar());
-        area.setDescription(values.description().stripTrailing());
+        area.setDescription(values.storedDescription());
         if (values.enabled()) {
             area.statusOn();
         } else {

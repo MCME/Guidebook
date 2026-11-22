@@ -73,7 +73,11 @@ _Avoid_: style, renderer, frontend
 The original Display: the Title and Subtitle on screen, then the Description as a chat message.
 
 **Typewriter display**:
-A Display that types the Welcome into a framed box over the chat, in pages the player turns and closes with a key. It needs the Typewriter plugin, and isn't part of Guidebook's own jar.
+A Display that types the Welcome into a framed box over the chat, in Pages the player turns and closes with a key. It needs the Typewriter plugin, and isn't part of Guidebook's own jar.
+
+**Page**:
+One screenful of a Welcome in the Typewriter display. The player turns it, or closes the Welcome on the last one, with a key.
+_Avoid_: Typewriter's own "page" (a saved group of Typewriter entries): always call that a "Typewriter page"
 
 **Enabled / Disabled**:
 Whether an Area welcomes anyone. This is set by staff for each Area.

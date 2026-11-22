@@ -30,6 +30,14 @@ tags have been created for uniformity. The Edit dialog lists them (hover over "G
 When *Dynmap* is running, every Area is drawn on the web map, so staff can review Areas quicker
 than they could in-game
 
+### The Typewriter display
+
+Welcomes can instead be typed into a framed box over the chat, which the player reads at their own
+pace and closes with a key. That's the [Typewriter display](typewriter-display/README.md), a
+[Typewriter](https://typewritermc.com) extension released separately on `typewriter-v*` tags. With
+it installed, choose it with `display: typewriter` in `plugins/Guidebook/config.yml` and restart.
+Without it, or whenever it can't show a Welcome, Welcomes are shown in chat
+
 ## Installing
 
 Download the jar from a [GitHub release](https://github.com/MCME/Guidebook/releases), or build it
@@ -41,7 +49,8 @@ as `plugins/Guidebook/<world>/<area>.yml`. If you edit one by hand, run `/guideb
 
 ```sh
 ./gradlew build       # compile, test, and write the jar to build/libs/
-./gradlew runServer   # start a Paper test server in run/ with WorldEdit and PluginUtils
+./gradlew runServer   # start a Paper test server in run/ with WorldEdit, PluginUtils and the Typewriter display
+./gradlew runServer -PwithoutTypewriter   # the same, without Typewriter or the Typewriter display
 ```
 
 The Paper and Java versions are set in [`gradle/libs.versions.toml`](gradle/libs.versions.toml)
@@ -78,3 +87,6 @@ CI then checks that the tag, the jar's `plugin.yml` and the changelog agree. It 
 `com.mcmiddleearth:Guidebook` to repo.mcmiddleearth.com, then creates the GitHub release with the
 jar and its SHA-256. The releases repository refuses to overwrite a version, so each version is
 published once.
+
+The Typewriter display has its own version and release steps: see its
+[README](typewriter-display/README.md#releasing).

@@ -1,0 +1,24 @@
+{
+  "name": "guidebook",
+  "type": "sequence",
+  "entries": [
+    {
+      "id": "guidebookWelcome",
+      "name": "guidebook_welcome",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": [],
+      "speaker": "",
+      "typingSpeed": 20,
+      "pageTypingCap": 4000,
+      "headerColor": "#e3c77d",
+      "titleTicksPerCharacter": 2,
+      "titleSubtitlePauseTicks": 6,
+      "descriptionDelayTicks": 24,
+      "type": "guidebook_welcome"
+    }
+  ],
+  "chapter": "",
+  "priority": 0,
+  "version": "0.9.0"
+}

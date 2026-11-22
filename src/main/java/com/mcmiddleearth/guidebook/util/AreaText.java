@@ -27,24 +27,13 @@ public final class AreaText {
     /** The opening a new Area's Description starts with. */
     public static final String DEFAULT_DESCRIPTION = GUIDE_TAG;
 
-    // Guidebook's own tags, on top of the standard ones. They are permanent once stored text uses them (ADR 0004).
-    private static final MiniMessage MINI_MESSAGE = MiniMessage.builder()
-            .tags(TagResolver.resolver(
-                    TagResolver.standard(),
-                    // The text inside the tag becomes the white part's children, up to </guide> or the end
-                    TagResolver.resolver(
-                            "guide",
-                            Tag.inserting(Component.text()
-                                    .color(NamedTextColor.WHITE)
-                                    .append(Component.text("Guide: ", NamedTextColor.DARK_AQUA))
-                                    .build())),
-                    TagResolver.resolver("date", Tag.styling(NamedTextColor.YELLOW)),
-                    TagResolver.resolver("term", AreaText::term),
-                    TagResolver.resolver("wiki", AreaText::wiki),
-                    TagResolver.resolver("warp", AreaText::warp),
-                    TagResolver.resolver(
-                            "bullet", Tag.selfClosingInserting(Component.text("▸ ", NamedTextColor.GRAY)))))
-            .build();
+    // The text inside the tag becomes the white part's children, up to </guide> or the end
+    private static final MiniMessage MINI_MESSAGE = withGuideTag(Tag.inserting(Component.text()
+            .color(NamedTextColor.WHITE)
+            .append(Component.text("Guide: ", NamedTextColor.DARK_AQUA))
+            .build()));
+
+    private static final MiniMessage WITHOUT_GUIDE_LABEL = withGuideTag(Tag.styling(NamedTextColor.WHITE));
 
     private static final String WIKI_URL = "https://tolkiengateway.net/wiki/";
 
@@ -52,6 +41,21 @@ public final class AreaText {
     private static final Pattern WARP_NAME = Pattern.compile("[\\p{L}\\p{N}'_.-]+( [\\p{L}\\p{N}'_.-]+)*");
 
     private AreaText() {}
+
+    // Guidebook's own tags, on top of the standard ones. They are permanent once stored text uses them (ADR 0004)
+    private static MiniMessage withGuideTag(Tag guide) {
+        return MiniMessage.builder()
+                .tags(TagResolver.resolver(
+                        TagResolver.standard(),
+                        TagResolver.resolver("guide", guide),
+                        TagResolver.resolver("date", Tag.styling(NamedTextColor.YELLOW)),
+                        TagResolver.resolver("term", AreaText::term),
+                        TagResolver.resolver("wiki", AreaText::wiki),
+                        TagResolver.resolver("warp", AreaText::warp),
+                        TagResolver.resolver(
+                                "bullet", Tag.selfClosingInserting(Component.text("▸ ", NamedTextColor.GRAY)))))
+                .build();
+    }
 
     // <term:'meaning'>
     private static Tag term(ArgumentQueue arguments, Context context) {
@@ -102,6 +106,14 @@ public final class AreaText {
 
     public static Component render(String miniMessage) {
         return MINI_MESSAGE.deserialize(miniMessage);
+    }
+
+    /**
+     * Like {@link #render}, except that {@code <guide>} only makes the text after it white, without the {@code Guide: }
+     * label: for a Display whose box already makes clear the Guidebook is speaking.
+     */
+    public static Component renderWithoutGuideLabel(String miniMessage) {
+        return WITHOUT_GUIDE_LABEL.deserialize(miniMessage);
     }
 
     /** The number of characters a player sees, which is what the Title and Subtitle limits count. */
