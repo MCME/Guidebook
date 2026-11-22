@@ -223,8 +223,8 @@ public final class PlacementDialog {
                     sendMoved(player, name);
                     GuidebookMessages.sendError(
                             player,
-                            "The old data file " + oldWorld + "/" + areaName
-                                    + ".yml couldn't be deleted. Delete it before reloading, or the area will load"
+                            "The old Area file " + oldWorld + "/" + areaName
+                                    + ".yml couldn't be deleted. Delete it before reloading, or the Area will load"
                                     + " twice.");
                 }
                 case ChangeOutcome.Gone() -> GuidebookMessages.sendGoneMeanwhile(player, name, "decided", "moved");
