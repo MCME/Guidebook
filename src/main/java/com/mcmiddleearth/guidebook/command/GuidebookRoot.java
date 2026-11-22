@@ -107,15 +107,17 @@ class GuidebookRoot {
     @Executes("warp")
     @Permission(STAFF)
     void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
-        // The world is looked up by name only now, as it may not be loaded
+        // By name, as the Area's world may not be loaded
+        String worldName = area.getWorldName();
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            GuidebookMessages.sendError(
+                    sender, GuidebookMessages.area(area.getName()), " is in " + worldName + ", which isn't loaded.");
+            return;
+        }
         WarpPoint warpPoint = area.getWarpPoint();
-        player.teleport(new Location(
-                Bukkit.getWorld(area.getWorldName()),
-                warpPoint.x(),
-                warpPoint.y(),
-                warpPoint.z(),
-                warpPoint.yaw(),
-                warpPoint.pitch()));
+        player.teleport(
+                new Location(world, warpPoint.x(), warpPoint.y(), warpPoint.z(), warpPoint.yaw(), warpPoint.pitch()));
         GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
     }
 

@@ -41,6 +41,7 @@ see the GitHub history.
 - An Area file holding no Shape Guidebook knows is now reported in the server log when loading,
   instead of being skipped silently.
 - An Area whose world isn't loaded can now be saved (edited or renamed), instead of failing.
+- `/guidebook warp` to an Area whose world isn't loaded says so, instead of failing.
 
 ## [2.0.1] - 2026-10-20
 
