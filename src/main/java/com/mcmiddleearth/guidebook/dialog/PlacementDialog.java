@@ -91,7 +91,7 @@ public final class PlacementDialog {
         }
 
         /** Places the Area, once the check has found nothing blocking. */
-        void place(Player player, AreaGeometry geometry, String worldName, WarpPoint warpPoint);
+        void place(Player player, String worldName, WarpPoint warpPoint, AreaGeometry geometry);
     }
 
     /** Creating the Area {@code areaName}, which continues into the Edit dialog's create mode. */
@@ -141,7 +141,7 @@ public final class PlacementDialog {
 
         // Built from where the player is now, but only added once they press Create in the Edit dialog
         @Override
-        public void place(Player player, AreaGeometry geometry, String worldName, WarpPoint warpPoint) {
+        public void place(Player player, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
             EditDialog.openToCreate(player, InfoArea.create(areaName, worldName, warpPoint, geometry));
         }
     }
@@ -213,10 +213,10 @@ public final class PlacementDialog {
         }
 
         @Override
-        public void place(Player player, AreaGeometry geometry, String worldName, WarpPoint warpPoint) {
+        public void place(Player player, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
             String name = area.getName();
             ChangeOutcome outcome =
-                    GuidebookPlugin.getPluginInstance().getAreaStore().move(area, geometry, worldName, warpPoint);
+                    GuidebookPlugin.getPluginInstance().getAreaStore().move(area, worldName, warpPoint, geometry);
             player.closeDialog();
             switch (outcome) {
                 case ChangeOutcome.Done() -> sendMoved(player, name);
@@ -422,7 +422,7 @@ public final class PlacementDialog {
         }
         Location location = player.getLocation();
         // In whole blocks, as the Area's file keeps it
-        purpose.place(player, proposal.geometry(), location.getWorld().getName(), WarpPoint.of(location));
+        purpose.place(player, location.getWorld().getName(), WarpPoint.of(location), proposal.geometry());
     }
 
     private static List<PlacementFinding> check(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {

@@ -131,9 +131,9 @@ class AreaStoreTest {
 
         store.move(
                 store.findExact("tower").orElseThrow(),
-                new AreaGeometry.Sphere(50, 64, 0, 5),
                 "middle-earth",
-                new WarpPoint(50, 64, 0, 0, 0));
+                new WarpPoint(50, 64, 0, 0, 0),
+                new AreaGeometry.Sphere(50, 64, 0, 5));
 
         assertEquals(0, fillOf("city"));
         assertTrue(fillOf("tower") > 0);
@@ -295,7 +295,7 @@ class AreaStoreTest {
         store.reload();
         InfoArea edoras = store.findExact("edoras").orElseThrow();
 
-        store.move(edoras, new AreaGeometry.Cuboid(490, 60, -10, 510, 80, 10), "middle-earth", WarpPoint.of(STANDING));
+        store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Cuboid(490, 60, -10, 510, 80, 10));
 
         assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.getWarpPoint());
     }
@@ -306,7 +306,7 @@ class AreaStoreTest {
         store.reload();
         InfoArea edoras = store.findExact("edoras").orElseThrow();
 
-        store.move(edoras, new AreaGeometry.Sphere(0, 64, 0, 8), "middle-earth", WarpPoint.of(STANDING));
+        store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Sphere(0, 64, 0, 8));
 
         assertEquals(new AreaGeometry.Sphere(500, 70, -1, 8), edoras.getGeometry());
         assertEquals(
@@ -320,7 +320,7 @@ class AreaStoreTest {
         store.reload();
         InfoArea edoras = store.findExact("edoras").orElseThrow();
 
-        ChangeOutcome outcome = store.move(edoras, MOVED_TO, "middle-earth", MOVED_WARP_POINT);
+        ChangeOutcome outcome = store.move(edoras, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertSame(edoras, store.findExact("edoras").orElseThrow());
@@ -344,7 +344,7 @@ class AreaStoreTest {
         Marker markerBefore = layer.markerOf("edoras").orElseThrow();
 
         files.failNextWrite();
-        ChangeOutcome outcome = store.move(edoras, MOVED_TO, "middle-earth", MOVED_WARP_POINT);
+        ChangeOutcome outcome = store.move(edoras, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
         assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), edoras.getGeometry());
@@ -362,7 +362,7 @@ class AreaStoreTest {
         InfoArea stale = store.findExact("edoras").orElseThrow();
         store.reload();
 
-        ChangeOutcome outcome = store.move(stale, MOVED_TO, "middle-earth", MOVED_WARP_POINT);
+        ChangeOutcome outcome = store.move(stale, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertEquals(0, files.contents("middle-earth", "edoras").orElseThrow().getDouble("locationX"));
@@ -378,7 +378,7 @@ class AreaStoreTest {
         InfoArea deleted = store.findExact("edoras").orElseThrow();
         store.delete(deleted);
 
-        ChangeOutcome outcome = store.move(deleted, MOVED_TO, "middle-earth", MOVED_WARP_POINT);
+        ChangeOutcome outcome = store.move(deleted, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertTrue(files.contents("middle-earth", "edoras").isEmpty());
@@ -391,7 +391,7 @@ class AreaStoreTest {
         store.reload();
         InfoArea edoras = store.findExact("edoras").orElseThrow();
         files.failNextDelete();
-        ChangeOutcome outcome = store.move(edoras, MOVED_TO, "arda", MOVED_WARP_POINT);
+        ChangeOutcome outcome = store.move(edoras, "arda", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.DoneButOldFileLeft("middle-earth", "edoras"), outcome);
         assertEquals("arda", edoras.getWorldName());
@@ -405,7 +405,7 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         store.reload();
 
-        ChangeOutcome outcome = store.move(store.findExact("edoras").orElseThrow(), MOVED_TO, "arda", MOVED_WARP_POINT);
+        ChangeOutcome outcome = store.move(store.findExact("edoras").orElseThrow(), "arda", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertTrue(files.contents("arda", "edoras").isPresent());

@@ -132,15 +132,15 @@ public final class AreaStore {
     }
 
     /**
-     * Gives the Area {@code geometry}, which may be another Shape, in the world {@code worldName}, with its Warp point
-     * at {@code warpPoint}, as {@link InfoArea#place} does, writes its file, and redraws the Web map. If the file can't
-     * be written, the Area goes back where it was. Moving it to another world deletes its file in the old
-     * world's folder.
+     * Puts the Area in the world {@code worldName}, with its Warp point at {@code warpPoint} and {@code geometry},
+     * which may be another Shape, as {@link InfoArea#place} does, writes its file, and redraws the Web map. If the file
+     * can't be written, the Area goes back where it was. Moving it to another world deletes its file in the old world's
+     * folder.
      *
      * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NotWritten}, or
      *     {@link ChangeOutcome.DoneButOldFileLeft} if the old world's file couldn't be deleted
      */
-    public ChangeOutcome move(InfoArea area, AreaGeometry geometry, String worldName, WarpPoint warpPoint) {
+    public ChangeOutcome move(InfoArea area, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
         if (!isCurrent(area)) {
             return new ChangeOutcome.Gone();
         }
