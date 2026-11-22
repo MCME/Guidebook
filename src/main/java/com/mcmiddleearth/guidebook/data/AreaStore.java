@@ -133,8 +133,8 @@ public final class AreaStore {
 
     /**
      * Gives the Area {@code geometry}, which may be another Shape, in the world {@code worldName}, with its Warp point
-     * at {@code warpPoint}, writes its file, and redraws the Web map. A sphere is centred on the Warp point. If the
-     * file can't be written, the Area goes back where it was. Moving it to another world deletes its file in the old
+     * at {@code warpPoint}, as {@link InfoArea#place} does, writes its file, and redraws the Web map. If the file can't
+     * be written, the Area goes back where it was. Moving it to another world deletes its file in the old
      * world's folder.
      *
      * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NotWritten}, or

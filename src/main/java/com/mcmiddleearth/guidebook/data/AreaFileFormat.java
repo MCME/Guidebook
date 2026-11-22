@@ -29,7 +29,7 @@ final class AreaFileFormat {
                 (float) file.getDouble("locationPitch"));
         AreaGeometry geometry;
         if (file.contains("radius")) {
-            // Centred on the Warp point when the Area is given it
+            // InfoArea#place says where a sphere's centre is
             geometry = new AreaGeometry.Sphere(warpPoint.x(), warpPoint.y(), warpPoint.z(), file.getInt("radius"));
         } else if (file.contains("xPoints")) {
             geometry = new AreaGeometry.Prism(

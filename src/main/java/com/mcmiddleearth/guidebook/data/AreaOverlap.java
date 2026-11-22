@@ -176,7 +176,7 @@ final class AreaOverlap {
         }
     }
 
-    /** A block is inside by the prism's own rule, WorldEdit's, so it counts exactly the blocks staff selected. */
+    /** A block is inside by the prism's own rule, {@link AreaGeometry.Prism#containsBlock(int, int, int)}. */
     private static final class PrismColumns implements Columns {
 
         private final List<BlockVector2> corners;

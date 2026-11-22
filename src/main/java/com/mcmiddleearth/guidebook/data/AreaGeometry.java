@@ -74,7 +74,7 @@ public sealed interface AreaGeometry {
     /**
      * Whether a point is inside the Shape. A sphere measures from the point's exact position: it's inside when its
      * distance from the centre is at most the radius. A cuboid or prism uses the block the point is in, edges
-     * included; a prism holds exactly the blocks WorldEdit's polygon selection holds.
+     * included, and a prism asks {@link Prism#containsBlock(int, int, int)}.
      */
     default boolean contains(double x, double y, double z) {
         return switch (this) {
