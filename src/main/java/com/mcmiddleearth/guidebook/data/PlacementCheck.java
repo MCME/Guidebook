@@ -137,11 +137,10 @@ public final class PlacementCheck {
                         : Optional.of(outsideBy(Math.sqrt((double) dx * dx + (double) dy * dy + (double) dz * dz)));
             }
             case AreaGeometry.Prism prism -> {
-                PrismInside inside = new PrismInside(prism);
-                if (inside.contains(staff.x(), staff.y(), staff.z())) {
+                if (prism.containsBlock(staff.x(), staff.y(), staff.z())) {
                     yield Optional.empty();
                 }
-                double horizontal = inside.horizontalDistance(staff.x(), staff.z());
+                double horizontal = PrismHorizontalDistance.of(prism, staff.x(), staff.z());
                 int dy = gap(staff.y(), prism.minY(), prism.maxY());
                 yield Optional.of(outsideBy(Math.hypot(horizontal, dy)));
             }
