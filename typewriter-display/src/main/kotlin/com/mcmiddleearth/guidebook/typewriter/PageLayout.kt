@@ -93,8 +93,18 @@ fun layOutPages(description: Component): List<Page> {
  * The box as the player sees it [elapsed] into typing [page]: the [header] (the Title, as plain text) in the top
  * border, the Page's text, and in the bottom border what [key] does. An Area with no Title gets "Guide" there, so the
  * box still says who is speaking.
+ *
+ * With [fillLines], each line of text is padded with spaces to the borders' width, so it stays flush left where every
+ * line is centred, as in a dialog.
  */
-fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings, elapsed: Duration): Component {
+fun drawBox(
+    header: String,
+    page: Page,
+    key: Component,
+    settings: LayoutSettings,
+    elapsed: Duration,
+    fillLines: Boolean = false,
+): Component {
     val title = Component.text()
         .append(Component.text(" "))
         .append(Component.text(header.ifBlank { NO_TITLE_HEADER }, settings.headerColor, TextDecoration.BOLD))
@@ -116,6 +126,9 @@ fun drawBox(header: String, page: Page, key: Component, settings: LayoutSettings
     if (text.size < LINES_PER_PAGE) text.add(0, Component.empty())
     // Short text leaves blank lines below it, so the box is always the same height
     while (text.size < LINES_PER_PAGE) text += Component.empty()
+    if (fillLines) {
+        text.replaceAll { line -> line.append(spaces((width - realWidth(line)).coerceAtLeast(0), Style.empty())) }
+    }
 
     return Component.join(JoinConfiguration.newlines(), listOf(framed(title, width)) + text + framed(prompt, width))
 }
@@ -184,14 +197,17 @@ private fun framed(content: Component, width: Int): Component {
         .build()
 }
 
+/** A horizontal rule [width] pixels long: struck-through [spaces]. */
+private fun rule(width: Int): Component =
+    spaces(width, Style.style(NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH))
+
 /**
- * A horizontal rule [width] pixels long: struck-through spaces, 4px each or 5px in bold. Mixing the two makes any
- * width from 12px exact.
+ * Spaces in [style] filling [width] pixels: 4px each, or 5px in bold. Mixing the two makes any width from 12px exact;
+ * a narrower one comes out up to 3px short.
  */
-private fun rule(width: Int): Component {
-    val bold = width % 4
+private fun spaces(width: Int, style: Style): Component {
+    val bold = if (width >= 12) width % 4 else 0
     val plain = (width - 5 * bold) / 4
-    val style = Style.style(NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH)
     return Component.text()
         .append(Component.text(" ".repeat(plain), style))
         .append(Component.text(" ".repeat(bold), style.decorate(TextDecoration.BOLD)))

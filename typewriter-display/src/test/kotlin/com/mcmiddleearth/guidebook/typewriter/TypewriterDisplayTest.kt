@@ -3,6 +3,7 @@ package com.mcmiddleearth.guidebook.typewriter
 import com.mcmiddleearth.guidebook.welcome.Display
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.Style
 import org.bukkit.entity.Player
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -117,7 +118,7 @@ class TypewriterDisplayTest {
         val lines = (1..9).joinToString("\n") { "Line $it." }
         val long = Welcome("me-bree-gate", "Bree", "", "<guide>$lines", true)
 
-        val boxes = display.previewDescription(player, long).map { plain(it).lines() }
+        val boxes = display.previewDescription(player, long).map { plain(it).lines().map(String::trimEnd) }
 
         assertEquals(2, boxes.size)
         assertEquals("Bree", boxes[0].first().trim())
@@ -125,6 +126,16 @@ class TypewriterDisplayTest {
         assertEquals("Press F to continue (1/2)", boxes[0].last().trim())
         assertEquals("Line 9.", boxes[1][2])
         assertEquals("Press F to close (2/2)", boxes[1].last().trim())
+    }
+
+    @Test
+    fun `every line of a previewed box is as wide as its borders, so centring it leaves the text flush left`() {
+        val short = Welcome("me-bree-gate", "Bree", "", "<guide>The <bold>West-gate</bold> of Bree.\nIt shuts at night.", true)
+
+        val box = display.previewDescription(player, short).single()
+
+        val widths = splitLines(styledCharacters(box)).map(::pixelWidth)
+        assertEquals(List(widths.size) { widths.first() }, widths)
     }
 
     @Test
@@ -138,6 +149,12 @@ class TypewriterDisplayTest {
 
         assertEquals(emptyList<Any>(), display.previewDescription(player, bree))
     }
+
+    private fun splitLines(characters: List<Pair<Char, Style>>): List<List<Pair<Char, Style>>> =
+        characters.fold(mutableListOf(mutableListOf<Pair<Char, Style>>())) { lines, character ->
+            if (character.first == '\n') lines.add(mutableListOf()) else lines.last().add(character)
+            lines
+        }
 
     private class FakeTypewriter : BoxOpener {
         var hasSession = true

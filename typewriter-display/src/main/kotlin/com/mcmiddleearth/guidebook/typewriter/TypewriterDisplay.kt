@@ -60,13 +60,16 @@ class TypewriterDisplay(
         }
     }
 
-    /** The Description's boxes, one for each Page as it looks once typed. None for a Welcome that gets no box. */
+    /**
+     * The Description's boxes, one for each Page as it looks once typed, each line filled to the box's width so it
+     * stays flush left wherever lines are centred. None for a Welcome that gets no box.
+     */
     override fun previewDescription(player: Player, welcome: Welcome): List<Component> {
         if (isEmptyDescription(welcome.description()) || inspector.problem() != null) return emptyList()
         val look = boxes.boxLook(player)
         val header = AreaText.plainText(welcome.title())
         return descriptionPages(welcome).map { page ->
-            drawBox(header, page, look.key, look.settings, page.typingDuration(look.settings))
+            drawBox(header, page, look.key, look.settings, page.typingDuration(look.settings), fillLines = true)
         }
     }
 
