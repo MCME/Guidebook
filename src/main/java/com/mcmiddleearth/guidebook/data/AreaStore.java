@@ -96,11 +96,15 @@ public final class AreaStore {
      * the new name. If the file can't be written, the Area keeps its old name. Then its old file is deleted. The Area
      * stays the same object, so players standing in it aren't Welcomed again.
      *
-     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.NameTaken} if an Area already has that name (ignoring
-     *     case), {@link ChangeOutcome.NotWritten}, or {@link ChangeOutcome.DoneButOldFileLeft} if the old file
-     *     couldn't be deleted, so the Area would load under both names
+     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NameTaken} if an Area
+     *     already has that name (ignoring case), {@link ChangeOutcome.NotWritten}, or
+     *     {@link ChangeOutcome.DoneButOldFileLeft} if the old file couldn't be deleted, so the Area would load under
+     *     both names
      */
     public ChangeOutcome rename(InfoArea area, String newName) {
+        if (!isCurrent(area)) {
+            return new ChangeOutcome.Gone();
+        }
         if (newNameProblem(newName).isPresent()) {
             return new ChangeOutcome.NameTaken();
         }

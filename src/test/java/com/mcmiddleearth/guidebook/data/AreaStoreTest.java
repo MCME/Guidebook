@@ -437,6 +437,26 @@ class AreaStoreTest {
     }
 
     @Test
+    void aRenameOfAnAreaReloadedMeanwhileIsGoneAndWritesNothing() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea stale = store.findExact("edoras").orElseThrow();
+        store.reload();
+        InfoArea current = store.findExact("edoras").orElseThrow();
+
+        ChangeOutcome outcome = store.rename(stale, "meduseld");
+
+        assertEquals(new ChangeOutcome.Gone(), outcome);
+        assertEquals("edoras", stale.getName());
+        assertSame(current, store.findExact("edoras").orElseThrow());
+        assertEquals(Set.of("edoras"), names());
+        assertTrue(files.contents("middle-earth", "edoras").isPresent());
+        assertTrue(files.contents("middle-earth", "meduseld").isEmpty());
+        assertTrue(layer.markerOf("edoras").isPresent());
+        assertTrue(layer.markerOf("meduseld").isEmpty());
+    }
+
+    @Test
     void aRenamedAreaIsTheSameAreaFoundUnderItsNewName() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();

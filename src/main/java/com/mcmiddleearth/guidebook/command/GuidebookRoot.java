@@ -163,12 +163,12 @@ class GuidebookRoot {
                 GuidebookPlugin.getPluginInstance().getAreaStore().rename(area, newName);
         switch (outcome) {
             case ChangeOutcome.Done() -> sendRenamed(sender, oldName, newName);
-            case ChangeOutcome.DoneButOldFileLeft _ -> {
+            case ChangeOutcome.DoneButOldFileLeft(String worldName, String areaName) -> {
                 sendRenamed(sender, oldName, newName);
                 GuidebookMessages.sendError(
                         sender,
-                        "The old data file " + oldName + ".yml couldn't be deleted. Delete it before reloading,"
-                                + " or the area will load under both names.");
+                        "The old Area file " + worldName + "/" + areaName + ".yml couldn't be deleted. Delete it"
+                                + " before reloading, or the Area will load under both names.");
             }
             // The argument checks the name, so this only happens if it was taken in between
             case ChangeOutcome.NameTaken() ->
@@ -183,7 +183,8 @@ class GuidebookRoot {
                 Logger.getLogger(GuidebookRoot.class.getName()).log(Level.SEVERE, null, cause);
                 GuidebookMessages.sendNotDone(sender, oldName, "renamed");
             }
-            case ChangeOutcome.Gone _ -> {}
+            case ChangeOutcome.Gone() ->
+                GuidebookMessages.sendGoneMeanwhile(sender, oldName, "typed the command", "renamed");
         }
     }
 
