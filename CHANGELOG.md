@@ -36,6 +36,11 @@ see the GitHub history.
   saved" message says. Before, the new Title, Subtitle, Description, Show title, Boss bar and
   Enabled were already live for players and on the Web map until the next `/guidebook reload`
   undid them.
+- A player inside a polygon Area who warps to another world now leaves it, instead of keeping its
+  Boss bar and missing the Welcome when they come back.
+- An Area file holding no Shape Guidebook knows is now reported in the server log when loading,
+  instead of being skipped silently.
+- An Area whose world isn't loaded can now be saved (edited or renamed), instead of failing.
 
 ## [2.0.1] - 2026-10-20
 
