@@ -164,14 +164,14 @@ class DisplaySwitchboardTest {
     @Test
     void chatShowsTheWelcomeWhenTheChosenDisplayDoesntMatchThisGuidebook() {
         switchboard.register("typewriter", (p, welcome) -> {
-            throw new NoSuchMethodError("'net.kyori.adventure.text.Component AreaText.render(String)'");
+            throw builtForAnotherGuidebook();
         });
 
         switchboard.show(player, bree);
 
         assertEquals(List.of("bree"), chatted);
         assertEquals(List.of(Level.SEVERE), logged);
-        assertTrue(logMessages.getFirst().contains("update both"), logMessages.getFirst());
+        assertTrue(logMessages.getFirst().endsWith(DisplaySwitchboard.MISMATCH), logMessages.getFirst());
     }
 
     @Test
@@ -214,13 +214,18 @@ class DisplaySwitchboardTest {
 
             @Override
             public List<Component> previewDescription(Player p, Welcome welcome) {
-                throw new NoSuchMethodError("'net.kyori.adventure.text.Component AreaText.render(String)'");
+                throw builtForAnotherGuidebook();
             }
         });
 
         assertEquals(List.of(), switchboard.previewDescription(player, bree));
         assertEquals(List.of(Level.SEVERE), logged);
-        assertTrue(logMessages.getFirst().contains("update both"), logMessages.getFirst());
+        assertTrue(logMessages.getFirst().endsWith(DisplaySwitchboard.MISMATCH), logMessages.getFirst());
+    }
+
+    /** What a Display's jar throws when it calls a Guidebook method this Guidebook doesn't have. */
+    private static NoSuchMethodError builtForAnotherGuidebook() {
+        return new NoSuchMethodError("'net.kyori.adventure.text.Component AreaText.render(String)'");
     }
 
     /** A Display that previews every Description as {@code screens}. */

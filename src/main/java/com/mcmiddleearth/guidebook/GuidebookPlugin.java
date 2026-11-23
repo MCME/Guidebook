@@ -99,7 +99,10 @@ public class GuidebookPlugin extends JavaPlugin {
         webMap.close();
     }
 
-    /** Guidebook's own; another plugin registers its Display with the {@link DisplayRegistry} service (ADR 0008). */
+    /**
+     * The server's Display, public so the Edit dialog can preview a Description as it shows it. Other plugins register
+     * theirs through the {@link DisplayRegistry} service instead.
+     */
     public DisplaySwitchboard getDisplaySwitchboard() {
         return displaySwitchboard;
     }

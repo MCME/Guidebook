@@ -19,8 +19,9 @@ public final class DisplaySwitchboard implements Display, DisplayRegistry {
     /** The name of the Chat display, Guidebook's own, which is always registered. */
     public static final String CHAT = "chat";
 
-    // A LinkageError means the Display's jar was built against another Guidebook, such as one updated without the other
-    private static final String MISMATCH =
+    // A Display failing with a LinkageError most likely comes from a jar built for another Guidebook, such as one
+    // updated without the other
+    static final String MISMATCH =
             "Its plugin was built for another version of Guidebook: update both to versions released together.";
 
     private final String chosen;
@@ -91,18 +92,8 @@ public final class DisplaySwitchboard implements Display, DisplayRegistry {
             } catch (Display.Unavailable ex) {
                 logger.fine("The display \"" + chosen + "\" can't show the Welcome to " + welcome.areaName()
                         + " now, so it was shown with the Chat display: " + ex.getMessage());
-            } catch (RuntimeException ex) {
-                logger.log(
-                        Level.SEVERE,
-                        "The display \"" + chosen + "\" failed to show the Welcome to " + welcome.areaName()
-                                + ", so it was shown with the Chat display",
-                        ex);
-            } catch (LinkageError ex) {
-                logger.log(
-                        Level.SEVERE,
-                        "The display \"" + chosen + "\" failed to show the Welcome to " + welcome.areaName()
-                                + ", so it was shown with the Chat display. " + MISMATCH,
-                        ex);
+            } catch (RuntimeException | LinkageError ex) {
+                logFailure("show the Welcome to " + welcome.areaName(), "shown with the Chat display", ex);
             }
         }
         chat.show(player, welcome);
@@ -117,21 +108,18 @@ public final class DisplaySwitchboard implements Display, DisplayRegistry {
         }
         try {
             return display.previewDescription(player, welcome);
-        } catch (RuntimeException ex) {
-            logger.log(
-                    Level.SEVERE,
-                    "The display \"" + chosen + "\" failed to preview the Description of " + welcome.areaName()
-                            + ", so it was previewed as chat",
-                    ex);
-            return List.of();
-        } catch (LinkageError ex) {
-            logger.log(
-                    Level.SEVERE,
-                    "The display \"" + chosen + "\" failed to preview the Description of " + welcome.areaName()
-                            + ", so it was previewed as chat. " + MISMATCH,
-                    ex);
+        } catch (RuntimeException | LinkageError ex) {
+            logFailure("preview the Description of " + welcome.areaName(), "previewed as chat", ex);
             return List.of();
         }
+    }
+
+    private void logFailure(String failedTo, String instead, Throwable ex) {
+        String advice = ex instanceof LinkageError ? " " + MISMATCH : "";
+        logger.log(
+                Level.SEVERE,
+                "The display \"" + chosen + "\" failed to " + failedTo + ", so it was " + instead + "." + advice,
+                ex);
     }
 
     private static String normalise(String name) {

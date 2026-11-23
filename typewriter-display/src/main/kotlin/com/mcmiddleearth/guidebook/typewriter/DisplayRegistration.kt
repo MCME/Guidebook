@@ -32,18 +32,22 @@ class DisplayRegistration : Initializable {
     override suspend fun initialize() {
         val guidebook = Bukkit.getPluginManager().getPlugin(GUIDEBOOK) ?: return
         InstallInspector.versionProblem(guidebook.pluginMeta.version, InstallInspector.LOWEST_GUIDEBOOK_VERSION)?.let {
-            logger.warning("The Typewriter display isn't available, so Welcomes use the Chat display. $it")
+            logUnavailable(it)
             return
         }
         if (inspector.problem() != null) return
         if (!DisplayRegistrar.register(inspector)) {
-            logger.warning("The Typewriter display isn't available, so Welcomes use the Chat display. Guidebook isn't enabled.")
+            logUnavailable("Guidebook isn't enabled.")
             return
         }
         Bukkit.getPluginManager().registerEvents(QuitListener, guidebook)
         registered = true
         // The one line in the log that says the Typewriter display is working
         logger.info("The Typewriter display is registered with Guidebook, so Welcomes are shown in its box.")
+    }
+
+    private fun logUnavailable(reason: String) {
+        logger.warning("The Typewriter display isn't available, so Welcomes use the Chat display. $reason")
     }
 
     override suspend fun shutdown() {
@@ -93,6 +97,5 @@ private object DisplayRegistrar {
         registry()?.unregister(TypewriterDisplay.NAME)
     }
 
-    // Guidebook offers it while it's enabled
     private fun registry(): DisplayRegistry? = Bukkit.getServicesManager().load(DisplayRegistry::class.java)
 }
