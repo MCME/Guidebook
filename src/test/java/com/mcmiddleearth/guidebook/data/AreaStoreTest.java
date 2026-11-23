@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class AreaStoreTest {
 
@@ -70,14 +72,14 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         fileOf(sphereArea("minas", 100));
         store.reload();
-        InfoArea minasBefore = store.findExact("minas").orElseThrow();
+        InfoArea minasBefore = store.find("minas").orElseThrow();
 
         files.delete("middle-earth", "edoras");
         fileOf(sphereArea("rohan", 200));
         store.reload();
 
         assertEquals(Set.of("minas", "rohan"), names());
-        assertNotSame(minasBefore, store.findExact("minas").orElseThrow());
+        assertNotSame(minasBefore, store.find("minas").orElseThrow());
         assertEquals(Set.of(AreaMarkers.id("minas"), AreaMarkers.id("rohan")), layer.ids());
     }
 
@@ -89,7 +91,7 @@ class AreaStoreTest {
 
         store.reload();
 
-        InfoArea baradDur = store.findExact("barad-dur").orElseThrow();
+        InfoArea baradDur = store.find("barad-dur").orElseThrow();
         assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), baradDur.getGeometry());
         assertEquals(UNLOADED_WORLD, baradDur.getWorldName());
         assertEquals(Set.of(AreaMarkers.id("edoras")), layer.ids());
@@ -130,7 +132,7 @@ class AreaStoreTest {
         assertTrue(fillOf("city") > 0);
 
         store.move(
-                store.findExact("tower").orElseThrow(),
+                store.find("tower").orElseThrow(),
                 "middle-earth",
                 new WarpPoint(50, 64, 0, 0, 0),
                 new AreaGeometry.Sphere(50, 64, 0, 5));
@@ -159,12 +161,12 @@ class AreaStoreTest {
     void anEditChangesTheAreaItsFileAndItsMarker() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         ChangeOutcome outcome = store.edit(edoras, NEW_DETAILS);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
-        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertSame(edoras, store.find("edoras").orElseThrow());
         assertEquals(NEW_DETAILS, AreaDetails.of(edoras));
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
         assertEquals("<gold>Edoras", file.getString("title"));
@@ -180,7 +182,7 @@ class AreaStoreTest {
     void anEditWhoseWriteFailsLeavesTheAreaItsFileAndTheWebMapAsTheyWere() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
         AreaDetails before = AreaDetails.of(edoras);
         String fileBefore =
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString();
@@ -201,21 +203,21 @@ class AreaStoreTest {
     void anEditOfAnAreaReloadedMeanwhileIsGoneAndWritesNothing() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea stale = store.findExact("edoras").orElseThrow();
+        InfoArea stale = store.find("edoras").orElseThrow();
         store.reload();
 
         ChangeOutcome outcome = store.edit(stale, NEW_DETAILS);
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertEquals("", files.contents("middle-earth", "edoras").orElseThrow().getString("title"));
-        assertEquals("", store.findExact("edoras").orElseThrow().getTitle());
+        assertEquals("", store.find("edoras").orElseThrow().getTitle());
     }
 
     @Test
     void anEditOfAnAreaDeletedMeanwhileIsGoneAndWritesNothing() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea deleted = store.findExact("edoras").orElseThrow();
+        InfoArea deleted = store.find("edoras").orElseThrow();
         store.delete(deleted);
 
         ChangeOutcome outcome = store.edit(deleted, NEW_DETAILS);
@@ -233,7 +235,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.create(edoras, NEW_DETAILS);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
-        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertSame(edoras, store.find("edoras").orElseThrow());
         assertEquals(NEW_DETAILS, AreaDetails.of(edoras));
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
         assertEquals("<gold>Edoras", file.getString("title"));
@@ -249,7 +251,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.create(sphereArea("edoras", 0), NEW_DETAILS);
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
-        assertTrue(store.findExact("edoras").isEmpty());
+        assertTrue(store.find("edoras").isEmpty());
         assertTrue(files.contents("middle-earth", "edoras").isEmpty());
         assertTrue(layer.ids().isEmpty());
     }
@@ -293,7 +295,7 @@ class AreaStoreTest {
     void aMoveRoundsTheWarpPointToWholeBlocksKeepingYawAndPitch() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Cuboid(490, 60, -10, 510, 80, 10));
 
@@ -304,7 +306,7 @@ class AreaStoreTest {
     void aSphereMovedToANewWarpPointIsCentredOnIt() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Sphere(0, 64, 0, 8));
 
@@ -318,12 +320,12 @@ class AreaStoreTest {
     void aMoveGivesTheAreaItsNewShapeAndWarpPointAndUpdatesItsFileAndMarker() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         ChangeOutcome outcome = store.move(edoras, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
-        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertSame(edoras, store.find("edoras").orElseThrow());
         assertEquals(MOVED_TO, edoras.getGeometry());
         assertEquals(MOVED_WARP_POINT, edoras.getWarpPoint());
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
@@ -338,7 +340,7 @@ class AreaStoreTest {
     void aMoveWhoseWriteFailsLeavesTheAreaItsFileAndTheWebMapAsTheyWere() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
         String fileBefore =
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString();
         Marker markerBefore = layer.markerOf("edoras").orElseThrow();
@@ -359,7 +361,7 @@ class AreaStoreTest {
     void aMoveOfAnAreaReloadedMeanwhileIsGoneAndWritesNothing() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea stale = store.findExact("edoras").orElseThrow();
+        InfoArea stale = store.find("edoras").orElseThrow();
         store.reload();
 
         ChangeOutcome outcome = store.move(stale, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
@@ -375,7 +377,7 @@ class AreaStoreTest {
     void aMoveOfAnAreaDeletedMeanwhileIsGoneAndWritesNothing() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea deleted = store.findExact("edoras").orElseThrow();
+        InfoArea deleted = store.find("edoras").orElseThrow();
         store.delete(deleted);
 
         ChangeOutcome outcome = store.move(deleted, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
@@ -389,7 +391,7 @@ class AreaStoreTest {
     void aMoveToAnotherWorldWhoseOldFileCantBeDeletedIsDoneWithThatFileLeftOver() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
         files.failNextDelete();
         ChangeOutcome outcome = store.move(edoras, "arda", MOVED_WARP_POINT, MOVED_TO);
 
@@ -405,7 +407,7 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         store.reload();
 
-        ChangeOutcome outcome = store.move(store.findExact("edoras").orElseThrow(), "arda", MOVED_WARP_POINT, MOVED_TO);
+        ChangeOutcome outcome = store.move(store.find("edoras").orElseThrow(), "arda", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertTrue(files.contents("arda", "edoras").isPresent());
@@ -416,7 +418,7 @@ class AreaStoreTest {
     void aRenameWritesTheNewFileDeletesTheOldOneAndRedrawsTheMarkerUnderTheNewName() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
 
@@ -432,7 +434,7 @@ class AreaStoreTest {
     void aRenameWhoseWriteFailsKeepsTheOldNameFileAndMarker() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
         String fileBefore =
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString();
         Marker markerBefore = layer.markerOf("edoras").orElseThrow();
@@ -442,7 +444,7 @@ class AreaStoreTest {
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
         assertEquals("edoras", edoras.getName());
-        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertSame(edoras, store.find("edoras").orElseThrow());
         assertTrue(store.find("meduseld").isEmpty());
         assertEquals(
                 fileBefore,
@@ -457,7 +459,7 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         fileOf(sphereArea("Meduseld", 100));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
 
@@ -473,7 +475,7 @@ class AreaStoreTest {
     void aRenameWhoseOldFileCantBeDeletedIsDoneWithThatFileLeftOver() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         files.failNextDelete();
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
@@ -489,15 +491,15 @@ class AreaStoreTest {
     void aRenameOfAnAreaReloadedMeanwhileIsGoneAndWritesNothing() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea stale = store.findExact("edoras").orElseThrow();
+        InfoArea stale = store.find("edoras").orElseThrow();
         store.reload();
-        InfoArea current = store.findExact("edoras").orElseThrow();
+        InfoArea current = store.find("edoras").orElseThrow();
 
         ChangeOutcome outcome = store.rename(stale, "meduseld");
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertEquals("edoras", stale.getName());
-        assertSame(current, store.findExact("edoras").orElseThrow());
+        assertSame(current, store.find("edoras").orElseThrow());
         assertEquals(Set.of("edoras"), names());
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
         assertTrue(files.contents("middle-earth", "meduseld").isEmpty());
@@ -509,13 +511,13 @@ class AreaStoreTest {
     void aRenamedAreaIsTheSameAreaFoundUnderItsNewName() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
 
         store.rename(edoras, "meduseld");
 
-        assertSame(edoras, store.findExact("meduseld").orElseThrow());
+        assertSame(edoras, store.find("meduseld").orElseThrow());
         assertSame(edoras, store.find("MEDUSELD").orElseThrow());
-        assertTrue(store.findExact("edoras").isEmpty());
+        assertTrue(store.find("edoras").isEmpty());
         assertEquals(Set.of("meduseld"), names());
     }
 
@@ -527,7 +529,7 @@ class AreaStoreTest {
         store.reload();
         assertEquals(0, fillOf("city"));
 
-        ChangeOutcome outcome = store.delete(store.findExact("tower").orElseThrow());
+        ChangeOutcome outcome = store.delete(store.find("tower").orElseThrow());
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertEquals(Set.of("city"), names());
@@ -540,14 +542,14 @@ class AreaStoreTest {
     void aDeleteWhoseFileCantBeDeletedKeepsTheAreaAndItsMarker() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea edoras = store.findExact("edoras").orElseThrow();
+        InfoArea edoras = store.find("edoras").orElseThrow();
         Marker markerBefore = layer.markerOf("edoras").orElseThrow();
 
         files.failNextDelete();
         ChangeOutcome outcome = store.delete(edoras);
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
-        assertSame(edoras, store.findExact("edoras").orElseThrow());
+        assertSame(edoras, store.find("edoras").orElseThrow());
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
         assertEquals(markerBefore, layer.markerOf("edoras").orElseThrow());
     }
@@ -556,14 +558,14 @@ class AreaStoreTest {
     void aDeleteOfAnAreaReloadedMeanwhileIsGoneAndDeletesNoFile() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea stale = store.findExact("edoras").orElseThrow();
+        InfoArea stale = store.find("edoras").orElseThrow();
         store.reload();
 
         ChangeOutcome outcome = store.delete(stale);
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
-        assertTrue(store.findExact("edoras").isPresent());
+        assertTrue(store.find("edoras").isPresent());
         assertTrue(layer.markerOf("edoras").isPresent());
     }
 
@@ -571,7 +573,7 @@ class AreaStoreTest {
     void aDeleteOfAnAreaDeletedMeanwhileIsGoneAndLeavesANewAreaOfThatNameAlone() throws IOException {
         fileOf(sphereArea("edoras", 0));
         store.reload();
-        InfoArea deleted = store.findExact("edoras").orElseThrow();
+        InfoArea deleted = store.find("edoras").orElseThrow();
         store.delete(deleted);
         store.create(sphereArea("edoras", 100), NEW_DETAILS);
 
@@ -589,7 +591,7 @@ class AreaStoreTest {
         fileOf(sphereArea("tower", 50));
         store.reload();
 
-        store.edit(store.findExact("city").orElseThrow(), NEW_DETAILS);
+        store.edit(store.find("city").orElseThrow(), NEW_DETAILS);
 
         Marker cityMarker = layer.markerOf("city").orElseThrow();
         assertEquals(0, cityMarker.style().fillOpacity());
@@ -597,12 +599,32 @@ class AreaStoreTest {
         assertTrue(fillOf("tower") > 0);
     }
 
+    /** Holds exactly these Areas, as loaded from their files. */
+    private void holding(InfoArea... areas) throws IOException {
+        for (InfoArea area : areas) {
+            fileOf(area);
+        }
+        store.reload();
+    }
+
+    /** An Area in "middle-earth" with {@code title} and {@code shape}, Enabled or not. */
+    private static InfoArea titled(String name, String title, Shape shape, boolean enabled) {
+        AreaGeometry geometry =
+                switch (shape) {
+                    case SPHERE -> new AreaGeometry.Sphere(0, 64, 0, 10);
+                    case CUBOID -> new AreaGeometry.Cuboid(0, 60, 0, 10, 70, 10);
+                    case PRISM -> new AreaGeometry.Prism(List.of(0, 10, 0), List.of(0, 0, 10), 60, 70);
+                };
+        return TestAreas.area(name, "middle-earth", geometry, new AreaDetails(false, title, "", false, "", enabled));
+    }
+
+    private Set<String> suggestedNames(String typed) {
+        return store.suggest(typed).stream().map(AreaStore.Suggestion::name).collect(Collectors.toSet());
+    }
+
     @Test
     void findsAnAreaByNameIgnoringCaseWithAnExactMatchWinning() throws IOException {
-        fileOf(sphereArea("minas", 0));
-        fileOf(sphereArea("Edoras", 100));
-        fileOf(sphereArea("edoras", 200));
-        store.reload();
+        holding(sphereArea("minas", 0), sphereArea("Edoras", 100), sphereArea("edoras", 200));
 
         assertEquals("minas", store.find("MINAS").orElseThrow().getName());
         assertEquals("edoras", store.find("edoras").orElseThrow().getName());
@@ -610,38 +632,70 @@ class AreaStoreTest {
         assertTrue(store.find("rohan").isEmpty());
     }
 
-    @Test
-    void findsAnAreaByExactNameOnly() throws IOException {
-        fileOf(sphereArea("minas", 0));
-        store.reload();
+    @ParameterizedTest
+    @ValueSource(strings = {"helms-deep", "Minas_Tirith", "v1.2+old", "0"})
+    void aNewNameMayHoldLettersDigitsAndUnderscoreHyphenDotPlus(String name) {
+        assertEquals(Optional.empty(), store.newNameProblem(name));
+    }
 
-        assertEquals("minas", store.findExact("minas").orElseThrow().getName());
-        assertTrue(store.findExact("Minas").isEmpty());
+    @ParameterizedTest
+    @ValueSource(strings = {"helm's-deep", "helms deep", "", "minas/tirith", "café"})
+    void aNewNameWithOtherCharactersIsRefusedNamingTheAllowedCharacters(String name) {
+        assertEquals(
+                Optional.of("'" + name + "' isn't a valid Area name. Use only letters, digits and _ - . +"),
+                store.newNameProblem(name));
     }
 
     @Test
-    void aNewNameIsRefusedWhenInvalidOrTakenIgnoringCase() throws IOException {
-        fileOf(sphereArea("minas", 0));
-        store.reload();
+    void aNewNameTakenIgnoringCaseIsRefusedNamingTheAreaThatHasIt() throws IOException {
+        holding(sphereArea("minas", 0));
 
-        assertEquals(Optional.empty(), store.newNameProblem("edoras"));
         assertEquals(Optional.of("Area minas already has that name"), store.newNameProblem("MINAS"));
-        assertEquals(
-                Optional.of("'helm's-deep' isn't a valid Area name. Use only letters, digits and _ - . +"),
-                store.newNameProblem("helm's-deep"));
+        assertEquals(Optional.empty(), store.newNameProblem("minas-tirith"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "world", "world-gondor-minas", "gondor", "gondor-mi", "minas", "MINAS", "m"})
+    void suggestsANameWhenAnyHyphenSegmentStartsWithTheTypedText(String typed) throws IOException {
+        holding(sphereArea("world-gondor-minas", 0));
+
+        assertEquals(Set.of("world-gondor-minas"), suggestedNames(typed));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ondor", "inas", "gondor-minas-x", "rohan"})
+    void doesNotSuggestANameWhenTheTypedTextStartsMidSegment(String typed) throws IOException {
+        holding(sphereArea("world-gondor-minas", 0));
+
+        assertEquals(Set.of(), suggestedNames(typed));
     }
 
     @Test
-    void suggestsAreasWhoseNameStartsWithTheTypedText() throws IOException {
-        fileOf(sphereArea("gondor-minas", 0));
-        fileOf(sphereArea("rohan-edoras", 100));
-        store.reload();
+    void suggestsOnlyTheMatchingNames() throws IOException {
+        holding(
+                sphereArea("world-gondor-minas", 0),
+                sphereArea("world-rohan-edoras", 100),
+                sphereArea("world-gondor-osgiliath", 200));
+
+        assertEquals(Set.of("world-gondor-minas", "world-gondor-osgiliath"), suggestedNames("gondor"));
+    }
+
+    @Test
+    void aSuggestionCarriesTheAreasTitleAndShape() throws IOException {
+        holding(titled("world-gondor-minas", "Minas Tirith", Shape.PRISM, true));
 
         assertEquals(
-                List.of("gondor-minas"),
-                store.suggest("minas").stream()
-                        .map(AreaRegistry.Suggestion::name)
-                        .toList());
+                List.of(new AreaStore.Suggestion("world-gondor-minas", "Minas Tirith", Shape.PRISM, false)),
+                store.suggest("minas"));
+    }
+
+    @Test
+    void aDisabledAreaIsStillSuggestedAndMarkedDisabled() throws IOException {
+        holding(titled("world-gondor-minas", "Minas Tirith", Shape.SPHERE, false));
+
+        assertEquals(
+                List.of(new AreaStore.Suggestion("world-gondor-minas", "Minas Tirith", Shape.SPHERE, true)),
+                store.suggest("minas"));
     }
 
     private double fillOf(String areaName) {

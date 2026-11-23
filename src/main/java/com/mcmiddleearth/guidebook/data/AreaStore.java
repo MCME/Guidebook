@@ -6,20 +6,29 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Holds every Area, keeps each one's file up to date through {@link AreaFiles}, and draws every Area on the Web map
  * after each change (ADR 0007).
+ *
+ * <p>A change either reaches the Area's file or doesn't happen: if the file can't be written or deleted, the Area is
+ * left as it was and the change returns {@link ChangeOutcome.NotWritten}, so players and the Web map never see an
+ * Area its file doesn't hold. An Area stays the same object through every change, since the Watchman and open dialogs
+ * hold it. A change to an Area deleted or reloaded since the caller found it returns {@link ChangeOutcome.Gone}.
  */
 public final class AreaStore {
 
+    // The characters Brigadier allows in an unquoted word, so every name can be typed as one argument
+    private static final Pattern VALID_NAME = Pattern.compile("[0-9A-Za-z_\\-.+]+");
+
     private final Map<String, InfoArea> areas = new HashMap<>();
-    private final AreaRegistry registry = new AreaRegistry(areas.values());
 
     private final AreaFiles files;
     private final MarkerLayer webMapLayer;
@@ -44,50 +53,47 @@ public final class AreaStore {
     public void reload() {
         areas.clear();
         AreaFiles.Loaded loaded = files.loadAll();
+
         loaded.backup()
                 .ifPresent(backup -> logger.info("Backed up the Guidebook folder to " + backup
                         + " before converting Guidebook areas from Legacy markup to MiniMessage."));
         loaded.problems().forEach(logger::severe);
         loaded.areas().forEach(area -> areas.put(area.getName(), area));
+
         drawWebMap();
     }
 
     /**
-     * Gives a new, unregistered Area {@code details} and writes its file, then adds it and draws it, so an Area whose
-     * file couldn't be written is never added.
-     *
-     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.NameTaken} if another Area took the name meanwhile
-     *     (ignoring case), or {@link ChangeOutcome.NotWritten}
+     * Adds a new Area with {@code details}. Returns {@link ChangeOutcome.NameTaken} if its name can no longer be given
+     * (see {@link #newNameProblem}), since another Area may have taken it while staff filled in the dialog.
      */
     public ChangeOutcome create(InfoArea area, AreaDetails details) {
         if (newNameProblem(area.getName()).isPresent()) {
             return new ChangeOutcome.NameTaken();
         }
+
         area.setDetails(details);
         try {
             files.write(area);
         } catch (IOException ex) {
             return new ChangeOutcome.NotWritten(ex);
         }
+
         areas.put(area.getName(), area);
         drawAreas();
         return new ChangeOutcome.Done();
     }
 
-    /**
-     * Deletes the Area's file, then removes the Area, erases its marker and redraws the Web map, so an Area whose file
-     * couldn't be deleted is kept.
-     *
-     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone} or {@link ChangeOutcome.NotWritten}
-     */
     public ChangeOutcome delete(InfoArea area) {
         if (!isCurrent(area)) {
             return new ChangeOutcome.Gone();
         }
+
         if (!files.delete(area.getWorldName(), area.getName())) {
             return new ChangeOutcome.NotWritten(new IOException("Couldn't delete the file of Area " + area.getName()
                     + " in the folder of world " + area.getWorldName() + "."));
         }
+
         areas.remove(area.getName());
         eraseArea(area.getName());
         drawAreas();
@@ -95,14 +101,9 @@ public final class AreaStore {
     }
 
     /**
-     * Gives the Area {@code newName}, writes its file under that name, and redraws the Web map with its marker under
-     * the new name. If the file can't be written, the Area keeps its old name. Then its old file is deleted. The Area
-     * stays the same object, so players standing in it aren't Welcomed again.
-     *
-     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NameTaken} if an Area
-     *     already has that name (ignoring case), {@link ChangeOutcome.NotWritten}, or
-     *     {@link ChangeOutcome.DoneButOldFileLeft} if the old file couldn't be deleted, so the Area would load under
-     *     both names
+     * Gives the Area {@code newName}, so players standing in it aren't Welcomed again. Its file under the old name is
+     * deleted afterwards; if that fails, the rename stands but returns {@link ChangeOutcome.DoneButOldFileLeft},
+     * because the Area would load under both names.
      */
     public ChangeOutcome rename(InfoArea area, String newName) {
         if (!isCurrent(area)) {
@@ -111,18 +112,16 @@ public final class AreaStore {
         if (newNameProblem(newName).isPresent()) {
             return new ChangeOutcome.NameTaken();
         }
+
         String oldName = area.getName();
-        areas.remove(oldName);
-        area.setName(newName);
-        areas.put(newName, area);
+        giveName(area, newName);
         try {
             files.write(area);
         } catch (IOException ex) {
-            areas.remove(newName);
-            area.setName(oldName);
-            areas.put(oldName, area);
+            giveName(area, oldName);
             return new ChangeOutcome.NotWritten(ex);
         }
+
         boolean oldFileDeleted = files.delete(area.getWorldName(), oldName);
         eraseArea(oldName);
         drawAreas();
@@ -132,22 +131,18 @@ public final class AreaStore {
     }
 
     /**
-     * Puts the Area in the world {@code worldName}, with its Warp point at {@code warpPoint} and {@code geometry},
-     * which may be another Shape, as {@link InfoArea#place} does, writes its file, and redraws the Web map. If the file
-     * can't be written, the Area goes back where it was. Moving it to another world deletes its file in the old world's
-     * folder.
-     *
-     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NotWritten}, or
-     *     {@link ChangeOutcome.DoneButOldFileLeft} if the old world's file couldn't be deleted
+     * Places the Area as {@link InfoArea#place} does, possibly in another world or with another Shape. Moving it to
+     * another world deletes its file in the old world's folder; if that fails, the move stands but returns
+     * {@link ChangeOutcome.DoneButOldFileLeft}.
      */
     public ChangeOutcome move(InfoArea area, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
         if (!isCurrent(area)) {
             return new ChangeOutcome.Gone();
         }
+
         String oldWorldName = area.getWorldName();
         WarpPoint oldWarpPoint = area.getWarpPoint();
         AreaGeometry oldGeometry = area.getGeometry();
-
         area.place(worldName, warpPoint, geometry);
         try {
             files.write(area);
@@ -155,8 +150,8 @@ public final class AreaStore {
             area.place(oldWorldName, oldWarpPoint, oldGeometry);
             return new ChangeOutcome.NotWritten(ex);
         }
-        boolean oldFileGone =
-                Objects.equals(oldWorldName, area.getWorldName()) || files.delete(oldWorldName, area.getName());
+
+        boolean oldFileGone = Objects.equals(oldWorldName, worldName) || files.delete(oldWorldName, area.getName());
         // The marker's id doesn't change, so this replaces it even in another world
         drawAreas();
         return oldFileGone
@@ -164,17 +159,11 @@ public final class AreaStore {
                 : new ChangeOutcome.DoneButOldFileLeft(oldWorldName, area.getName());
     }
 
-    /**
-     * Gives the Area {@code details}, writes its file, and redraws the Web map. If the file can't be written, the Area
-     * gets its old details back, so players and the Web map never see an edit that isn't saved. The Area stays the
-     * same object, since the Watchman and open dialogs hold it.
-     *
-     * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone} or {@link ChangeOutcome.NotWritten}
-     */
     public ChangeOutcome edit(InfoArea area, AreaDetails details) {
         if (!isCurrent(area)) {
             return new ChangeOutcome.Gone();
         }
+
         AreaDetails oldDetails = AreaDetails.of(area);
         area.setDetails(details);
         try {
@@ -183,32 +172,72 @@ public final class AreaStore {
             area.setDetails(oldDetails);
             return new ChangeOutcome.NotWritten(ex);
         }
+
         drawAreas();
         return new ChangeOutcome.Done();
     }
 
-    /** The Area the typed name reaches, ignoring case; an Area with exactly that name wins. */
+    /**
+     * The Area a typed name reaches, ignoring case. An Area with exactly that name wins, for folders that already hold
+     * names differing only in case.
+     */
     public Optional<InfoArea> find(String name) {
-        return registry.resolve(name);
-    }
-
-    /** The Area with exactly this name. */
-    public Optional<InfoArea> findExact(String name) {
-        return registry.resolveExact(name);
+        InfoArea exact = areas.get(name);
+        if (exact != null) {
+            return Optional.of(exact);
+        }
+        return areas.values().stream()
+                .filter(area -> area.getName().equalsIgnoreCase(name))
+                .findFirst();
     }
 
     /** Why the name can't be given to a new or renamed Area, or empty if it can. */
     public Optional<String> newNameProblem(String name) {
-        return registry.newNameProblem(name);
+        if (!VALID_NAME.matcher(name).matches()) {
+            return Optional.of("'" + name + "' isn't a valid Area name. Use only letters, digits and _ - . +");
+        }
+        return find(name).map(area -> "Area " + area.getName() + " already has that name");
     }
 
-    public List<AreaRegistry.Suggestion> suggest(String typed) {
-        return registry.suggest(typed);
+    /** A suggested Area name, with what its tooltip shows about the Area. */
+    public record Suggestion(String name, String title, Shape shape, boolean disabled) {}
+
+    /**
+     * The Areas whose name has a hyphen segment starting with the typed text, ignoring case, since an Area name is
+     * written {@code <world>-<project>-<place>}: {@code minas} and {@code gondor-mi} both reach
+     * {@code world-gondor-minas}.
+     */
+    public List<Suggestion> suggest(String typed) {
+        String search = typed.toLowerCase(Locale.ROOT);
+        return areas.values().stream()
+                .filter(area -> anySegmentStartsWith(area.getName(), search))
+                .map(area -> new Suggestion(area.getName(), area.getTitle(), area.getShape(), !area.isEnabled()))
+                .toList();
     }
 
     /** Every Area, as it is now; later changes show through. */
     public Collection<InfoArea> all() {
         return Collections.unmodifiableCollection(areas.values());
+    }
+
+    private static boolean anySegmentStartsWith(String name, String search) {
+        String lowerName = name.toLowerCase(Locale.ROOT);
+        if (lowerName.startsWith(search)) {
+            return true;
+        }
+        for (int i = lowerName.indexOf('-'); i != -1; i = lowerName.indexOf('-', i + 1)) {
+            if (lowerName.startsWith(search, i + 1)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Gives the Area {@code name}, keeping it under that name in the store. */
+    private void giveName(InfoArea area, String name) {
+        areas.remove(area.getName());
+        area.setName(name);
+        areas.put(name, area);
     }
 
     /**
