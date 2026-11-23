@@ -19,6 +19,10 @@ public final class DisplaySwitchboard implements Display {
     /** The name of the Chat display, Guidebook's own, which is always registered. */
     public static final String CHAT = "chat";
 
+    // A LinkageError means the Display's jar was built against another Guidebook, such as one updated without the other
+    private static final String MISMATCH =
+            "Its plugin was built for another version of Guidebook: update both to versions released together.";
+
     private final String chosen;
     private final Display chat;
     private final Logger logger;
@@ -93,6 +97,12 @@ public final class DisplaySwitchboard implements Display {
                         "The display \"" + chosen + "\" failed to show the Welcome to " + welcome.areaName()
                                 + ", so it was shown with the Chat display",
                         ex);
+            } catch (LinkageError ex) {
+                logger.log(
+                        Level.SEVERE,
+                        "The display \"" + chosen + "\" failed to show the Welcome to " + welcome.areaName()
+                                + ", so it was shown with the Chat display. " + MISMATCH,
+                        ex);
             }
         }
         chat.show(player, welcome);
@@ -112,6 +122,13 @@ public final class DisplaySwitchboard implements Display {
                     Level.SEVERE,
                     "The display \"" + chosen + "\" failed to preview the Description of " + welcome.areaName()
                             + ", so it was previewed as chat",
+                    ex);
+            return List.of();
+        } catch (LinkageError ex) {
+            logger.log(
+                    Level.SEVERE,
+                    "The display \"" + chosen + "\" failed to preview the Description of " + welcome.areaName()
+                            + ", so it was previewed as chat. " + MISMATCH,
                     ex);
             return List.of();
         }

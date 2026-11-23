@@ -21,6 +21,7 @@ class DisplaySwitchboardTest {
     final Display chat = (player, welcome) -> chatted.add(welcome.areaName());
     final Display typewriter = (player, welcome) -> typed.add(welcome.areaName());
     final List<Level> logged = new ArrayList<>();
+    final List<String> logMessages = new ArrayList<>();
     final DisplaySwitchboard switchboard = new DisplaySwitchboard("typewriter", chat, recordingLogger());
 
     final Player player = new WatchmanTest.TestPlayer(0).player;
@@ -161,6 +162,19 @@ class DisplaySwitchboardTest {
     }
 
     @Test
+    void chatShowsTheWelcomeWhenTheChosenDisplayDoesntMatchThisGuidebook() {
+        switchboard.register("typewriter", (p, welcome) -> {
+            throw new NoSuchMethodError("'net.kyori.adventure.text.Component AreaText.render(String)'");
+        });
+
+        switchboard.show(player, bree);
+
+        assertEquals(List.of("bree"), chatted);
+        assertEquals(List.of(Level.SEVERE), logged);
+        assertTrue(logMessages.getFirst().contains("update both"), logMessages.getFirst());
+    }
+
+    @Test
     void theChosenDisplayPreviewsTheDescription() {
         switchboard.register("typewriter", previewing(List.of(Component.text("Page 1"), Component.text("Page 2"))));
 
@@ -192,6 +206,23 @@ class DisplaySwitchboardTest {
         assertEquals(List.of(Level.SEVERE), logged);
     }
 
+    @Test
+    void theDescriptionPreviewsAsChatWhenTheChosenDisplayDoesntMatchThisGuidebook() {
+        switchboard.register("typewriter", new Display() {
+            @Override
+            public void show(Player p, Welcome welcome) {}
+
+            @Override
+            public List<Component> previewDescription(Player p, Welcome welcome) {
+                throw new NoSuchMethodError("'net.kyori.adventure.text.Component AreaText.render(String)'");
+            }
+        });
+
+        assertEquals(List.of(), switchboard.previewDescription(player, bree));
+        assertEquals(List.of(Level.SEVERE), logged);
+        assertTrue(logMessages.getFirst().contains("update both"), logMessages.getFirst());
+    }
+
     /** A Display that previews every Description as {@code screens}. */
     private static Display previewing(List<Component> screens) {
         return new Display() {
@@ -213,6 +244,7 @@ class DisplaySwitchboardTest {
             @Override
             public void publish(LogRecord record) {
                 logged.add(record.getLevel());
+                logMessages.add(record.getMessage());
             }
 
             @Override
