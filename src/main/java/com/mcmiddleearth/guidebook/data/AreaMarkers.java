@@ -1,7 +1,7 @@
 package com.mcmiddleearth.guidebook.data;
 
-import com.mcmiddleearth.guidebook.util.AreaHtml;
-import com.mcmiddleearth.guidebook.util.AreaText;
+import com.mcmiddleearth.guidebook.text.AreaHtml;
+import com.mcmiddleearth.guidebook.text.AreaText;
 import com.mcmiddleearth.guidebook.webmap.Marker;
 import com.mcmiddleearth.guidebook.webmap.MarkerStyle;
 import com.mcmiddleearth.guidebook.webmap.Outline;

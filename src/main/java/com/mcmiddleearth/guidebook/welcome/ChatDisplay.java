@@ -1,7 +1,7 @@
 package com.mcmiddleearth.guidebook.welcome;
 
-import com.mcmiddleearth.guidebook.util.AreaText;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.text.AreaText;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;

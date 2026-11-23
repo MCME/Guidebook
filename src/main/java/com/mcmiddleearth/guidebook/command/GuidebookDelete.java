@@ -7,7 +7,7 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.dialog.ConfirmDialog;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 

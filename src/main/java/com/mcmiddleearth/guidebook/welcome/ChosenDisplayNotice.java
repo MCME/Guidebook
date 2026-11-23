@@ -1,8 +1,8 @@
 package com.mcmiddleearth.guidebook.welcome;
 
-import static com.mcmiddleearth.guidebook.util.GuidebookMessages.stressed;
+import static com.mcmiddleearth.guidebook.text.GuidebookMessages.stressed;
 
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

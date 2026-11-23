@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.mcmiddleearth.guidebook.util.AreaText;
-import com.mcmiddleearth.guidebook.util.StyledCharacters;
+import com.mcmiddleearth.guidebook.text.AreaText;
+import com.mcmiddleearth.guidebook.text.StyledCharacters;
 import java.util.List;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;

@@ -7,8 +7,8 @@ package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.util.AreaText;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.text.AreaText;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;

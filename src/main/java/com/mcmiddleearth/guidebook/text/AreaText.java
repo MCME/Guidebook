@@ -1,4 +1,4 @@
-package com.mcmiddleearth.guidebook.util;
+package com.mcmiddleearth.guidebook.text;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

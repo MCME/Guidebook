@@ -3,7 +3,7 @@ package com.mcmiddleearth.guidebook.welcome;
 import com.mcmiddleearth.guidebook.data.AreaDetails;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.WorldPoint;
-import com.mcmiddleearth.guidebook.util.AreaText;
+import com.mcmiddleearth.guidebook.text.AreaText;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;

@@ -1,4 +1,4 @@
-package com.mcmiddleearth.guidebook.util;
+package com.mcmiddleearth.guidebook.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

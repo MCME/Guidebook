@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-import com.mcmiddleearth.guidebook.util.AreaText
+import com.mcmiddleearth.guidebook.text.AreaText
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
