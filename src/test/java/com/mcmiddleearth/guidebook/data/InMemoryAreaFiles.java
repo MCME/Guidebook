@@ -26,8 +26,11 @@ public final class InMemoryAreaFiles implements AreaFiles {
     @Override
     public Loaded loadAll() {
         List<InfoArea> areas = new ArrayList<>();
-        files.forEach(
-                (key, contents) -> AreaFileFormat.read(key.name(), contents).ifPresent(areas::add));
+        files.forEach((key, contents) -> {
+            if (AreaFileFormat.read(key.name(), contents) instanceof AreaFileFormat.Read.Found(InfoArea area)) {
+                areas.add(area);
+            }
+        });
         Loaded loaded = new Loaded(areas, nextBackup, nextProblems);
         nextBackup = Optional.empty();
         nextProblems = List.of();

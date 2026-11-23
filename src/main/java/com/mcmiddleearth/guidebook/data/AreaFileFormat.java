@@ -1,7 +1,6 @@
 package com.mcmiddleearth.guidebook.data;
 
 import java.util.List;
-import java.util.Optional;
 import org.bukkit.configuration.ConfigurationSection;
 
 /**
@@ -13,14 +12,23 @@ final class AreaFileFormat {
 
     private AreaFileFormat() {}
 
-    /**
-     * Reads the Area {@code areaName} from its file's contents. Its world needn't be loaded.
-     *
-     * @return the Area, or empty if the file holds no Shape Guidebook knows
-     */
-    static Optional<InfoArea> read(String areaName, ConfigurationSection file) {
+    /** What an Area file holds: an Area, or why it holds none that Guidebook can load. */
+    sealed interface Read {
+
+        record Found(InfoArea area) implements Read {}
+
+        /** @param why ends a sentence about the file, such as "names no world" */
+        record Unreadable(String why) implements Read {}
+    }
+
+    /** Reads the Area {@code areaName} from its file's contents. Its world needn't be loaded. */
+    static Read read(String areaName, ConfigurationSection file) {
         // An old cuboid file keeps its world under its center
         String worldName = file.getString("world", file.getString("center.world"));
+        if (worldName == null) {
+            return new Read.Unreadable("names no world");
+        }
+
         WarpPoint warpPoint = new WarpPoint(
                 file.getInt("locationX"),
                 file.getInt("locationY"),
@@ -38,7 +46,7 @@ final class AreaFileFormat {
                     file.getInt("minY"),
                     file.getInt("maxY"));
         } else if (!file.contains("minCornerX") && !file.contains("xSize")) {
-            return Optional.empty();
+            return new Read.Unreadable("holds no Shape Guidebook knows");
         } else if (file.contains("center")) {
             // The old format: a centre and the sizes along each axis
             warpPoint = new WarpPoint(
@@ -57,7 +65,8 @@ final class AreaFileFormat {
                     file.getInt("maxCornerY", 0),
                     file.getInt("maxCornerZ", 0));
         }
-        return Optional.of(InfoArea.loaded(areaName, worldName, warpPoint, geometry, details(file)));
+
+        return new Read.Found(InfoArea.loaded(areaName, worldName, warpPoint, geometry, details(file)));
     }
 
     /** The block a coordinate is in, as Bukkit's {@code Location.getBlockX} gives it. */
@@ -75,19 +84,16 @@ final class AreaFileFormat {
                 center.z() + sizeZ / 2);
     }
 
+    // Each key with its own default, since a file can lack any of them: the oldest hold only a Description, and a
+    // value blanked by hand reads as no key at all
     private static AreaDetails details(ConfigurationSection file) {
-        String description = file.getString("description", "");
-        if (!file.contains("title")) {
-            return new AreaDetails(false, "", "", false, description, true);
-        }
         return new AreaDetails(
                 file.getBoolean("showTitle"),
-                file.getString("title"),
-                // A file can hold a Title without a Subtitle
+                file.getString("title", ""),
                 file.getString("subtitle", ""),
                 // Stored under its old name, from when it was a scoreboard
                 file.getBoolean("showScoreboard"),
-                description,
+                file.getString("description", ""),
                 file.getBoolean("enabled", true));
     }
 

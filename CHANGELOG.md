@@ -50,6 +50,10 @@ see the GitHub history.
   sit on whole blocks, as they already did after a `/guidebook reload`.
 - Moving an Area checks it for Overlap against every other Area, including one whose name differs
   from it only in case. Before, the Move dialog skipped both.
+- An Area file whose `title:` was blanked by hand keeps its Subtitle, Show title, Boss bar and
+  Enabled. Before, they were all reset, and a Disabled Area became Enabled.
+- An Area file that names no world is reported in the server log when loading, instead of loading
+  an Area that broke Welcomes and the Web map.
 
 ## [2.0.1] - 2026-10-20
 

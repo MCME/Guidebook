@@ -33,11 +33,12 @@ public final class AreaFolder implements AreaFiles {
         for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
             String areaName = loaded.name();
             DevUtil.log("Load area " + areaName);
-            AreaFileFormat.read(areaName, loaded.config())
-                    .ifPresentOrElse(
-                            areas::add,
-                            () -> problems.add("Guidebook area " + areaName + " isn't loaded, because " + loaded.file()
-                                    + " holds no Shape Guidebook knows."));
+            switch (AreaFileFormat.read(areaName, loaded.config())) {
+                case AreaFileFormat.Read.Found(InfoArea area) -> areas.add(area);
+                case AreaFileFormat.Read.Unreadable(String why) ->
+                    problems.add(
+                            "Guidebook area " + areaName + " isn't loaded, because " + loaded.file() + " " + why + ".");
+            }
         }
         return new Loaded(areas, outcome.backup(), problems);
     }

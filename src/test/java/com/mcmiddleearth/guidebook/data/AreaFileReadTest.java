@@ -173,6 +173,52 @@ class AreaFileReadTest {
         assertEquals("", area.getSubtitle());
     }
 
+    @Test
+    void aTitleBlankedByHandLoadsEmptyAndKeepsTheRestOfTheText() throws IOException {
+        Path worldFolder = dataFolder.resolve(WORLD);
+        Files.createDirectories(worldFolder);
+        Files.writeString(worldFolder.resolve("edoras.yml"), """
+                world: middle-earth
+                locationX: 100
+                locationY: 64
+                locationZ: -200
+                radius: 10
+                title:
+                subtitle: Capital of Rohan
+                showTitle: true
+                showScoreboard: true
+                description: Welcome
+                enabled: false
+                minimessage: true
+                """);
+
+        InfoArea area = onlyArea(new AreaFolder(dataFolder.toFile()).loadAll());
+
+        assertEquals(new AreaDetails(true, "", "Capital of Rohan", true, "Welcome", false), area.getDetails());
+    }
+
+    @Test
+    void aFileWithNoWorldIsReportedAsALoadProblem() throws IOException {
+        Path worldFolder = dataFolder.resolve(WORLD);
+        Files.createDirectories(worldFolder);
+        Files.writeString(worldFolder.resolve("edoras.yml"), """
+                locationX: 100
+                locationY: 64
+                locationZ: -200
+                radius: 10
+                title: Edoras
+                minimessage: true
+                """);
+
+        AreaFiles.Loaded loaded = new AreaFolder(dataFolder.toFile()).loadAll();
+
+        assertEquals(List.of(), loaded.areas());
+        assertEquals(1, loaded.problems().size());
+        assertTrue(
+                loaded.problems().getFirst().endsWith("names no world."),
+                loaded.problems().getFirst());
+    }
+
     private Map<String, Object> sampleValues(String sample) throws IOException {
         try (InputStream in = getClass().getResourceAsStream("/area-files/" + sample + ".yml")) {
             return YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8))
