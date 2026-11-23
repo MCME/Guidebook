@@ -26,6 +26,7 @@ import com.mcmiddleearth.guidebook.webmap.WebMap;
 import com.mcmiddleearth.guidebook.webmap.dynmap.DynmapWebMap;
 import com.mcmiddleearth.guidebook.welcome.ChatDisplay;
 import com.mcmiddleearth.guidebook.welcome.ChosenDisplayNotice;
+import com.mcmiddleearth.guidebook.welcome.DisplayRegistry;
 import com.mcmiddleearth.guidebook.welcome.DisplaySwitchboard;
 import com.mcmiddleearth.guidebook.welcome.Watchman;
 import com.mcmiddleearth.guidebook.welcome.WatchmanListener;
@@ -34,6 +35,7 @@ import java.time.InstantSource;
 import java.util.List;
 import java.util.UUID;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -97,7 +99,7 @@ public class GuidebookPlugin extends JavaPlugin {
         webMap.close();
     }
 
-    /** Where another plugin registers its own Display (ADR 0008). */
+    /** Guidebook's own; another plugin registers its Display with the {@link DisplayRegistry} service (ADR 0008). */
     public DisplaySwitchboard getDisplaySwitchboard() {
         return displaySwitchboard;
     }
@@ -127,6 +129,10 @@ public class GuidebookPlugin extends JavaPlugin {
         getConfig().options().copyDefaults(true);
         displaySwitchboard = new DisplaySwitchboard(
                 getConfig().getString(DISPLAY_KEY, DisplaySwitchboard.CHAT), new ChatDisplay(this), getLogger());
+        // Bukkit drops it when Guidebook disables
+        getServer()
+                .getServicesManager()
+                .register(DisplayRegistry.class, displaySwitchboard, this, ServicePriority.Normal);
 
         List<UUID> optedOut = getConfig().getStringList(OPTED_OUT_KEY).stream()
                 .map(UUID::fromString)

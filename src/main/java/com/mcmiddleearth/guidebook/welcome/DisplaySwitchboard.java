@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
  * register theirs, and may do so after Guidebook enables, so the chosen Display is looked up for every Welcome.
  * Whenever it isn't registered, or fails, the Chat display shows the Welcome instead (ADR 0008).
  */
-public final class DisplaySwitchboard implements Display {
+public final class DisplaySwitchboard implements Display, DisplayRegistry {
 
     /** The name of the Chat display, Guidebook's own, which is always registered. */
     public static final String CHAT = "chat";
@@ -38,7 +38,7 @@ public final class DisplaySwitchboard implements Display {
         registered.put(CHAT, chat);
     }
 
-    /** Makes {@code display} available as {@code name}, which the server's config can choose. Names ignore case. */
+    @Override
     public void register(String name, Display display) {
         if (normalise(name).equals(CHAT)) {
             throw new IllegalArgumentException("The Chat display is Guidebook's own, so its name can't be registered");
@@ -47,7 +47,7 @@ public final class DisplaySwitchboard implements Display {
         missingLogged = false;
     }
 
-    /** Removes the Display registered as {@code name}, such as when its plugin disables. */
+    @Override
     public void unregister(String name) {
         if (!normalise(name).equals(CHAT)) {
             registered.remove(normalise(name));
