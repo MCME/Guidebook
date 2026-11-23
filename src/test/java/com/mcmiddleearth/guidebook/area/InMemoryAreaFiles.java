@@ -45,7 +45,7 @@ public final class InMemoryAreaFiles implements AreaFiles {
         }
         YamlConfiguration contents = new YamlConfiguration();
         AreaFileFormat.write(area, contents);
-        files.put(new Key(area.getWorldName(), area.getName()), contents);
+        files.put(new Key(area.worldName(), area.name()), contents);
     }
 
     @Override

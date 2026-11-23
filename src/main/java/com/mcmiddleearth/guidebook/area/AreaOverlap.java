@@ -19,9 +19,9 @@ final class AreaOverlap {
     /** The Overlap finding for {@code proposal} among {@code others}, or empty when it overlaps none of them. */
     static Optional<PlacementFinding.Overlap> overlapping(PlacementCheck.Proposal proposal, Collection<Area> others) {
         List<String> names = others.stream()
-                .filter(area -> area.getWorldName().equals(proposal.world()))
-                .filter(area -> overlap(proposal.geometry(), area.getGeometry()))
-                .map(Area::getName)
+                .filter(area -> area.worldName().equals(proposal.world()))
+                .filter(area -> overlap(proposal.geometry(), area.geometry()))
+                .map(Area::name)
                 .sorted()
                 .toList();
         return names.isEmpty() ? Optional.empty() : Optional.of(new PlacementFinding.Overlap(names));

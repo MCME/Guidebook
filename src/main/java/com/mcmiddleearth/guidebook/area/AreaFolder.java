@@ -43,11 +43,11 @@ public final class AreaFolder implements AreaFiles {
 
     @Override
     public void write(Area area) throws IOException {
-        final String areaName = area.getName();
+        final String areaName = area.name();
         FileConfiguration config = new YamlConfiguration();
         AreaFileFormat.write(area, config);
 
-        File dataFile = fileOf(area.getWorldName(), areaName);
+        File dataFile = fileOf(area.worldName(), areaName);
         dataFile.getParentFile().mkdir();
         config.save(dataFile);
     }

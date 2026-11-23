@@ -45,18 +45,18 @@ public final class AreaMarkers {
      */
     public static Marker toMarker(Area area, Collection<Area> drawn) {
         return new Marker(
-                id(area.getName()),
-                area.getWorldName(),
+                id(area.name()),
+                area.worldName(),
                 label(area),
                 popup(area),
-                outline(area.getGeometry()),
+                outline(area.geometry()),
                 style(area, holdsAnother(area, drawn)));
     }
 
     private static String label(Area area) {
         // An older file can hold an empty Title, and a marker with no label can't be told apart on hover
         String title = AreaText.isVisiblyBlank(area.details().title())
-                ? area.getName()
+                ? area.name()
                 : AreaText.plainText(area.details().title());
         // Said in words as well as colour, for staff who can't tell the colours apart
         return area.isEnabled() ? title : title + " (Disabled)";
@@ -76,7 +76,7 @@ public final class AreaMarkers {
         // The name is a block of its own, so a triple-click selects just it to copy into a command
         String header = "<div style=\"display:flex;justify-content:space-between;align-items:baseline;gap:8px\">"
                 + "<div style=\"font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:bold\">"
-                + AreaHtml.escape(area.getName()) + "</div>"
+                + AreaHtml.escape(area.name()) + "</div>"
                 + disabledMark
                 + "</div>";
         AreaDetails details = area.details();
@@ -120,15 +120,15 @@ public final class AreaMarkers {
      * can count as holding an Area just outside it, which only costs it its fill.
      */
     private static boolean holdsAnother(Area area, Collection<Area> drawn) {
-        Footprint footprint = Footprint.of(area.getGeometry());
+        Footprint footprint = Footprint.of(area.geometry());
         return drawn.stream()
-                .filter(other -> other.getWorldName().equals(area.getWorldName()))
-                .filter(other -> !other.getName().equalsIgnoreCase(area.getName()))
+                .filter(other -> other.worldName().equals(area.worldName()))
+                .filter(other -> !other.name().equalsIgnoreCase(area.name()))
                 .anyMatch(other -> {
-                    Footprint inner = Footprint.of(other.getGeometry());
+                    Footprint inner = Footprint.of(other.geometry());
                     // Of two Areas with the same box, one is left filled so it can be clicked anywhere inside
                     return footprint.equals(inner)
-                            ? area.getName().compareToIgnoreCase(other.getName()) < 0
+                            ? area.name().compareToIgnoreCase(other.name()) < 0
                             : footprint.holds(inner);
                 });
     }

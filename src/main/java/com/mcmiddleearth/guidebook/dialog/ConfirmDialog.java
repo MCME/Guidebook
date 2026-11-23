@@ -39,7 +39,7 @@ public final class ConfirmDialog {
                 player,
                 area,
                 canceller -> GuidebookMessages.sendInfo(
-                        canceller, GuidebookMessages.area(area.getName()), " was not deleted."));
+                        canceller, GuidebookMessages.area(area.name()), " was not deleted."));
     }
 
     /**
@@ -47,7 +47,7 @@ public final class ConfirmDialog {
      * or Esc, so a dialog that opened the confirmation can reopen itself.
      */
     public static void openToDelete(Player player, Area area, Consumer<Player> cancelled) {
-        String areaName = area.getName();
+        String areaName = area.name();
         String title = area.details().title();
         List<DialogBody> body = List.of(
                 DialogBody.plainMessage(Component.text("Do you really want to ")
@@ -93,7 +93,7 @@ public final class ConfirmDialog {
         if (!(audience instanceof Player player)) {
             return;
         }
-        String name = area.getName();
+        String name = area.name();
         ChangeOutcome outcome =
                 GuidebookPlugin.getPluginInstance().getAreaStore().delete(area);
         switch (outcome) {

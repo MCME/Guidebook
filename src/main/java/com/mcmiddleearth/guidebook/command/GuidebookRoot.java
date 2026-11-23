@@ -82,36 +82,36 @@ class GuidebookRoot {
     @Permission(STAFF)
     void select(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         // By name, as the Area's world may not be loaded
-        String worldName = area.getWorldName();
+        String worldName = area.worldName();
         World world = player.getWorld();
         if (!world.getName().equals(worldName)) {
             GuidebookMessages.sendError(
                     player,
-                    GuidebookMessages.area(area.getName()),
+                    GuidebookMessages.area(area.name()),
                     " is in " + worldName + ". Go to that world to select it.");
             return;
         }
-        WorldEditSelections.select(player, world, area.getGeometry());
+        WorldEditSelections.select(player, world, area.geometry());
         GuidebookMessages.sendInfo(
                 player,
                 "Your WorldEdit selection is now ",
-                GuidebookMessages.area(area.getName()),
-                " (" + area.getShape().displayName() + ").");
+                GuidebookMessages.area(area.name()),
+                " (" + area.shape().displayName() + ").");
     }
 
     @Executes("warp")
     @Permission(STAFF)
     void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         // By name, as the Area's world may not be loaded
-        String worldName = area.getWorldName();
+        String worldName = area.worldName();
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
             GuidebookMessages.sendError(
-                    sender, GuidebookMessages.area(area.getName()), " is in " + worldName + ", which isn't loaded.");
+                    sender, GuidebookMessages.area(area.name()), " is in " + worldName + ", which isn't loaded.");
             return;
         }
-        player.teleport(area.getWarpPoint().toLocation(world));
-        GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
+        player.teleport(area.warpPoint().toLocation(world));
+        GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.name()), ".");
     }
 
     @Executes("create")
@@ -142,7 +142,7 @@ class GuidebookRoot {
         } else {
             List<Object> parts = new ArrayList<>();
             parts.add("You're standing in more than one Guidebook area (");
-            here.stream().map(Area::getName).sorted().forEach(name -> {
+            here.stream().map(Area::name).sorted().forEach(name -> {
                 if (parts.size() > 1) {
                     parts.add(", ");
                 }
@@ -165,7 +165,7 @@ class GuidebookRoot {
             CommandSender sender,
             @CustomArg(AreaArgument.class) Area area,
             @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String newName) {
-        String oldName = area.getName();
+        String oldName = area.name();
         ChangeOutcome outcome =
                 GuidebookPlugin.getPluginInstance().getAreaStore().rename(area, newName);
         switch (outcome) {

@@ -39,8 +39,8 @@ final class GuidebookList {
     static void send(CommandSender sender, String filter, int page) {
         String search = filter.toLowerCase(Locale.ROOT);
         List<Area> areas = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
-                .filter(area -> area.getName().toLowerCase(Locale.ROOT).contains(search))
-                .sorted(Comparator.comparing(Area::getName, String.CASE_INSENSITIVE_ORDER))
+                .filter(area -> area.name().toLowerCase(Locale.ROOT).contains(search))
+                .sorted(Comparator.comparing(Area::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
         if (areas.isEmpty()) {
             GuidebookMessages.sendInfo(
@@ -72,7 +72,7 @@ final class GuidebookList {
     // the short indent gives long names room before the line wraps. The button tooltips are short, since a tooltip
     // covers the name to its right
     private static Component areaLine(Area area) {
-        String name = area.getName();
+        String name = area.name();
         Component nameText = Component.text(name, area.isEnabled() ? NamedTextColor.BLUE : NamedTextColor.GRAY)
                 .hoverEvent(HoverEvent.showText(nameHover(area)));
         return GuidebookMessages.infoShortIndented(
@@ -111,7 +111,7 @@ final class GuidebookList {
 
     // Such as "■ Cuboid, 21 × 30 blocks, from y 60 to 69"
     private static String shapeText(Area area) {
-        return area.getShape().symbol() + " " + capitalised(area.getGeometry().describe());
+        return area.shape().symbol() + " " + capitalised(area.geometry().describe());
     }
 
     private static String capitalised(String text) {

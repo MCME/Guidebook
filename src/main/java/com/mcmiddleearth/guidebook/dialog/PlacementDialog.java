@@ -156,7 +156,7 @@ public final class PlacementDialog {
         // Read when needed, so a rename while the dialog is open is followed
         @Override
         public String areaName() {
-            return area.getName();
+            return area.name();
         }
 
         @Override
@@ -211,12 +211,12 @@ public final class PlacementDialog {
         public Optional<Component> currentPlacement() {
             return Optional.of(Component.text("Now: ")
                     .append(Component.text(
-                            area.getWorldName() + ", " + area.getGeometry().describe())));
+                            area.worldName() + ", " + area.geometry().describe())));
         }
 
         @Override
         public void place(Player player, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
-            String name = area.getName();
+            String name = area.name();
             ChangeOutcome outcome =
                     GuidebookPlugin.getPluginInstance().getAreaStore().move(area, worldName, warpPoint, geometry);
             player.closeDialog();

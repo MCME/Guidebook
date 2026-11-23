@@ -41,8 +41,8 @@ final class GuidebookCreate {
         // Loaded worlds, and the worlds of Areas whose world isn't loaded
         TreeSet<String> worlds = new TreeSet<>();
         Bukkit.getWorlds().stream().map(World::getName).forEach(worlds::add);
-        areas.stream().map(Area::getWorldName).forEach(worlds::add);
-        List<String> names = areas.stream().map(Area::getName).toList();
+        areas.stream().map(Area::worldName).forEach(worlds::add);
+        List<String> names = areas.stream().map(Area::name).toList();
         AreaNameSuggestions.suggest(builder.getRemaining(), worlds, names)
                 .forEach(suggestion -> builder.suggest(suggestion, CONVENTION));
         return builder.buildFuture();

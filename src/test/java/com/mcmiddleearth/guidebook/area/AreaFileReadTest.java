@@ -49,10 +49,10 @@ class AreaFileReadTest {
     }
 
     private static void assertLoaded(AreaGeometry geometry, WarpPoint warpPoint, Area area) {
-        assertEquals("edoras", area.getName());
-        assertEquals(geometry, area.getGeometry());
-        assertEquals(WORLD, area.getWorldName());
-        assertEquals(warpPoint, area.getWarpPoint());
+        assertEquals("edoras", area.name());
+        assertEquals(geometry, area.geometry());
+        assertEquals(WORLD, area.worldName());
+        assertEquals(warpPoint, area.warpPoint());
         assertEquals(EDORAS_TEXT, area.details());
     }
 
@@ -99,10 +99,10 @@ class AreaFileReadTest {
 
             Area read = onlyArea(files.loadAll());
 
-            assertEquals("fangorn", read.getName());
-            assertEquals(written.getGeometry(), read.getGeometry(), shape.toString());
-            assertEquals(WORLD, read.getWorldName());
-            assertEquals(new WarpPoint(10, 64, -4, -135.75f, 45.5f), read.getWarpPoint());
+            assertEquals("fangorn", read.name());
+            assertEquals(written.geometry(), read.geometry(), shape.toString());
+            assertEquals(WORLD, read.worldName());
+            assertEquals(new WarpPoint(10, 64, -4, -135.75f, 45.5f), read.warpPoint());
             assertEquals(EDORAS_TEXT, read.details());
         }
     }
@@ -118,7 +118,7 @@ class AreaFileReadTest {
             AreaFolder files = new AreaFolder(folder.toFile());
 
             Area area = onlyArea(files.loadAll());
-            assertEquals(WORLD, area.getWorldName(), sample);
+            assertEquals(WORLD, area.worldName(), sample);
             Path rewritten = Files.createTempDirectory(dataFolder, sample + "-rewritten");
             new AreaFolder(rewritten.toFile()).write(area);
 

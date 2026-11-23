@@ -67,21 +67,21 @@ public final class Area {
         };
     }
 
-    public AreaGeometry getGeometry() {
+    public AreaGeometry geometry() {
         return geometry;
     }
 
     // The Shape follows the geometry, since a move can give an Area another Shape
-    public Shape getShape() {
+    public Shape shape() {
         return geometry.shape();
     }
 
     /** The name of the Area's world, even when that world isn't loaded. */
-    public String getWorldName() {
+    public String worldName() {
         return worldName;
     }
 
-    public WarpPoint getWarpPoint() {
+    public WarpPoint warpPoint() {
         return warpPoint;
     }
 
@@ -111,7 +111,7 @@ public final class Area {
         return details.enabled();
     }
 
-    public String getName() {
+    public String name() {
         return this.areaName;
     }
 

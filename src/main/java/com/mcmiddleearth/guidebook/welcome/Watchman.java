@@ -157,7 +157,7 @@ public final class Watchman {
         if (last != null && Duration.between(last, now).compareTo(COOLDOWN) < 0) {
             return;
         }
-        if (isOptedOut(player.getUniqueId()) || veto.cancels(player, area.getName())) {
+        if (isOptedOut(player.getUniqueId()) || veto.cancels(player, area.name())) {
             return;
         }
         welcome(player, area);
@@ -182,7 +182,7 @@ public final class Watchman {
     private static Welcome welcomeTo(Area area) {
         AreaDetails details = area.details();
         return new Welcome(
-                area.getName(), details.title(), details.subtitle(), details.description(), details.showTitle());
+                area.name(), details.title(), details.subtitle(), details.description(), details.showTitle());
     }
 
     /** Forgets every Area not in {@code kept}, hiding its Boss bar. */

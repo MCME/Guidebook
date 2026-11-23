@@ -45,7 +45,7 @@ class AreaFileWriteTest {
 
     private YamlConfiguration written(Area area) throws IOException {
         new AreaFolder(dataFolder.toFile()).write(area);
-        File file = dataFolder.resolve(WORLD).resolve(area.getName() + ".yml").toFile();
+        File file = dataFolder.resolve(WORLD).resolve(area.name() + ".yml").toFile();
         assertTrue(file.isFile(), "no file at " + file);
         return YamlConfiguration.loadConfiguration(file);
     }

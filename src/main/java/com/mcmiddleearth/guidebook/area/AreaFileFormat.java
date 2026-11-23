@@ -99,15 +99,15 @@ final class AreaFileFormat {
 
     /** Writes the Area into {@code file}. */
     static void write(Area area, ConfigurationSection file) {
-        WarpPoint warpPoint = area.getWarpPoint();
-        file.set("world", area.getWorldName());
+        WarpPoint warpPoint = area.warpPoint();
+        file.set("world", area.worldName());
         file.set("locationX", warpPoint.x());
         file.set("locationY", warpPoint.y());
         file.set("locationZ", warpPoint.z());
         file.set("locationYaw", warpPoint.yaw());
         file.set("locationPitch", warpPoint.pitch());
 
-        switch (area.getGeometry()) {
+        switch (area.geometry()) {
             case AreaGeometry.Sphere sphere -> file.set("radius", sphere.radius());
             case AreaGeometry.Cuboid cuboid -> {
                 file.set("minCornerX", cuboid.minX());

@@ -62,7 +62,7 @@ class AreaStoreTest {
     }
 
     private Set<String> names() {
-        return store.all().stream().map(Area::getName).collect(Collectors.toSet());
+        return store.all().stream().map(Area::name).collect(Collectors.toSet());
     }
 
     @Test
@@ -90,8 +90,8 @@ class AreaStoreTest {
         store.reload();
 
         Area baradDur = store.find("barad-dur").orElseThrow();
-        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), baradDur.getGeometry());
-        assertEquals(UNLOADED_WORLD, baradDur.getWorldName());
+        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), baradDur.geometry());
+        assertEquals(UNLOADED_WORLD, baradDur.worldName());
         assertEquals(Set.of(AreaMarkers.id("edoras")), layer.ids());
         assertEquals(
                 List.of("Area barad-dur isn't drawn on the Web map because its world isn't loaded."),
@@ -285,7 +285,7 @@ class AreaStoreTest {
 
         store.create(edoras, NEW_DETAILS);
 
-        assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.getWarpPoint());
+        assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.warpPoint());
         assertEquals(-1, files.contents("middle-earth", "edoras").orElseThrow().getInt("locationZ"));
     }
 
@@ -297,7 +297,7 @@ class AreaStoreTest {
 
         store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Cuboid(490, 60, -10, 510, 80, 10));
 
-        assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.getWarpPoint());
+        assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.warpPoint());
     }
 
     @Test
@@ -308,7 +308,7 @@ class AreaStoreTest {
 
         store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Sphere(0, 64, 0, 8));
 
-        assertEquals(new AreaGeometry.Sphere(500, 70, -1, 8), edoras.getGeometry());
+        assertEquals(new AreaGeometry.Sphere(500, 70, -1, 8), edoras.geometry());
         assertEquals(
                 new Outline.Circle(500, -1, 8),
                 layer.markerOf("edoras").orElseThrow().outline());
@@ -324,8 +324,8 @@ class AreaStoreTest {
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertSame(edoras, store.find("edoras").orElseThrow());
-        assertEquals(MOVED_TO, edoras.getGeometry());
-        assertEquals(MOVED_WARP_POINT, edoras.getWarpPoint());
+        assertEquals(MOVED_TO, edoras.geometry());
+        assertEquals(MOVED_WARP_POINT, edoras.warpPoint());
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
         assertEquals(500, file.getDouble("locationX"));
         assertEquals(70, file.getDouble("locationY"));
@@ -347,8 +347,8 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.move(edoras, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
-        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), edoras.getGeometry());
-        assertEquals(new WarpPoint(0, 64, 0, 0, 0), edoras.getWarpPoint());
+        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), edoras.geometry());
+        assertEquals(new WarpPoint(0, 64, 0, 0, 0), edoras.warpPoint());
         assertEquals(
                 fileBefore,
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString());
@@ -394,7 +394,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.move(edoras, "arda", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.DoneButOldFileLeft("middle-earth", "edoras"), outcome);
-        assertEquals("arda", edoras.getWorldName());
+        assertEquals("arda", edoras.worldName());
         assertTrue(files.contents("arda", "edoras").isPresent());
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
         assertEquals("arda", layer.markerOf("edoras").orElseThrow().world());
@@ -421,7 +421,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
 
         assertEquals(new ChangeOutcome.Done(), outcome);
-        assertEquals("meduseld", edoras.getName());
+        assertEquals("meduseld", edoras.name());
         assertTrue(files.contents("middle-earth", "meduseld").isPresent());
         assertTrue(files.contents("middle-earth", "edoras").isEmpty());
         assertTrue(layer.markerOf("meduseld").isPresent());
@@ -441,7 +441,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
-        assertEquals("edoras", edoras.getName());
+        assertEquals("edoras", edoras.name());
         assertSame(edoras, store.find("edoras").orElseThrow());
         assertTrue(store.find("meduseld").isEmpty());
         assertEquals(
@@ -462,7 +462,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
 
         assertEquals(new ChangeOutcome.NameTaken(), outcome);
-        assertEquals("edoras", edoras.getName());
+        assertEquals("edoras", edoras.name());
         assertEquals(Set.of("edoras", "Meduseld"), names());
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
         assertTrue(files.contents("middle-earth", "meduseld").isEmpty());
@@ -479,7 +479,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.rename(edoras, "meduseld");
 
         assertEquals(new ChangeOutcome.DoneButOldFileLeft("middle-earth", "edoras"), outcome);
-        assertEquals("meduseld", edoras.getName());
+        assertEquals("meduseld", edoras.name());
         assertTrue(files.contents("middle-earth", "meduseld").isPresent());
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
         assertTrue(layer.markerOf("edoras").isEmpty());
@@ -496,7 +496,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.rename(stale, "meduseld");
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
-        assertEquals("edoras", stale.getName());
+        assertEquals("edoras", stale.name());
         assertSame(current, store.find("edoras").orElseThrow());
         assertEquals(Set.of("edoras"), names());
         assertTrue(files.contents("middle-earth", "edoras").isPresent());
@@ -624,9 +624,9 @@ class AreaStoreTest {
     void findsAnAreaByNameIgnoringCaseWithAnExactMatchWinning() throws IOException {
         holding(sphereArea("minas", 0), sphereArea("Edoras", 100), sphereArea("edoras", 200));
 
-        assertEquals("minas", store.find("MINAS").orElseThrow().getName());
-        assertEquals("edoras", store.find("edoras").orElseThrow().getName());
-        assertEquals("Edoras", store.find("Edoras").orElseThrow().getName());
+        assertEquals("minas", store.find("MINAS").orElseThrow().name());
+        assertEquals("edoras", store.find("edoras").orElseThrow().name());
+        assertEquals("Edoras", store.find("Edoras").orElseThrow().name());
         assertTrue(store.find("rohan").isEmpty());
     }
 

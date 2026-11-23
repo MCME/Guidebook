@@ -282,7 +282,7 @@ public final class EditDialog {
 
         player.showDialog(Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area ")
-                                .append(GuidebookMessages.stressed(area.getName())))
+                                .append(GuidebookMessages.stressed(area.name())))
                         .canCloseWithEscape(mode == Mode.EDIT)
                         // The dialog stays open after a button until the server replaces or closes it, so that typed
                         // text isn't lost. Minecraft only allows that for a dialog that doesn't pause the
@@ -304,7 +304,7 @@ public final class EditDialog {
         addPreview(body, "Title", values.title(), values.showTitle() ? null : "not shown: Show title is off");
         addPreview(body, "Subtitle", values.subtitle(), values.showTitle() ? null : "not shown: Show title is off");
         Welcome asSaved = new Welcome(
-                area.getName(), values.title(), values.subtitle(), values.storedDescription(), values.showTitle());
+                area.name(), values.title(), values.subtitle(), values.storedDescription(), values.showTitle());
         List<Component> screens =
                 GuidebookPlugin.getPluginInstance().getDisplaySwitchboard().previewDescription(player, asSaved);
         if (screens.isEmpty()) {
@@ -328,7 +328,7 @@ public final class EditDialog {
 
         player.showDialog(Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(Component.text("Preview of Guidebook area ")
-                                .append(GuidebookMessages.stressed(area.getName())))
+                                .append(GuidebookMessages.stressed(area.name())))
                         .afterAction(DialogBase.DialogAfterAction.NONE)
                         .pause(false)
                         .body(body)
@@ -359,7 +359,7 @@ public final class EditDialog {
         if (!(audience instanceof Player player)) {
             return;
         }
-        String areaName = area.getName();
+        String areaName = area.name();
         Optional<String> problem = problem(values);
         if (problem.isPresent()) {
             show(player, area, mode, values, Component.text(problem.get() + " Nothing was " + mode.done + "."));
@@ -391,7 +391,7 @@ public final class EditDialog {
     /** Says the Area was saved or created, then previews its Welcome, which only a saved Area may show. */
     private static void sendDone(Player player, Area area, Mode mode) {
         // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
-        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was " + mode.done + ":");
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.name()), " was " + mode.done + ":");
         GuidebookPlugin.getPluginInstance().getWatchman().preview(player, area);
     }
 

@@ -58,7 +58,7 @@ public final class AreaStore {
                 .ifPresent(backup -> logger.info("Backed up the Guidebook folder to " + backup
                         + " before converting Guidebook areas from Legacy markup to MiniMessage."));
         loaded.problems().forEach(logger::severe);
-        loaded.areas().forEach(area -> areas.put(area.getName(), area));
+        loaded.areas().forEach(area -> areas.put(area.name(), area));
 
         drawWebMap();
     }
@@ -68,7 +68,7 @@ public final class AreaStore {
      * (see {@link #newNameProblem}), since another Area may have taken it while staff filled in the dialog.
      */
     public ChangeOutcome create(Area area, AreaDetails details) {
-        if (newNameProblem(area.getName()).isPresent()) {
+        if (newNameProblem(area.name()).isPresent()) {
             return new ChangeOutcome.NameTaken();
         }
 
@@ -79,7 +79,7 @@ public final class AreaStore {
             return new ChangeOutcome.NotWritten(ex);
         }
 
-        areas.put(area.getName(), area);
+        areas.put(area.name(), area);
         drawAreas();
         return new ChangeOutcome.Done();
     }
@@ -89,13 +89,13 @@ public final class AreaStore {
             return new ChangeOutcome.Gone();
         }
 
-        if (!files.delete(area.getWorldName(), area.getName())) {
-            return new ChangeOutcome.NotWritten(new IOException("Couldn't delete the file of Area " + area.getName()
-                    + " in the folder of world " + area.getWorldName() + "."));
+        if (!files.delete(area.worldName(), area.name())) {
+            return new ChangeOutcome.NotWritten(new IOException("Couldn't delete the file of Area " + area.name()
+                    + " in the folder of world " + area.worldName() + "."));
         }
 
-        areas.remove(area.getName());
-        eraseArea(area.getName());
+        areas.remove(area.name());
+        eraseArea(area.name());
         drawAreas();
         return new ChangeOutcome.Done();
     }
@@ -113,7 +113,7 @@ public final class AreaStore {
             return new ChangeOutcome.NameTaken();
         }
 
-        String oldName = area.getName();
+        String oldName = area.name();
         giveName(area, newName);
         try {
             files.write(area);
@@ -122,12 +122,12 @@ public final class AreaStore {
             return new ChangeOutcome.NotWritten(ex);
         }
 
-        boolean oldFileDeleted = files.delete(area.getWorldName(), oldName);
+        boolean oldFileDeleted = files.delete(area.worldName(), oldName);
         eraseArea(oldName);
         drawAreas();
         return oldFileDeleted
                 ? new ChangeOutcome.Done()
-                : new ChangeOutcome.DoneButOldFileLeft(area.getWorldName(), oldName);
+                : new ChangeOutcome.DoneButOldFileLeft(area.worldName(), oldName);
     }
 
     /**
@@ -140,9 +140,9 @@ public final class AreaStore {
             return new ChangeOutcome.Gone();
         }
 
-        String oldWorldName = area.getWorldName();
-        WarpPoint oldWarpPoint = area.getWarpPoint();
-        AreaGeometry oldGeometry = area.getGeometry();
+        String oldWorldName = area.worldName();
+        WarpPoint oldWarpPoint = area.warpPoint();
+        AreaGeometry oldGeometry = area.geometry();
         area.place(worldName, warpPoint, geometry);
         try {
             files.write(area);
@@ -151,12 +151,10 @@ public final class AreaStore {
             return new ChangeOutcome.NotWritten(ex);
         }
 
-        boolean oldFileGone = Objects.equals(oldWorldName, worldName) || files.delete(oldWorldName, area.getName());
+        boolean oldFileGone = Objects.equals(oldWorldName, worldName) || files.delete(oldWorldName, area.name());
         // The marker's id doesn't change, so this replaces it even in another world
         drawAreas();
-        return oldFileGone
-                ? new ChangeOutcome.Done()
-                : new ChangeOutcome.DoneButOldFileLeft(oldWorldName, area.getName());
+        return oldFileGone ? new ChangeOutcome.Done() : new ChangeOutcome.DoneButOldFileLeft(oldWorldName, area.name());
     }
 
     public ChangeOutcome edit(Area area, AreaDetails details) {
@@ -187,7 +185,7 @@ public final class AreaStore {
             return Optional.of(exact);
         }
         return areas.values().stream()
-                .filter(area -> area.getName().equalsIgnoreCase(name))
+                .filter(area -> area.name().equalsIgnoreCase(name))
                 .findFirst();
     }
 
@@ -196,7 +194,7 @@ public final class AreaStore {
         if (!VALID_NAME.matcher(name).matches()) {
             return Optional.of("'" + name + "' isn't a valid Area name. Use only letters, digits and _ - . +");
         }
-        return find(name).map(area -> "Area " + area.getName() + " already has that name");
+        return find(name).map(area -> "Area " + area.name() + " already has that name");
     }
 
     /** A suggested Area name, with what its tooltip shows about the Area. */
@@ -210,8 +208,8 @@ public final class AreaStore {
     public List<Suggestion> suggest(String typed) {
         String search = typed.toLowerCase(Locale.ROOT);
         return areas.values().stream()
-                .filter(area -> anySegmentStartsWith(area.getName(), search))
-                .map(area -> new Suggestion(area.getName(), area.details().title(), area.getShape(), !area.isEnabled()))
+                .filter(area -> anySegmentStartsWith(area.name(), search))
+                .map(area -> new Suggestion(area.name(), area.details().title(), area.shape(), !area.isEnabled()))
                 .toList();
     }
 
@@ -235,7 +233,7 @@ public final class AreaStore {
 
     /** Gives the Area {@code name}, keeping it under that name in the store. */
     private void giveName(Area area, String name) {
-        areas.remove(area.getName());
+        areas.remove(area.name());
         area.setName(name);
         areas.put(name, area);
     }
@@ -245,7 +243,7 @@ public final class AreaStore {
      * but a delete or a reload drops it.
      */
     private boolean isCurrent(Area area) {
-        return areas.get(area.getName()) == area;
+        return areas.get(area.name()) == area;
     }
 
     private void drawWebMap() {
@@ -253,7 +251,7 @@ public final class AreaStore {
         areas.values().stream()
                 .filter(area -> !isInLoadedWorld(area))
                 .forEach(area -> logger.warning(
-                        "Area " + area.getName() + " isn't drawn on the Web map because its world isn't loaded."));
+                        "Area " + area.name() + " isn't drawn on the Web map because its world isn't loaded."));
         drawAreas();
     }
 
@@ -264,11 +262,11 @@ public final class AreaStore {
     private void drawAreas() {
         List<Area> drawn = areas.values().stream().filter(this::isInLoadedWorld).toList();
         drawn.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, drawn)));
-        areas.values().stream().filter(area -> !isInLoadedWorld(area)).forEach(area -> eraseArea(area.getName()));
+        areas.values().stream().filter(area -> !isInLoadedWorld(area)).forEach(area -> eraseArea(area.name()));
     }
 
     private boolean isInLoadedWorld(Area area) {
-        return worldLoaded.test(area.getWorldName());
+        return worldLoaded.test(area.worldName());
     }
 
     private void eraseArea(String areaName) {
