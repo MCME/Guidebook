@@ -16,13 +16,9 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
-import java.util.Objects;
-
 /**
  * An Area, made with {@link #create} or read from its file by the Area file adapter. Its Shape, world and Warp point
  * are plain values, which a move can change; its world is named, and needn't be loaded.
- *
- * @author Eriol_Eandur
  */
 public final class InfoArea {
 
@@ -35,21 +31,10 @@ public final class InfoArea {
 
     private String areaName;
 
-    private boolean status;
-
-    private String title;
-    private String subtitle;
-    private boolean showTitle;
-    private boolean showBossBar;
-
-    private String description = "";
+    private AreaDetails details = new AreaDetails(false, "", "", false, "", true);
 
     private InfoArea(String areaName) {
         this.areaName = areaName;
-
-        setTitle("");
-        subtitle = "";
-        status = true;
     }
 
     /** A new Area filling {@code geometry} in the world {@code worldName}, with its Warp point at {@code warpPoint}. */
@@ -113,65 +98,37 @@ public final class InfoArea {
         return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), LEAVE_DISTANCE);
     }
 
-    public boolean isEnabled() {
-        return status;
+    /** The Area's Title, Subtitle, Description and switches, as one value. */
+    public AreaDetails getDetails() {
+        return details;
     }
 
     void setDetails(AreaDetails details) {
-        setShowTitle(details.showTitle());
-        setTitle(details.title());
-        setSubtitle(details.subtitle());
-        setShowBossBar(details.showBossBar());
-        setDescription(details.description());
-        status = details.enabled();
+        this.details = details;
     }
 
-    void setDescription(String description) {
-        this.description = description;
+    public boolean isEnabled() {
+        return details.enabled();
     }
 
     public String getTitle() {
-        return title;
-    }
-
-    final void setTitle(String newTitle) {
-        /*Objective obj = scoreboard.getObjective(newTitle);
-        if(obj!=null) {
-            obj.unregister();
-        }
-        Objective objective = scoreboard.registerNewObjective(newTitle, "dummy");
-        objective.getScore("dummy").setScore(0);
-        objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);*/
-        // An older file can hold an empty Title or Subtitle as null
-        title = Objects.requireNonNullElse(newTitle, "");
-    }
-
-    public String getDescription() {
-        return description;
+        return details.title();
     }
 
     public String getSubtitle() {
-        return subtitle;
+        return details.subtitle();
     }
 
-    void setSubtitle(String subtitle) {
-        this.subtitle = Objects.requireNonNullElse(subtitle, "");
+    public String getDescription() {
+        return details.description();
     }
 
     public boolean isShowTitle() {
-        return showTitle;
-    }
-
-    void setShowTitle(boolean showTitle) {
-        this.showTitle = showTitle;
+        return details.showTitle();
     }
 
     public boolean isShowBossBar() {
-        return showBossBar;
-    }
-
-    void setShowBossBar(boolean showBossBar) {
-        this.showBossBar = showBossBar;
+        return details.showBossBar();
     }
 
     public String getName() {

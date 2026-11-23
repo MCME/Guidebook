@@ -5,16 +5,4 @@ package com.mcmiddleearth.guidebook.data;
  * Description is as stored.
  */
 public record AreaDetails(
-        boolean showTitle, String title, String subtitle, boolean showBossBar, String description, boolean enabled) {
-
-    /** The details the Area has now. */
-    public static AreaDetails of(InfoArea area) {
-        return new AreaDetails(
-                area.isShowTitle(),
-                area.getTitle(),
-                area.getSubtitle(),
-                area.isShowBossBar(),
-                area.getDescription(),
-                area.isEnabled());
-    }
-}
+        boolean showTitle, String title, String subtitle, boolean showBossBar, String description, boolean enabled) {}

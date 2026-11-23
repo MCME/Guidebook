@@ -53,7 +53,7 @@ class AreaFileReadTest {
         assertEquals(geometry, area.getGeometry());
         assertEquals(WORLD, area.getWorldName());
         assertEquals(warpPoint, area.getWarpPoint());
-        assertEquals(EDORAS_TEXT, AreaDetails.of(area));
+        assertEquals(EDORAS_TEXT, area.getDetails());
     }
 
     @Test
@@ -103,7 +103,7 @@ class AreaFileReadTest {
             assertEquals(written.getGeometry(), read.getGeometry(), shape.toString());
             assertEquals(WORLD, read.getWorldName());
             assertEquals(new WarpPoint(10, 64, -4, -135.75f, 45.5f), read.getWarpPoint());
-            assertEquals(EDORAS_TEXT, AreaDetails.of(read));
+            assertEquals(EDORAS_TEXT, read.getDetails());
         }
     }
 
@@ -151,6 +151,26 @@ class AreaFileReadTest {
         assertTrue(
                 loaded.problems().getFirst().contains("edoras"),
                 loaded.problems().getFirst());
+    }
+
+    @Test
+    void aFileWithATitleButNoSubtitleLoadsWithAnEmptySubtitle() throws IOException {
+        Path worldFolder = dataFolder.resolve(WORLD);
+        Files.createDirectories(worldFolder);
+        Files.writeString(worldFolder.resolve("edoras.yml"), """
+                world: middle-earth
+                locationX: 100
+                locationY: 64
+                locationZ: -200
+                radius: 10
+                title: Edoras
+                minimessage: true
+                """);
+
+        InfoArea area = onlyArea(new AreaFolder(dataFolder.toFile()).loadAll());
+
+        assertEquals("Edoras", area.getTitle());
+        assertEquals("", area.getSubtitle());
     }
 
     private Map<String, Object> sampleValues(String sample) throws IOException {

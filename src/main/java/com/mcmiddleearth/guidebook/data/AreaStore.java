@@ -164,7 +164,7 @@ public final class AreaStore {
             return new ChangeOutcome.Gone();
         }
 
-        AreaDetails oldDetails = AreaDetails.of(area);
+        AreaDetails oldDetails = area.getDetails();
         area.setDetails(details);
         try {
             files.write(area);

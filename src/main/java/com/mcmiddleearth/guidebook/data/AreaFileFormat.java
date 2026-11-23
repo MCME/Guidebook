@@ -83,7 +83,8 @@ final class AreaFileFormat {
         return new AreaDetails(
                 file.getBoolean("showTitle"),
                 file.getString("title"),
-                file.getString("subtitle"),
+                // A file can hold a Title without a Subtitle
+                file.getString("subtitle", ""),
                 // Stored under its old name, from when it was a scoreboard
                 file.getBoolean("showScoreboard"),
                 description,
