@@ -31,27 +31,20 @@ public final class PlacementCheck {
     /** The block the staff member placing the Area stands on, which becomes its Warp point. */
     public record StaffPosition(String world, int x, int y, int z) {}
 
-    /** Checks a placement for a new Area. */
-    public static List<PlacementFinding> check(Proposal proposal, StaffPosition staff, Collection<InfoArea> areas) {
-        return check(proposal, staff, areas, Optional.empty());
-    }
-
     /**
      * Checks a placement.
      *
-     * @param areas the existing Areas
-     * @param movedAreaName the Area being moved, if this is a move, which is never compared with itself
+     * @param others the Areas the placement mustn't overlap: every Area but the one being placed
      * @return the findings, in the order the dialog shows them
      */
-    public static List<PlacementFinding> check(
-            Proposal proposal, StaffPosition staff, Collection<InfoArea> areas, Optional<String> movedAreaName) {
+    public static List<PlacementFinding> check(Proposal proposal, StaffPosition staff, Collection<InfoArea> others) {
         List<PlacementFinding> findings = new ArrayList<>();
         if (!proposal.world().equals(staff.world())) {
             findings.add(new PlacementFinding.AnotherWorld(proposal.world(), staff.world()));
         }
         findings.addAll(shapeFindings(proposal.geometry()));
         outside(proposal, staff).ifPresent(findings::add);
-        AreaOverlap.overlapping(proposal, areas, movedAreaName).ifPresent(findings::add);
+        AreaOverlap.overlapping(proposal, others).ifPresent(findings::add);
         return findings;
     }
 
@@ -69,15 +62,11 @@ public final class PlacementCheck {
      * {@code maxRadius}. A larger sphere holds every block of a smaller one, so once a radius overlaps, every larger
      * one does too.
      *
-     * @param movedAreaName the Area being moved, if this is a move, which is never compared with itself
+     * @param others the Areas the sphere mustn't overlap: every Area but the one being placed
      */
     public static SphereClearance sphereClearance(
-            StaffPosition staff,
-            Collection<InfoArea> areas,
-            Optional<String> movedAreaName,
-            int minRadius,
-            int maxRadius) {
-        if (overlapped(staff, areas, movedAreaName, maxRadius).isEmpty()) {
+            StaffPosition staff, Collection<InfoArea> others, int minRadius, int maxRadius) {
+        if (overlapped(staff, others, maxRadius).isEmpty()) {
             return new SphereClearance(maxRadius, List.of());
         }
         // Binary search for the smallest overlapping radius, which is somewhere in low to high
@@ -85,19 +74,18 @@ public final class PlacementCheck {
         int high = maxRadius;
         while (low < high) {
             int middle = (low + high) / 2;
-            if (overlapped(staff, areas, movedAreaName, middle).isEmpty()) {
+            if (overlapped(staff, others, middle).isEmpty()) {
                 low = middle + 1;
             } else {
                 high = middle;
             }
         }
         int largestClear = low == minRadius ? 0 : low - 1;
-        return new SphereClearance(largestClear, overlapped(staff, areas, movedAreaName, low));
+        return new SphereClearance(largestClear, overlapped(staff, others, low));
     }
 
-    private static List<String> overlapped(
-            StaffPosition staff, Collection<InfoArea> areas, Optional<String> movedAreaName, int radius) {
-        return AreaOverlap.overlapping(Proposal.sphereAround(staff, radius), areas, movedAreaName)
+    private static List<String> overlapped(StaffPosition staff, Collection<InfoArea> others, int radius) {
+        return AreaOverlap.overlapping(Proposal.sphereAround(staff, radius), others)
                 .map(PlacementFinding.Overlap::areaNames)
                 .orElse(List.of());
     }

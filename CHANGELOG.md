@@ -48,6 +48,8 @@ see the GitHub history.
 - `/guidebook warp` to an Area whose world isn't loaded says so, instead of failing.
 - Right after `/guidebook create` or `/guidebook move`, an Area's Warp point, and a sphere's centre,
   sit on whole blocks, as they already did after a `/guidebook reload`.
+- Moving an Area checks it for Overlap against every other Area, including one whose name differs
+  from it only in case. Before, the Move dialog skipped both.
 
 ## [2.0.1] - 2026-10-20
 

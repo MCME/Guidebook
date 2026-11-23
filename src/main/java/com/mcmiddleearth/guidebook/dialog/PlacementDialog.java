@@ -19,6 +19,7 @@ import io.papermc.paper.registry.data.dialog.input.DialogInput;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.IntPredicate;
@@ -80,9 +81,9 @@ public final class PlacementDialog {
         /** Tells the player that Cancel changed nothing. */
         void sendCancelled(Player player);
 
-        /** For a move, the Area being moved, which the overlap check skips. */
-        default Optional<String> movedAreaName() {
-            return Optional.empty();
+        /** The Areas the placement mustn't overlap, out of {@code all}: every Area but the one being placed. */
+        default Collection<InfoArea> others(Collection<InfoArea> all) {
+            return all;
         }
 
         /** For a move, where the Area is now, shown above the new placement. */
@@ -200,9 +201,10 @@ public final class PlacementDialog {
             GuidebookMessages.sendInfo(player, GuidebookMessages.area(areaName()), " was not moved.");
         }
 
+        // By the Area itself, so another Area whose name differs only in case is still checked
         @Override
-        public Optional<String> movedAreaName() {
-            return Optional.of(areaName());
+        public Collection<InfoArea> others(Collection<InfoArea> all) {
+            return all.stream().filter(other -> other != area).toList();
         }
 
         @Override
@@ -335,12 +337,8 @@ public final class PlacementDialog {
      */
     private static void showSphere(Player player, Purpose purpose) {
         PlacementCheck.StaffPosition staff = positionOf(player);
-        PlacementCheck.SphereClearance clearance = PlacementCheck.sphereClearance(
-                staff,
-                GuidebookPlugin.getPluginInstance().getAreaStore().all(),
-                purpose.movedAreaName(),
-                RADIUS_MIN,
-                RADIUS_MAX);
+        PlacementCheck.SphereClearance clearance =
+                PlacementCheck.sphereClearance(staff, others(purpose), RADIUS_MIN, RADIUS_MAX);
         int clear = clearance.largestClearRadius();
 
         List<DialogBody> body = new ArrayList<>();
@@ -426,11 +424,11 @@ public final class PlacementDialog {
     }
 
     private static List<PlacementFinding> check(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
-        return PlacementCheck.check(
-                proposal,
-                positionOf(player),
-                GuidebookPlugin.getPluginInstance().getAreaStore().all(),
-                purpose.movedAreaName());
+        return PlacementCheck.check(proposal, positionOf(player), others(purpose));
+    }
+
+    private static Collection<InfoArea> others(Purpose purpose) {
+        return purpose.others(GuidebookPlugin.getPluginInstance().getAreaStore().all());
     }
 
     private static boolean hasBlocking(List<PlacementFinding> findings) {

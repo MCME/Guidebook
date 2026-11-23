@@ -3,7 +3,6 @@ package com.mcmiddleearth.guidebook.data;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** How far Sphere around me can reach before it overlaps another Area, shown before the staff member picks a radius. */
@@ -18,11 +17,7 @@ class PlacementCheckSphereClearanceTest {
     }
 
     private static PlacementCheck.SphereClearance clearance(List<InfoArea> areas) {
-        return clearance(areas, Optional.empty());
-    }
-
-    private static PlacementCheck.SphereClearance clearance(List<InfoArea> areas, Optional<String> moved) {
-        return PlacementCheck.sphereClearance(STAFF, areas, moved, 1, 200);
+        return PlacementCheck.sphereClearance(STAFF, areas, 1, 200);
     }
 
     @Test
@@ -54,12 +49,5 @@ class PlacementCheckSphereClearanceTest {
     @Test
     void anAreaJustBeyondTheLargestRadiusLeavesItClear() {
         assertEquals(new PlacementCheck.SphereClearance(200, List.of()), clearance(List.of(blockEastBy("far", 201))));
-    }
-
-    @Test
-    void theAreaBeingMovedIsIgnored() {
-        assertEquals(
-                new PlacementCheck.SphereClearance(200, List.of()),
-                clearance(List.of(blockEastBy("gate", 30)), Optional.of("gate")));
     }
 }

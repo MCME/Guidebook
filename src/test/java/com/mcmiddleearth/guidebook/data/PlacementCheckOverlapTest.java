@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,13 +27,9 @@ class PlacementCheckOverlapTest {
 
     /** The names the check reports overlapping when {@code proposed} is placed among {@code areas}, or none. */
     private static List<String> overlapping(AreaGeometry proposed, InfoArea... areas) {
-        return overlapping(proposed, Optional.empty(), areas);
-    }
-
-    private static List<String> overlapping(AreaGeometry proposed, Optional<String> moved, InfoArea... areas) {
         // The staff member stands in the proposal's world, so Another world never applies
         PlacementCheck.StaffPosition staff = new PlacementCheck.StaffPosition(WORLD, 0, 64, 0);
-        return PlacementCheck.check(new PlacementCheck.Proposal(WORLD, proposed), staff, List.of(areas), moved).stream()
+        return PlacementCheck.check(new PlacementCheck.Proposal(WORLD, proposed), staff, List.of(areas)).stream()
                 .filter(PlacementFinding.Overlap.class::isInstance)
                 .map(PlacementFinding.Overlap.class::cast)
                 .findFirst()
@@ -273,17 +268,6 @@ class PlacementCheckOverlapTest {
         InfoArea elsewhere = TestAreas.area("moria-gate", "moria", cuboid(0, 60, 0, 20, 80, 20));
 
         assertEquals(List.of(), overlapping(cuboid(0, 60, 0, 20, 80, 20), elsewhere));
-    }
-
-    @Test
-    void theAreaBeingMovedNeverOverlapsItself() {
-        assertEquals(
-                List.of("bree-town"),
-                overlapping(
-                        cuboid(0, 60, 0, 20, 80, 20),
-                        Optional.of("bree-inn"),
-                        area("bree-inn", cuboid(5, 60, 5, 25, 80, 25)),
-                        area("bree-town", cuboid(-50, 0, -50, 50, 100, 50))));
     }
 
     @Test
