@@ -1,6 +1,5 @@
 package com.mcmiddleearth.guidebook.data;
 
-import com.mcmiddleearth.guidebook.util.DevUtil;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -32,7 +31,6 @@ public final class AreaFolder implements AreaFiles {
         List<String> problems = new ArrayList<>(outcome.problems());
         for (AreaFileLoader.LoadedArea loaded : outcome.areas()) {
             String areaName = loaded.name();
-            DevUtil.log("Load area " + areaName);
             switch (AreaFileFormat.read(areaName, loaded.config())) {
                 case AreaFileFormat.Read.Found(InfoArea area) -> areas.add(area);
                 case AreaFileFormat.Read.Unreadable(String why) ->
@@ -46,8 +44,6 @@ public final class AreaFolder implements AreaFiles {
     @Override
     public void write(InfoArea area) throws IOException {
         final String areaName = area.getName();
-        DevUtil.log("SaveData " + areaName);
-
         FileConfiguration config = new YamlConfiguration();
         AreaFileFormat.write(area, config);
 

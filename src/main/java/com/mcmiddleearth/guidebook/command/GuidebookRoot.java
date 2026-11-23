@@ -9,7 +9,6 @@ import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.WorldPoint;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
-import com.mcmiddleearth.guidebook.util.DevUtil;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import java.io.IOException;
@@ -22,8 +21,6 @@ import java.util.logging.Logger;
 import net.strokkur.commands.Command;
 import net.strokkur.commands.DefaultExecutes;
 import net.strokkur.commands.Executes;
-import net.strokkur.commands.Literal;
-import net.strokkur.commands.arguments.IntArg;
 import net.strokkur.commands.arguments.StringArg;
 import net.strokkur.commands.paper.Description;
 import net.strokkur.commands.paper.Executor;
@@ -45,7 +42,7 @@ class GuidebookRoot {
     // lands on the node where its path ends, so an empty path would put it on the /guidebook root and lock
     // guidebook.user players out of on, off and help. See docs/adr/0001-commands-via-strokkcommands.md
 
-    // Runs for bare /guidebook and every incomplete command, such as "move" or "dev level". The root needs
+    // Runs for bare /guidebook and every incomplete command, such as "move" or "list". The root needs
     // guidebook.user or guidebook.staff, and the help is filtered to what the sender may run
     @DefaultExecutes
     void help(CommandSender sender, List<String> args) {
@@ -233,43 +230,5 @@ class GuidebookRoot {
     void reload(CommandSender sender) {
         GuidebookPlugin.getPluginInstance().getAreaStore().reload();
         GuidebookMessages.sendInfo(sender, "All Guidebook areas reloaded from file.");
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void dev(CommandSender sender) {
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devConsole(
-            CommandSender sender,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("console") String console,
-            boolean output) {
-        DevUtil.setConsoleOutput(output);
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devLevel(
-            CommandSender sender,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("level") String levelLiteral,
-            @IntArg int level) {
-        DevUtil.setLevel(level);
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devWatchOrUnwatch(
-            CommandSender sender, @Executor Player player, @Literal({"watch", "unwatch"}) String action) {
-        if (action.equals("watch")) {
-            DevUtil.add(player);
-        } else {
-            DevUtil.remove(player);
-        }
-        GuidebookDev.showState(sender);
     }
 }
