@@ -73,14 +73,14 @@ public final class EditDialog {
             String description,
             boolean enabled) {
 
-        static Values of(InfoArea area) {
+        static Values of(AreaDetails details) {
             return new Values(
-                    area.isShowTitle(),
-                    area.getTitle(),
-                    area.getSubtitle(),
-                    area.isShowBossBar(),
-                    area.getDescription(),
-                    area.isEnabled());
+                    details.showTitle(),
+                    details.title(),
+                    details.subtitle(),
+                    details.showBossBar(),
+                    details.description(),
+                    details.enabled());
         }
 
         static Values of(DialogResponseView response) {
@@ -115,7 +115,7 @@ public final class EditDialog {
     }
 
     public static void open(Player player, InfoArea area) {
-        show(player, area, Mode.EDIT, Values.of(area), null);
+        show(player, area, Mode.EDIT, Values.of(area.details()), null);
     }
 
     /**
@@ -123,7 +123,7 @@ public final class EditDialog {
      * or written until Create is pressed.
      */
     public static void openToCreate(Player player, InfoArea area) {
-        show(player, area, Mode.CREATE, Values.of(area).forNewArea(), null);
+        show(player, area, Mode.CREATE, Values.of(area.details()).forNewArea(), null);
     }
 
     /** Whether the dialog changes a stored Area, or creates one that the Placement dialog has built. */

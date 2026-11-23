@@ -48,7 +48,7 @@ public final class ConfirmDialog {
      */
     public static void openToDelete(Player player, InfoArea area, Consumer<Player> cancelled) {
         String areaName = area.getName();
-        String title = area.getTitle();
+        String title = area.details().title();
         List<DialogBody> body = List.of(
                 DialogBody.plainMessage(Component.text("Do you really want to ")
                         .append(Component.text("delete", NamedTextColor.RED))

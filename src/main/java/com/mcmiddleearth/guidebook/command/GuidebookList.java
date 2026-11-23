@@ -94,9 +94,9 @@ final class GuidebookList {
 
     // The Title as players see it, the Shape with its dimensions, and Enabled or Disabled
     private static Component nameHover(InfoArea area) {
-        Component title = AreaText.isVisiblyBlank(area.getTitle())
+        Component title = AreaText.isVisiblyBlank(area.details().title())
                 ? Component.text("(no Title)", NamedTextColor.GRAY)
-                : AreaText.render(area.getTitle());
+                : AreaText.render(area.details().title());
         return Component.text()
                 .append(title)
                 .append(Component.newline())

@@ -47,27 +47,27 @@ class WatchmanTest {
     }
 
     void setTitle(InfoArea area, String title) {
-        AreaDetails d = area.getDetails();
+        AreaDetails d = area.details();
         edit(area, new AreaDetails(d.showTitle(), title, d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
     }
 
     void setSubtitle(InfoArea area, String subtitle) {
-        AreaDetails d = area.getDetails();
+        AreaDetails d = area.details();
         edit(area, new AreaDetails(d.showTitle(), d.title(), subtitle, d.showBossBar(), d.description(), d.enabled()));
     }
 
     void setShowTitle(InfoArea area, boolean showTitle) {
-        AreaDetails d = area.getDetails();
+        AreaDetails d = area.details();
         edit(area, new AreaDetails(showTitle, d.title(), d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
     }
 
     void setShowBossBar(InfoArea area, boolean showBossBar) {
-        AreaDetails d = area.getDetails();
+        AreaDetails d = area.details();
         edit(area, new AreaDetails(d.showTitle(), d.title(), d.subtitle(), showBossBar, d.description(), d.enabled()));
     }
 
     void setEnabled(InfoArea area, boolean enabled) {
-        AreaDetails d = area.getDetails();
+        AreaDetails d = area.details();
         edit(area, new AreaDetails(d.showTitle(), d.title(), d.subtitle(), d.showBossBar(), d.description(), enabled));
     }
 

@@ -53,7 +53,7 @@ class AreaFileReadTest {
         assertEquals(geometry, area.getGeometry());
         assertEquals(WORLD, area.getWorldName());
         assertEquals(warpPoint, area.getWarpPoint());
-        assertEquals(EDORAS_TEXT, area.getDetails());
+        assertEquals(EDORAS_TEXT, area.details());
     }
 
     @Test
@@ -103,7 +103,7 @@ class AreaFileReadTest {
             assertEquals(written.getGeometry(), read.getGeometry(), shape.toString());
             assertEquals(WORLD, read.getWorldName());
             assertEquals(new WarpPoint(10, 64, -4, -135.75f, 45.5f), read.getWarpPoint());
-            assertEquals(EDORAS_TEXT, read.getDetails());
+            assertEquals(EDORAS_TEXT, read.details());
         }
     }
 
@@ -169,8 +169,8 @@ class AreaFileReadTest {
 
         InfoArea area = onlyArea(new AreaFolder(dataFolder.toFile()).loadAll());
 
-        assertEquals("Edoras", area.getTitle());
-        assertEquals("", area.getSubtitle());
+        assertEquals("Edoras", area.details().title());
+        assertEquals("", area.details().subtitle());
     }
 
     @Test
@@ -194,7 +194,7 @@ class AreaFileReadTest {
 
         InfoArea area = onlyArea(new AreaFolder(dataFolder.toFile()).loadAll());
 
-        assertEquals(new AreaDetails(true, "", "Capital of Rohan", true, "Welcome", false), area.getDetails());
+        assertEquals(new AreaDetails(true, "", "Capital of Rohan", true, "Welcome", false), area.details());
     }
 
     @Test

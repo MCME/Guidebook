@@ -167,7 +167,7 @@ class AreaStoreTest {
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertSame(edoras, store.find("edoras").orElseThrow());
-        assertEquals(NEW_DETAILS, edoras.getDetails());
+        assertEquals(NEW_DETAILS, edoras.details());
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
         assertEquals("<gold>Edoras", file.getString("title"));
         assertEquals("Golden Hall", file.getString("subtitle"));
@@ -183,7 +183,7 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         store.reload();
         InfoArea edoras = store.find("edoras").orElseThrow();
-        AreaDetails before = edoras.getDetails();
+        AreaDetails before = edoras.details();
         String fileBefore =
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString();
         Marker markerBefore = layer.markerOf("edoras").orElseThrow();
@@ -192,7 +192,7 @@ class AreaStoreTest {
         ChangeOutcome outcome = store.edit(edoras, NEW_DETAILS);
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
-        assertEquals(before, edoras.getDetails());
+        assertEquals(before, edoras.details());
         assertEquals(
                 fileBefore,
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString());
@@ -210,7 +210,7 @@ class AreaStoreTest {
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertEquals("", files.contents("middle-earth", "edoras").orElseThrow().getString("title"));
-        assertEquals("", store.find("edoras").orElseThrow().getTitle());
+        assertEquals("", store.find("edoras").orElseThrow().details().title());
     }
 
     @Test
@@ -236,7 +236,7 @@ class AreaStoreTest {
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertSame(edoras, store.find("edoras").orElseThrow());
-        assertEquals(NEW_DETAILS, edoras.getDetails());
+        assertEquals(NEW_DETAILS, edoras.details());
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
         assertEquals("<gold>Edoras", file.getString("title"));
         assertFalse(file.getBoolean("enabled"));
@@ -260,7 +260,7 @@ class AreaStoreTest {
     void aCreateWhoseNameWasTakenMeanwhileIgnoringCaseWritesNothing() {
         store.reload();
         InfoArea mine = sphereArea("edoras", 0);
-        store.create(sphereArea("Edoras", 100), sphereArea("Edoras", 100).getDetails());
+        store.create(sphereArea("Edoras", 100), sphereArea("Edoras", 100).details());
 
         ChangeOutcome outcome = store.create(mine, NEW_DETAILS);
 

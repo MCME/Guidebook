@@ -106,6 +106,7 @@ final class AreaFileFormat {
         file.set("locationZ", warpPoint.z());
         file.set("locationYaw", warpPoint.yaw());
         file.set("locationPitch", warpPoint.pitch());
+
         switch (area.getGeometry()) {
             case AreaGeometry.Sphere sphere -> file.set("radius", sphere.radius());
             case AreaGeometry.Cuboid cuboid -> {
@@ -123,12 +124,14 @@ final class AreaFileFormat {
                 file.set("maxY", prism.maxY());
             }
         }
-        file.set("description", area.getDescription());
-        file.set("title", area.getTitle());
-        file.set("subtitle", area.getSubtitle());
-        file.set("showScoreboard", area.isShowBossBar());
-        file.set("showTitle", area.isShowTitle());
-        file.set("enabled", area.isEnabled());
+
+        AreaDetails details = area.details();
+        file.set("description", details.description());
+        file.set("title", details.title());
+        file.set("subtitle", details.subtitle());
+        file.set("showScoreboard", details.showBossBar());
+        file.set("showTitle", details.showTitle());
+        file.set("enabled", details.enabled());
         file.set(LegacyMarkupConverter.MARKER, true);
     }
 }

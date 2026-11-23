@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.welcome;
 
+import com.mcmiddleearth.guidebook.data.AreaDetails;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.WorldPoint;
 import com.mcmiddleearth.guidebook.util.AreaText;
@@ -166,11 +167,12 @@ public final class Watchman {
     private void welcome(Player player, InfoArea area) {
         display.show(player, welcomeTo(area));
 
-        if (area.isShowBossBar()) {
-            long delay = area.isShowTitle() ? BOSS_BAR_DELAY_AFTER_TITLE : 0;
+        if (area.details().showBossBar()) {
+            long delay = area.details().showTitle() ? BOSS_BAR_DELAY_AFTER_TITLE : 0;
             later.run(delay, () -> {
                 // Only while still inside, or a player who left during the Title would keep the bar
-                if (area.isShowBossBar() && inside.getOrDefault(area, Set.of()).contains(player.getUniqueId())) {
+                if (area.details().showBossBar()
+                        && inside.getOrDefault(area, Set.of()).contains(player.getUniqueId())) {
                     showBossBar(area, player);
                 }
             });
@@ -178,8 +180,9 @@ public final class Watchman {
     }
 
     private static Welcome welcomeTo(InfoArea area) {
+        AreaDetails details = area.details();
         return new Welcome(
-                area.getName(), area.getTitle(), area.getSubtitle(), area.getDescription(), area.isShowTitle());
+                area.getName(), details.title(), details.subtitle(), details.description(), details.showTitle());
     }
 
     /** Forgets every Area not in {@code kept}, hiding its Boss bar. */
@@ -197,8 +200,8 @@ public final class Watchman {
     /** Hides Boss bars their Areas no longer show, and renames the rest after their Areas' Titles. */
     private void updateBossBars() {
         bossBars.forEach((area, bar) -> {
-            if (area.isShowBossBar()) {
-                bar.name(AreaText.render(area.getTitle()));
+            if (area.details().showBossBar()) {
+                bar.name(AreaText.render(area.details().title()));
             } else {
                 hideBossBar(area);
             }
@@ -208,7 +211,7 @@ public final class Watchman {
     private void showBossBar(InfoArea area, Player player) {
         BossBar bar = bossBars.computeIfAbsent(
                 area, a -> BossBar.bossBar(Component.empty(), 0, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS));
-        bar.name(AreaText.render(area.getTitle()));
+        bar.name(AreaText.render(area.details().title()));
         bossBarViewers.computeIfAbsent(area, a -> new HashMap<>()).put(player.getUniqueId(), player);
         player.showBossBar(bar);
     }

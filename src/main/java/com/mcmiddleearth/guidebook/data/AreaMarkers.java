@@ -55,7 +55,9 @@ public final class AreaMarkers {
 
     private static String label(InfoArea area) {
         // An older file can hold an empty Title, and a marker with no label can't be told apart on hover
-        String title = AreaText.isVisiblyBlank(area.getTitle()) ? area.getName() : AreaText.plainText(area.getTitle());
+        String title = AreaText.isVisiblyBlank(area.details().title())
+                ? area.getName()
+                : AreaText.plainText(area.details().title());
         // Said in words as well as colour, for staff who can't tell the colours apart
         return area.isEnabled() ? title : title + " (Disabled)";
     }
@@ -77,11 +79,12 @@ public final class AreaMarkers {
                 + AreaHtml.escape(area.getName()) + "</div>"
                 + disabledMark
                 + "</div>";
-        String title = orMissing(area.getTitle(), "no Title", "font-size:14px");
-        String subtitle = orMissing(area.getSubtitle(), "no Subtitle", "");
+        AreaDetails details = area.details();
+        String title = orMissing(details.title(), "no Title", "font-size:14px");
+        String subtitle = orMissing(details.subtitle(), "no Subtitle", "");
         String titleLine = "<div style=\"margin:6px 0 8px\">" + title + " " + styled("color:" + MUTED_HEX, "—") + " "
                 + subtitle + "</div>";
-        String description = "<div>" + orMissing(area.getDescription(), "no Description", "") + "</div>";
+        String description = "<div>" + orMissing(details.description(), "no Description", "") + "</div>";
         String edgeHex = hex(area.isEnabled() ? ENABLED_RGB : DISABLED_RGB);
         return "<div style=\"" + POPUP_CSS + ";border-left:4px solid " + edgeHex + "\">" + header + titleLine
                 + description + "</div>";

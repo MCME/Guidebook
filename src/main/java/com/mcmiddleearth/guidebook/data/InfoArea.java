@@ -98,8 +98,8 @@ public final class InfoArea {
         return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), LEAVE_DISTANCE);
     }
 
-    /** The Area's Title, Subtitle, Description and switches, as one value. */
-    public AreaDetails getDetails() {
+    /** What the Area says, and whether it's Enabled. */
+    public AreaDetails details() {
         return details;
     }
 
@@ -109,26 +109,6 @@ public final class InfoArea {
 
     public boolean isEnabled() {
         return details.enabled();
-    }
-
-    public String getTitle() {
-        return details.title();
-    }
-
-    public String getSubtitle() {
-        return details.subtitle();
-    }
-
-    public String getDescription() {
-        return details.description();
-    }
-
-    public boolean isShowTitle() {
-        return details.showTitle();
-    }
-
-    public boolean isShowBossBar() {
-        return details.showBossBar();
     }
 
     public String getName() {

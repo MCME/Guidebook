@@ -164,7 +164,7 @@ public final class AreaStore {
             return new ChangeOutcome.Gone();
         }
 
-        AreaDetails oldDetails = area.getDetails();
+        AreaDetails oldDetails = area.details();
         area.setDetails(details);
         try {
             files.write(area);
@@ -211,7 +211,7 @@ public final class AreaStore {
         String search = typed.toLowerCase(Locale.ROOT);
         return areas.values().stream()
                 .filter(area -> anySegmentStartsWith(area.getName(), search))
-                .map(area -> new Suggestion(area.getName(), area.getTitle(), area.getShape(), !area.isEnabled()))
+                .map(area -> new Suggestion(area.getName(), area.details().title(), area.getShape(), !area.isEnabled()))
                 .toList();
     }
 
