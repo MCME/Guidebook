@@ -4,9 +4,9 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.STAFF;
 import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.ChangeOutcome;
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.WorldPoint;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.ChangeOutcome;
+import com.mcmiddleearth.guidebook.area.WorldPoint;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
 import com.mcmiddleearth.guidebook.text.GuidebookMessages;
@@ -80,7 +80,7 @@ class GuidebookRoot {
 
     @Executes("select")
     @Permission(STAFF)
-    void select(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void select(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         // By name, as the Area's world may not be loaded
         String worldName = area.getWorldName();
         World world = player.getWorld();
@@ -101,7 +101,7 @@ class GuidebookRoot {
 
     @Executes("warp")
     @Permission(STAFF)
-    void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         // By name, as the Area's world may not be loaded
         String worldName = area.getWorldName();
         World world = Bukkit.getWorld(worldName);
@@ -124,14 +124,14 @@ class GuidebookRoot {
 
     @Executes("move")
     @Permission(STAFF)
-    void move(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void move(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         PlacementDialog.openToMove(player, area);
     }
 
     @Executes("edit")
     @Permission(STAFF)
     void editHere(@Executor Player player) {
-        List<InfoArea> here = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
+        List<Area> here = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
                 .filter(area -> area.isInside(WorldPoint.from(player.getLocation())))
                 .toList();
         if (here.size() == 1) {
@@ -142,7 +142,7 @@ class GuidebookRoot {
         } else {
             List<Object> parts = new ArrayList<>();
             parts.add("You're standing in more than one Guidebook area (");
-            here.stream().map(InfoArea::getName).sorted().forEach(name -> {
+            here.stream().map(Area::getName).sorted().forEach(name -> {
                 if (parts.size() > 1) {
                     parts.add(", ");
                 }
@@ -155,7 +155,7 @@ class GuidebookRoot {
 
     @Executes("edit")
     @Permission(STAFF)
-    void edit(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void edit(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         EditDialog.open(player, area);
     }
 
@@ -163,7 +163,7 @@ class GuidebookRoot {
     @Permission(STAFF)
     void rename(
             CommandSender sender,
-            @CustomArg(AreaArgument.class) InfoArea area,
+            @CustomArg(AreaArgument.class) Area area,
             @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String newName) {
         String oldName = area.getName();
         ChangeOutcome outcome =
@@ -206,7 +206,7 @@ class GuidebookRoot {
 
     @Executes("delete")
     @Permission(STAFF)
-    void delete(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
+    void delete(CommandSender sender, @CustomArg(AreaArgument.class) Area area) {
         GuidebookDelete.delete(sender, area);
     }
 

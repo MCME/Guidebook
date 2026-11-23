@@ -1,12 +1,12 @@
 package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.AreaGeometry;
-import com.mcmiddleearth.guidebook.data.ChangeOutcome;
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PlacementCheck;
-import com.mcmiddleearth.guidebook.data.PlacementFinding;
-import com.mcmiddleearth.guidebook.data.WarpPoint;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.AreaGeometry;
+import com.mcmiddleearth.guidebook.area.ChangeOutcome;
+import com.mcmiddleearth.guidebook.area.PlacementCheck;
+import com.mcmiddleearth.guidebook.area.PlacementFinding;
+import com.mcmiddleearth.guidebook.area.WarpPoint;
 import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.dialog.Dialog;
@@ -82,7 +82,7 @@ public final class PlacementDialog {
         void sendCancelled(Player player);
 
         /** The Areas the placement mustn't overlap, out of {@code all}: every Area but the one being placed. */
-        default Collection<InfoArea> others(Collection<InfoArea> all) {
+        default Collection<Area> others(Collection<Area> all) {
             return all;
         }
 
@@ -143,7 +143,7 @@ public final class PlacementDialog {
         // Built from where the player is now, but only added once they press Create in the Edit dialog
         @Override
         public void place(Player player, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
-            EditDialog.openToCreate(player, InfoArea.create(areaName, worldName, warpPoint, geometry));
+            EditDialog.openToCreate(player, Area.create(areaName, worldName, warpPoint, geometry));
         }
     }
 
@@ -151,7 +151,7 @@ public final class PlacementDialog {
      * Moving {@code area}. Pressing a Move button is the confirmation: the Area takes the new Shape, and its Warp point
      * becomes where the player stands.
      */
-    private record Move(InfoArea area) implements Purpose {
+    private record Move(Area area) implements Purpose {
 
         // Read when needed, so a rename while the dialog is open is followed
         @Override
@@ -203,7 +203,7 @@ public final class PlacementDialog {
 
         // By the Area itself, so another Area whose name differs only in case is still checked
         @Override
-        public Collection<InfoArea> others(Collection<InfoArea> all) {
+        public Collection<Area> others(Collection<Area> all) {
             return all.stream().filter(other -> other != area).toList();
         }
 
@@ -251,7 +251,7 @@ public final class PlacementDialog {
     }
 
     /** Opens the dialog that moves {@code area}, showing where it is now above the new placement. */
-    public static void openToMove(Player player, InfoArea area) {
+    public static void openToMove(Player player, Area area) {
         show(player, new Move(area), List.of());
     }
 
@@ -427,7 +427,7 @@ public final class PlacementDialog {
         return PlacementCheck.check(proposal, positionOf(player), others(purpose));
     }
 
-    private static Collection<InfoArea> others(Purpose purpose) {
+    private static Collection<Area> others(Purpose purpose) {
         return purpose.others(GuidebookPlugin.getPluginInstance().getAreaStore().all());
     }
 

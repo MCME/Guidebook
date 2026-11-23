@@ -5,7 +5,7 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.area.Area;
 import com.mcmiddleearth.guidebook.dialog.ConfirmDialog;
 import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import org.bukkit.command.CommandSender;
@@ -20,7 +20,7 @@ final class GuidebookDelete {
 
     private GuidebookDelete() {}
 
-    static void delete(CommandSender sender, InfoArea area) {
+    static void delete(CommandSender sender, Area area) {
         // The confirmation is a Dialog, which only a player can answer
         if (!(sender instanceof Player player)) {
             GuidebookMessages.sendError(

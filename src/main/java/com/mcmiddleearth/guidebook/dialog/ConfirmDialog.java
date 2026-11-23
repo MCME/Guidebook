@@ -1,8 +1,8 @@
 package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.ChangeOutcome;
-import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.ChangeOutcome;
 import com.mcmiddleearth.guidebook.text.AreaText;
 import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import io.papermc.paper.dialog.Dialog;
@@ -34,7 +34,7 @@ public final class ConfirmDialog {
     /**
      * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and Cancel says it was not deleted.
      */
-    public static void openToDelete(Player player, InfoArea area) {
+    public static void openToDelete(Player player, Area area) {
         openToDelete(
                 player,
                 area,
@@ -46,7 +46,7 @@ public final class ConfirmDialog {
      * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and {@code cancelled} runs on Cancel
      * or Esc, so a dialog that opened the confirmation can reopen itself.
      */
-    public static void openToDelete(Player player, InfoArea area, Consumer<Player> cancelled) {
+    public static void openToDelete(Player player, Area area, Consumer<Player> cancelled) {
         String areaName = area.getName();
         String title = area.details().title();
         List<DialogBody> body = List.of(
@@ -89,7 +89,7 @@ public final class ConfirmDialog {
     }
 
     /** Deletes {@code area} through the store, which refuses if it was deleted or reloaded meanwhile. */
-    private static void delete(Audience audience, InfoArea area) {
+    private static void delete(Audience audience, Area area) {
         if (!(audience instanceof Player player)) {
             return;
         }

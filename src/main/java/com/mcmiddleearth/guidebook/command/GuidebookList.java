@@ -6,7 +6,7 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.area.Area;
 import com.mcmiddleearth.guidebook.text.AreaText;
 import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import java.util.Comparator;
@@ -38,9 +38,9 @@ final class GuidebookList {
      */
     static void send(CommandSender sender, String filter, int page) {
         String search = filter.toLowerCase(Locale.ROOT);
-        List<InfoArea> areas = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
+        List<Area> areas = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
                 .filter(area -> area.getName().toLowerCase(Locale.ROOT).contains(search))
-                .sorted(Comparator.comparing(InfoArea::getName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing(Area::getName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
         if (areas.isEmpty()) {
             GuidebookMessages.sendInfo(
@@ -71,7 +71,7 @@ final class GuidebookList {
     // ✎ W ⬚ 🗑 ... <name>. The buttons come first so they line up down the page, whatever the names' lengths, and
     // the short indent gives long names room before the line wraps. The button tooltips are short, since a tooltip
     // covers the name to its right
-    private static Component areaLine(InfoArea area) {
+    private static Component areaLine(Area area) {
         String name = area.getName();
         Component nameText = Component.text(name, area.isEnabled() ? NamedTextColor.BLUE : NamedTextColor.GRAY)
                 .hoverEvent(HoverEvent.showText(nameHover(area)));
@@ -93,7 +93,7 @@ final class GuidebookList {
     }
 
     // The Title as players see it, the Shape with its dimensions, and Enabled or Disabled
-    private static Component nameHover(InfoArea area) {
+    private static Component nameHover(Area area) {
         Component title = AreaText.isVisiblyBlank(area.details().title())
                 ? Component.text("(no Title)", NamedTextColor.GRAY)
                 : AreaText.render(area.details().title());
@@ -110,7 +110,7 @@ final class GuidebookList {
     }
 
     // Such as "■ Cuboid, 21 × 30 blocks, from y 60 to 69"
-    private static String shapeText(InfoArea area) {
+    private static String shapeText(Area area) {
         return area.getShape().symbol() + " " + capitalised(area.getGeometry().describe());
     }
 

@@ -16,10 +16,10 @@
  */
 package com.mcmiddleearth.guidebook;
 
+import com.mcmiddleearth.guidebook.area.AreaFolder;
+import com.mcmiddleearth.guidebook.area.AreaMarkers;
+import com.mcmiddleearth.guidebook.area.AreaStore;
 import com.mcmiddleearth.guidebook.command.GuidebookRootBrigadier;
-import com.mcmiddleearth.guidebook.data.AreaFolder;
-import com.mcmiddleearth.guidebook.data.AreaMarkers;
-import com.mcmiddleearth.guidebook.data.AreaStore;
 import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.webmap.NoWebMap;
 import com.mcmiddleearth.guidebook.webmap.WebMap;

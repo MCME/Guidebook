@@ -1,8 +1,8 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.AreaStore;
-import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.AreaStore;
 import com.mcmiddleearth.guidebook.text.AreaText;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -21,13 +21,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
  * An existing Area, typed as its name and found by {@link AreaStore#find}. An unknown name fails when the command is
  * parsed.
  */
-final class AreaArgument implements CustomArgumentType.Converted<InfoArea, String> {
+final class AreaArgument implements CustomArgumentType.Converted<Area, String> {
 
     private static final DynamicCommandExceptionType UNKNOWN_AREA = new DynamicCommandExceptionType(name ->
             MessageComponentSerializer.message().serialize(Component.text("No Guidebook area called '" + name + "'")));
 
     @Override
-    public InfoArea convert(String name) throws CommandSyntaxException {
+    public Area convert(String name) throws CommandSyntaxException {
         return GuidebookPlugin.getPluginInstance()
                 .getAreaStore()
                 .find(name)
