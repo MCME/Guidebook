@@ -10,7 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -32,20 +31,16 @@ public final class AreaStore {
 
     private final AreaFiles files;
     private final MarkerLayer webMapLayer;
-    private final Predicate<String> worldLoaded;
     private final Logger logger;
 
     /**
      * Holds no Areas until {@link #reload()}.
      *
-     * @param worldLoaded whether the world of that name is loaded now. An Area whose world isn't has nowhere to be
-     *     drawn on the Web map; it's asked at each drawing, so a world loaded later shows its Areas at the next change
-     * @param logger where load problems and Areas left off the Web map are logged
+     * @param logger where load problems are logged
      */
-    public AreaStore(AreaFiles files, MarkerLayer webMapLayer, Predicate<String> worldLoaded, Logger logger) {
+    public AreaStore(AreaFiles files, MarkerLayer webMapLayer, Logger logger) {
         this.files = files;
         this.webMapLayer = webMapLayer;
-        this.worldLoaded = worldLoaded;
         this.logger = logger;
     }
 
@@ -60,7 +55,8 @@ public final class AreaStore {
         loaded.problems().forEach(logger::severe);
         loaded.areas().forEach(area -> areas.put(area.name(), area));
 
-        drawWebMap();
+        webMapLayer.clear();
+        drawAreas();
     }
 
     /**
@@ -246,27 +242,12 @@ public final class AreaStore {
         return areas.get(area.name()) == area;
     }
 
-    private void drawWebMap() {
-        webMapLayer.clear();
-        areas.values().stream()
-                .filter(area -> !isInLoadedWorld(area))
-                .forEach(area -> logger.warning(
-                        "Area " + area.name() + " isn't drawn on the Web map because its world isn't loaded."));
-        drawAreas();
-    }
-
     /**
      * Draws every Area again, since a change to one can change whether another holds an Area and so is drawn unfilled.
-     * An Area whose world isn't loaded has nowhere to be drawn, so its marker is erased.
      */
     private void drawAreas() {
-        List<Area> drawn = areas.values().stream().filter(this::isInLoadedWorld).toList();
-        drawn.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, drawn)));
-        areas.values().stream().filter(area -> !isInLoadedWorld(area)).forEach(area -> eraseArea(area.name()));
-    }
-
-    private boolean isInLoadedWorld(Area area) {
-        return worldLoaded.test(area.worldName());
+        List<Area> all = List.copyOf(areas.values());
+        all.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, all)));
     }
 
     private void eraseArea(String areaName) {

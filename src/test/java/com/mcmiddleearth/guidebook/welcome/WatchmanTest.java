@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 class WatchmanTest {
 
     /** Holds every Area a test builds, so tests change Areas as a saved edit in the Edit dialog does. */
-    final AreaStore store = new AreaStore(
-            new InMemoryAreaFiles(), new RecordingMarkerLayer(), worldName -> true, Logger.getAnonymousLogger());
+    final AreaStore store =
+            new AreaStore(new InMemoryAreaFiles(), new RecordingMarkerLayer(), Logger.getAnonymousLogger());
 
     /** An Area filling x from {@code minX} to {@code maxX} at every height and depth the test players use. */
     Area area(String name, int minX, int maxX) {

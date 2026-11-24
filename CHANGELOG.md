@@ -29,6 +29,8 @@ see the GitHub history.
   one you enter.
 - `/guidebook reload` no longer undoes `/guidebook on` and `off` used since the server started.
 - `GuidebookSendEvent` isn't fired for Opted out players.
+- Every Area is drawn on the Web map, including one whose world the server hasn't loaded. Guidebook no
+  longer waits for Multiverse-Core to start, and no longer logs those Areas as left off the Web map.
 - A polygon Area's corners are written to its Area file in the order staff selected them. The
   polygon is unchanged, and older Guidebook versions read it the same.
 
