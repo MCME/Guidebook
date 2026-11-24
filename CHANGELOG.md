@@ -4,13 +4,13 @@ All notable changes to Guidebook are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions before 2.0.1 have no entries;
 see the GitHub history.
 
-## [Unreleased]
+## [2.1.0] - 2026-11-24
 
 ### Added
 
 - `display` in `config.yml` chooses how Welcomes are shown. `chat` (the default) is the Title then
-  the Description in chat, as before. Another plugin can add a Display through
-  `GuidebookPlugin#getDisplaySwitchboard()`. If the chosen one isn't registered or fails, Welcomes
+  the Description in chat, as before. Another plugin adds a Display by registering
+  it with the `DisplayRegistry` service. If the chosen one isn't registered or fails, Welcomes
   are shown in chat and the server log says why. A Display that can't show a Welcome for an
   expected reason throws `Display.Unavailable`, which sends it to chat without logging a failure.
 - Staff (`guidebook.staff`) who join while the Display chosen in `config.yml` isn't running are
@@ -29,6 +29,8 @@ see the GitHub history.
   one you enter.
 - `/guidebook reload` no longer undoes `/guidebook on` and `off` used since the server started.
 - `GuidebookSendEvent` isn't fired for Opted out players.
+- Every Area is drawn on the Web map, including one whose world the server hasn't loaded. Guidebook no
+  longer waits for Multiverse-Core to start, and no longer logs those Areas as left off the Web map.
 - A polygon Area's corners are written to its Area file in the order staff selected them. The
   polygon is unchanged, and older Guidebook versions read it the same.
 
@@ -48,6 +50,12 @@ see the GitHub history.
 - `/guidebook warp` to an Area whose world isn't loaded says so, instead of failing.
 - Right after `/guidebook create` or `/guidebook move`, an Area's Warp point, and a sphere's centre,
   sit on whole blocks, as they already did after a `/guidebook reload`.
+- Moving an Area checks it for Overlap against every other Area, including one whose name differs
+  from it only in case. Before, the Move dialog skipped both.
+- An Area file whose `title:` was blanked by hand keeps its Subtitle, Show title, Boss bar and
+  Enabled. Before, they were all reset, and a Disabled Area became Enabled.
+- An Area file that names no world is reported in the server log when loading, instead of loading
+  an Area that broke Welcomes and the Web map.
 
 ## [2.0.1] - 2026-10-20
 

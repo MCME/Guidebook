@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-import com.mcmiddleearth.guidebook.util.AreaText
+import com.mcmiddleearth.guidebook.text.AreaText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

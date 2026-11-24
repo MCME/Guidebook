@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-import com.mcmiddleearth.guidebook.util.AreaText
+import com.mcmiddleearth.guidebook.text.AreaText
 import com.mcmiddleearth.guidebook.welcome.Welcome
 import com.typewritermc.core.books.pages.Colors
 import com.typewritermc.core.entries.Ref

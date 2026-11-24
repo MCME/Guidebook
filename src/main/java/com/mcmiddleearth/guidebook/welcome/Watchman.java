@@ -1,8 +1,9 @@
 package com.mcmiddleearth.guidebook.welcome;
 
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.WorldPoint;
-import com.mcmiddleearth.guidebook.util.AreaText;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.AreaDetails;
+import com.mcmiddleearth.guidebook.area.WorldPoint;
+import com.mcmiddleearth.guidebook.text.AreaText;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
@@ -38,15 +39,15 @@ public final class Watchman {
     // Keyed by the Area object, so a renamed Area keeps its players and a reloaded one starts afresh
 
     /** The players inside each Area. */
-    private final Map<InfoArea, Set<UUID>> inside = new HashMap<>();
+    private final Map<Area, Set<UUID>> inside = new HashMap<>();
 
     /** When each player was last Welcomed to each Area, for the cooldown. */
-    private final Map<InfoArea, Map<UUID, Instant>> lastWelcomed = new HashMap<>();
+    private final Map<Area, Map<UUID, Instant>> lastWelcomed = new HashMap<>();
 
-    private final Map<InfoArea, BossBar> bossBars = new HashMap<>();
+    private final Map<Area, BossBar> bossBars = new HashMap<>();
 
     /** The players each Area's Boss bar is shown to. */
-    private final Map<InfoArea, Map<UUID, Player>> bossBarViewers = new HashMap<>();
+    private final Map<Area, Map<UUID, Player>> bossBarViewers = new HashMap<>();
 
     /**
      * @param display shows each Welcome
@@ -101,14 +102,14 @@ public final class Watchman {
      * Notices which players entered or left which Areas since the last tick. An Area that is Disabled or no longer
      * among {@code areas} (deleted, or replaced by a reload) has been left by everyone, and is forgotten.
      */
-    public void tick(Collection<InfoArea> areas, Collection<? extends Player> players) {
-        List<InfoArea> enabled = areas.stream().filter(InfoArea::isEnabled).toList();
+    public void tick(Collection<Area> areas, Collection<? extends Player> players) {
+        List<Area> enabled = areas.stream().filter(Area::isEnabled).toList();
         forgetAllBut(new HashSet<>(enabled));
         updateBossBars();
 
         for (Player player : players) {
             WorldPoint point = WorldPoint.from(player.getLocation());
-            for (InfoArea area : enabled) {
+            for (Area area : enabled) {
                 Set<UUID> playersInside = inside.computeIfAbsent(area, a -> new HashSet<>());
                 if (playersInside.contains(player.getUniqueId())) {
                     if (!area.isNear(point)) {
@@ -127,7 +128,7 @@ public final class Watchman {
      * Shows staff an Area's Welcome now through the server's Display. None of the checks a player entering the Area
      * goes through apply, and it doesn't count as Welcoming them.
      */
-    public void preview(Player player, InfoArea area) {
+    public void preview(Player player, Area area) {
         // An Area just created or Enabled doesn't know yet that the player is inside. Marking them stops their next
         // move counting as an entry and giving them the Welcome again
         if (area.isEnabled() && area.isInside(WorldPoint.from(player.getLocation()))) {
@@ -149,44 +150,46 @@ public final class Watchman {
         forgetAllBut(Set.of());
     }
 
-    private void enter(Player player, InfoArea area) {
+    private void enter(Player player, Area area) {
         Instant now = clock.instant();
         Map<UUID, Instant> welcomed = lastWelcomed.computeIfAbsent(area, a -> new HashMap<>());
         Instant last = welcomed.get(player.getUniqueId());
         if (last != null && Duration.between(last, now).compareTo(COOLDOWN) < 0) {
             return;
         }
-        if (isOptedOut(player.getUniqueId()) || veto.cancels(player, area.getName())) {
+        if (isOptedOut(player.getUniqueId()) || veto.cancels(player, area.name())) {
             return;
         }
         welcome(player, area);
         welcomed.put(player.getUniqueId(), now);
     }
 
-    private void welcome(Player player, InfoArea area) {
+    private void welcome(Player player, Area area) {
         display.show(player, welcomeTo(area));
 
-        if (area.isShowBossBar()) {
-            long delay = area.isShowTitle() ? BOSS_BAR_DELAY_AFTER_TITLE : 0;
+        if (area.details().showBossBar()) {
+            long delay = area.details().showTitle() ? BOSS_BAR_DELAY_AFTER_TITLE : 0;
             later.run(delay, () -> {
                 // Only while still inside, or a player who left during the Title would keep the bar
-                if (area.isShowBossBar() && inside.getOrDefault(area, Set.of()).contains(player.getUniqueId())) {
+                if (area.details().showBossBar()
+                        && inside.getOrDefault(area, Set.of()).contains(player.getUniqueId())) {
                     showBossBar(area, player);
                 }
             });
         }
     }
 
-    private static Welcome welcomeTo(InfoArea area) {
+    private static Welcome welcomeTo(Area area) {
+        AreaDetails details = area.details();
         return new Welcome(
-                area.getName(), area.getTitle(), area.getSubtitle(), area.getDescription(), area.isShowTitle());
+                area.name(), details.title(), details.subtitle(), details.description(), details.showTitle());
     }
 
     /** Forgets every Area not in {@code kept}, hiding its Boss bar. */
-    private void forgetAllBut(Set<InfoArea> kept) {
+    private void forgetAllBut(Set<Area> kept) {
         inside.keySet().retainAll(kept);
         lastWelcomed.keySet().retainAll(kept);
-        for (InfoArea area : List.copyOf(bossBars.keySet())) {
+        for (Area area : List.copyOf(bossBars.keySet())) {
             if (!kept.contains(area)) {
                 hideBossBar(area);
                 bossBars.remove(area);
@@ -197,23 +200,23 @@ public final class Watchman {
     /** Hides Boss bars their Areas no longer show, and renames the rest after their Areas' Titles. */
     private void updateBossBars() {
         bossBars.forEach((area, bar) -> {
-            if (area.isShowBossBar()) {
-                bar.name(AreaText.render(area.getTitle()));
+            if (area.details().showBossBar()) {
+                bar.name(AreaText.render(area.details().title()));
             } else {
                 hideBossBar(area);
             }
         });
     }
 
-    private void showBossBar(InfoArea area, Player player) {
+    private void showBossBar(Area area, Player player) {
         BossBar bar = bossBars.computeIfAbsent(
                 area, a -> BossBar.bossBar(Component.empty(), 0, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS));
-        bar.name(AreaText.render(area.getTitle()));
+        bar.name(AreaText.render(area.details().title()));
         bossBarViewers.computeIfAbsent(area, a -> new HashMap<>()).put(player.getUniqueId(), player);
         player.showBossBar(bar);
     }
 
-    private void hideBossBar(InfoArea area, UUID playerId) {
+    private void hideBossBar(Area area, UUID playerId) {
         Map<UUID, Player> viewers = bossBarViewers.getOrDefault(area, Map.of());
         Player player = viewers.get(playerId);
         if (player != null) {
@@ -222,7 +225,7 @@ public final class Watchman {
         }
     }
 
-    private void hideBossBar(InfoArea area) {
+    private void hideBossBar(Area area) {
         Map<UUID, Player> viewers = bossBarViewers.remove(area);
         if (viewers != null) {
             viewers.values().forEach(player -> player.hideBossBar(bossBars.get(area)));

@@ -3,12 +3,11 @@ main: com.mcmiddleearth.guidebook.GuidebookPlugin
 version: ${version}
 description: Welcomes players to the places they enter with a title and a short description.
 load: POSTWORLD
-# Staff place and select Areas with WorldEdit selections, so create, move and select can't work without it.
-# Every Area's shape is a PluginUtils region, so without PluginUtils no Area can load.
-depend: [WorldEdit, PluginUtils]
-# Multiverse-Core loads its worlds in its own onEnable. Saved areas look their world up by name
-# on load, so Guidebook must enable after Multiverse or those lookups return null.
-softdepend: [Multiverse-Core, dynmap]
+# WorldEdit: Areas are placed from selections, and polygon Areas use its polygon rule.
+# PluginUtils parses the 1.x Legacy markup that Area files are converted from on first start.
+depend: [ WorldEdit, PluginUtils ]
+# Dynmap: Guidebook draws on it only if it's already enabled.
+softdepend: [ dynmap ]
 api-version: '${apiVersion}'
 
 permissions:

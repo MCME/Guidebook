@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.mcmiddleearth"
-version = "2.1.0-SNAPSHOT"
+version = "2.1.0"
 
 // ./gradlew runServer -PwithoutTypewriter starts the test server without Typewriter or the Typewriter display
 val withoutTypewriter = providers.gradleProperty("withoutTypewriter").isPresent

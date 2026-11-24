@@ -14,10 +14,15 @@ import org.bukkit.entity.Player;
  * register theirs, and may do so after Guidebook enables, so the chosen Display is looked up for every Welcome.
  * Whenever it isn't registered, or fails, the Chat display shows the Welcome instead (ADR 0008).
  */
-public final class DisplaySwitchboard implements Display {
+public final class DisplaySwitchboard implements Display, DisplayRegistry {
 
     /** The name of the Chat display, Guidebook's own, which is always registered. */
     public static final String CHAT = "chat";
+
+    // A Display failing with a LinkageError most likely comes from a jar built for another Guidebook, such as one
+    // updated without the other
+    static final String MISMATCH =
+            "Its plugin was built for another version of Guidebook: update both to versions released together.";
 
     private final String chosen;
     private final Display chat;
@@ -34,7 +39,7 @@ public final class DisplaySwitchboard implements Display {
         registered.put(CHAT, chat);
     }
 
-    /** Makes {@code display} available as {@code name}, which the server's config can choose. Names ignore case. */
+    @Override
     public void register(String name, Display display) {
         if (normalise(name).equals(CHAT)) {
             throw new IllegalArgumentException("The Chat display is Guidebook's own, so its name can't be registered");
@@ -43,7 +48,7 @@ public final class DisplaySwitchboard implements Display {
         missingLogged = false;
     }
 
-    /** Removes the Display registered as {@code name}, such as when its plugin disables. */
+    @Override
     public void unregister(String name) {
         if (!normalise(name).equals(CHAT)) {
             registered.remove(normalise(name));
@@ -87,12 +92,8 @@ public final class DisplaySwitchboard implements Display {
             } catch (Display.Unavailable ex) {
                 logger.fine("The display \"" + chosen + "\" can't show the Welcome to " + welcome.areaName()
                         + " now, so it was shown with the Chat display: " + ex.getMessage());
-            } catch (RuntimeException ex) {
-                logger.log(
-                        Level.SEVERE,
-                        "The display \"" + chosen + "\" failed to show the Welcome to " + welcome.areaName()
-                                + ", so it was shown with the Chat display",
-                        ex);
+            } catch (RuntimeException | LinkageError ex) {
+                logFailure("show the Welcome to " + welcome.areaName(), "shown with the Chat display", ex);
             }
         }
         chat.show(player, welcome);
@@ -107,14 +108,18 @@ public final class DisplaySwitchboard implements Display {
         }
         try {
             return display.previewDescription(player, welcome);
-        } catch (RuntimeException ex) {
-            logger.log(
-                    Level.SEVERE,
-                    "The display \"" + chosen + "\" failed to preview the Description of " + welcome.areaName()
-                            + ", so it was previewed as chat",
-                    ex);
+        } catch (RuntimeException | LinkageError ex) {
+            logFailure("preview the Description of " + welcome.areaName(), "previewed as chat", ex);
             return List.of();
         }
+    }
+
+    private void logFailure(String failedTo, String instead, Throwable ex) {
+        String advice = ex instanceof LinkageError ? " " + MISMATCH : "";
+        logger.log(
+                Level.SEVERE,
+                "The display \"" + chosen + "\" failed to " + failedTo + ", so it was " + instead + "." + advice,
+                ex);
     }
 
     private static String normalise(String name) {

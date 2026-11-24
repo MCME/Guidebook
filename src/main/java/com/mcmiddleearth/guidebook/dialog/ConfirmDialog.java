@@ -1,10 +1,10 @@
 package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.ChangeOutcome;
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.util.AreaText;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.ChangeOutcome;
+import com.mcmiddleearth.guidebook.text.AreaText;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.data.dialog.DialogBase;
@@ -34,21 +34,21 @@ public final class ConfirmDialog {
     /**
      * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and Cancel says it was not deleted.
      */
-    public static void openToDelete(Player player, InfoArea area) {
+    public static void openToDelete(Player player, Area area) {
         openToDelete(
                 player,
                 area,
                 canceller -> GuidebookMessages.sendInfo(
-                        canceller, GuidebookMessages.area(area.getName()), " was not deleted."));
+                        canceller, GuidebookMessages.area(area.name()), " was not deleted."));
     }
 
     /**
      * Asks {@code player} to confirm deleting {@code area}. Confirm deletes it, and {@code cancelled} runs on Cancel
      * or Esc, so a dialog that opened the confirmation can reopen itself.
      */
-    public static void openToDelete(Player player, InfoArea area, Consumer<Player> cancelled) {
-        String areaName = area.getName();
-        String title = area.getTitle();
+    public static void openToDelete(Player player, Area area, Consumer<Player> cancelled) {
+        String areaName = area.name();
+        String title = area.details().title();
         List<DialogBody> body = List.of(
                 DialogBody.plainMessage(Component.text("Do you really want to ")
                         .append(Component.text("delete", NamedTextColor.RED))
@@ -89,11 +89,11 @@ public final class ConfirmDialog {
     }
 
     /** Deletes {@code area} through the store, which refuses if it was deleted or reloaded meanwhile. */
-    private static void delete(Audience audience, InfoArea area) {
+    private static void delete(Audience audience, Area area) {
         if (!(audience instanceof Player player)) {
             return;
         }
-        String name = area.getName();
+        String name = area.name();
         ChangeOutcome outcome =
                 GuidebookPlugin.getPluginInstance().getAreaStore().delete(area);
         switch (outcome) {

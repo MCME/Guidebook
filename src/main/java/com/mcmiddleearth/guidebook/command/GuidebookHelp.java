@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -70,12 +70,7 @@ final class GuidebookHelp {
                     STAFF,
                     List.of("list [page]", "list <filter> [page]"),
                     "List the areas, or those whose names contain <filter>."),
-            new Entry("reload", STAFF, "reload", "Reload every area from its file."),
-            new Entry(
-                    "dev",
-                    STAFF,
-                    List.of("dev", "dev console <true|false>", "dev level <level>", "dev watch", "dev unwatch"),
-                    "Show or change the debug output."));
+            new Entry("reload", STAFF, "reload", "Reload every area from its file."));
 
     private GuidebookHelp() {}
 

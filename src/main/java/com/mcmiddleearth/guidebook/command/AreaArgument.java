@@ -1,9 +1,9 @@
 package com.mcmiddleearth.guidebook.command;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.AreaRegistry;
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.util.AreaText;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.AreaStore;
+import com.mcmiddleearth.guidebook.text.AreaText;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -18,16 +18,16 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
- * An existing Area, typed as its name. The name resolves through the {@link AreaRegistry} (ignoring case, exact case
- * wins), and an unknown name fails when the command is parsed.
+ * An existing Area, typed as its name and found by {@link AreaStore#find}. An unknown name fails when the command is
+ * parsed.
  */
-final class AreaArgument implements CustomArgumentType.Converted<InfoArea, String> {
+final class AreaArgument implements CustomArgumentType.Converted<Area, String> {
 
     private static final DynamicCommandExceptionType UNKNOWN_AREA = new DynamicCommandExceptionType(name ->
             MessageComponentSerializer.message().serialize(Component.text("No Guidebook area called '" + name + "'")));
 
     @Override
-    public InfoArea convert(String name) throws CommandSyntaxException {
+    public Area convert(String name) throws CommandSyntaxException {
         return GuidebookPlugin.getPluginInstance()
                 .getAreaStore()
                 .find(name)
@@ -46,7 +46,7 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
 
     /** Suggests the Area names matching the typed text, each with its Title, Shape and whether it's disabled. */
     static CompletableFuture<Suggestions> suggestAreaNames(SuggestionsBuilder builder) {
-        for (AreaRegistry.Suggestion suggestion :
+        for (AreaStore.Suggestion suggestion :
                 GuidebookPlugin.getPluginInstance().getAreaStore().suggest(builder.getRemaining())) {
             builder.suggest(
                     suggestion.name(), MessageComponentSerializer.message().serialize(tooltip(suggestion)));
@@ -55,7 +55,7 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
     }
 
     // e.g. "Minas Tirith ⬟ prism ✖ disabled"
-    private static Component tooltip(AreaRegistry.Suggestion suggestion) {
+    private static Component tooltip(AreaStore.Suggestion suggestion) {
         Component tooltip = Component.text()
                 .color(NamedTextColor.YELLOW)
                 .append(AreaText.render(suggestion.title()))

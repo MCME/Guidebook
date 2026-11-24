@@ -41,8 +41,8 @@ Without it, or whenever it can't show a Welcome, Welcomes are shown in chat
 ## Installing
 
 Download the jar from a [GitHub release](https://github.com/MCME/Guidebook/releases), or build it
-(see below), and put it in `plugins/`. WorldEdit and PluginUtils are required: PluginUtils holds
-each Area's shape. Dynmap and Multiverse-Core are supported if they're present. Each Area is saved
+(see below), and put it in `plugins/`. WorldEdit and PluginUtils are required, and Dynmap is
+supported if it's present. Each Area is saved
 as `plugins/Guidebook/<world>/<area>.yml`. If you edit one by hand, run `/guidebook reload`.
 
 ## Developing

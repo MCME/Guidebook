@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.worldedit;
 
-import com.mcmiddleearth.guidebook.data.AreaGeometry;
+import com.mcmiddleearth.guidebook.area.AreaGeometry;
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;

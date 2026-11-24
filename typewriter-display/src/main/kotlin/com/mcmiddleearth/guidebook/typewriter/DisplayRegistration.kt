@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.typewriter
 
-import com.mcmiddleearth.guidebook.GuidebookPlugin
+import com.mcmiddleearth.guidebook.welcome.DisplayRegistry
 import com.typewritermc.core.books.pages.PageType
 import com.typewritermc.core.entries.Query
 import com.typewritermc.core.extension.Initializable
@@ -17,7 +17,7 @@ import org.bukkit.event.player.PlayerQuitEvent
  * every Typewriter reload. Each reload loads fresh classes, so shutting down must unregister the Display from the last
  * load.
  *
- * Guidebook's own classes are only reached through [SwitchboardRegistrar], once Guidebook's version is known to have
+ * Guidebook's own classes are only reached through [DisplayRegistrar], once Guidebook's version is known to have
  * them.
  */
 @Singleton
@@ -32,19 +32,26 @@ class DisplayRegistration : Initializable {
     override suspend fun initialize() {
         val guidebook = Bukkit.getPluginManager().getPlugin(GUIDEBOOK) ?: return
         InstallInspector.versionProblem(guidebook.pluginMeta.version, InstallInspector.LOWEST_GUIDEBOOK_VERSION)?.let {
-            logger.warning("The Typewriter display isn't available, so Welcomes use the Chat display. $it")
+            logUnavailable(it)
             return
         }
         if (inspector.problem() != null) return
+        if (!DisplayRegistrar.register(inspector)) {
+            logUnavailable("Guidebook isn't enabled.")
+            return
+        }
         Bukkit.getPluginManager().registerEvents(QuitListener, guidebook)
-        SwitchboardRegistrar.register(inspector)
         registered = true
         // The one line in the log that says the Typewriter display is working
         logger.info("The Typewriter display is registered with Guidebook, so Welcomes are shown in its box.")
     }
 
+    private fun logUnavailable(reason: String) {
+        logger.warning("The Typewriter display isn't available, so Welcomes use the Chat display. $reason")
+    }
+
     override suspend fun shutdown() {
-        if (registered) SwitchboardRegistrar.unregister()
+        if (registered) DisplayRegistrar.unregister()
         registered = false
         HandlerList.unregisterAll(QuitListener)
         WelcomeQueues.clear()
@@ -70,21 +77,25 @@ private fun findWelcomeEntries(): List<FoundWelcomeEntry> =
         .toList()
 
 /**
- * Registers the Typewriter display on Guidebook's Display switchboard. Every use of Guidebook's own classes in
+ * Registers the Typewriter display with Guidebook's DisplayRegistry service. Every use of Guidebook's own classes in
  * registering is here, kept apart so an older Guidebook never loads them.
  */
-private object SwitchboardRegistrar {
+private object DisplayRegistrar {
 
-    fun register(inspector: InstallInspector) {
-        switchboard().register(
+    /** Whether it registered, which it can't while Guidebook isn't enabled. */
+    fun register(inspector: InstallInspector): Boolean {
+        val registry = registry() ?: return false
+        registry.register(
             TypewriterDisplay.NAME,
             TypewriterDisplay(TypewriterBoxOpener, inspector, WelcomeQueues) { Bukkit.getCurrentTick() },
         )
+        return true
     }
 
+    /** Guidebook disabling first leaves nothing to unregister from. */
     fun unregister() {
-        switchboard().unregister(TypewriterDisplay.NAME)
+        registry()?.unregister(TypewriterDisplay.NAME)
     }
 
-    private fun switchboard() = (Bukkit.getPluginManager().getPlugin(GUIDEBOOK) as GuidebookPlugin).displaySwitchboard
+    private fun registry(): DisplayRegistry? = Bukkit.getServicesManager().load(DisplayRegistry::class.java)
 }

@@ -1,12 +1,12 @@
 package com.mcmiddleearth.guidebook.dialog;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.AreaDetails;
-import com.mcmiddleearth.guidebook.data.AreaStore;
-import com.mcmiddleearth.guidebook.data.ChangeOutcome;
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.util.AreaText;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.AreaDetails;
+import com.mcmiddleearth.guidebook.area.AreaStore;
+import com.mcmiddleearth.guidebook.area.ChangeOutcome;
+import com.mcmiddleearth.guidebook.text.AreaText;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import com.mcmiddleearth.guidebook.welcome.Welcome;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.DialogResponseView;
@@ -73,14 +73,14 @@ public final class EditDialog {
             String description,
             boolean enabled) {
 
-        static Values of(InfoArea area) {
+        static Values of(AreaDetails details) {
             return new Values(
-                    area.isShowTitle(),
-                    area.getTitle(),
-                    area.getSubtitle(),
-                    area.isShowBossBar(),
-                    area.getDescription(),
-                    area.isEnabled());
+                    details.showTitle(),
+                    details.title(),
+                    details.subtitle(),
+                    details.showBossBar(),
+                    details.description(),
+                    details.enabled());
         }
 
         static Values of(DialogResponseView response) {
@@ -114,16 +114,16 @@ public final class EditDialog {
         }
     }
 
-    public static void open(Player player, InfoArea area) {
-        show(player, area, Mode.EDIT, Values.of(area), null);
+    public static void open(Player player, Area area) {
+        show(player, area, Mode.EDIT, Values.of(area.details()), null);
     }
 
     /**
      * Opens the dialog that creates {@code area}, which the Placement dialog has built but not added. Nothing is added
      * or written until Create is pressed.
      */
-    public static void openToCreate(Player player, InfoArea area) {
-        show(player, area, Mode.CREATE, Values.of(area).forNewArea(), null);
+    public static void openToCreate(Player player, Area area) {
+        show(player, area, Mode.CREATE, Values.of(area.details()).forNewArea(), null);
     }
 
     /** Whether the dialog changes a stored Area, or creates one that the Placement dialog has built. */
@@ -175,7 +175,7 @@ public final class EditDialog {
     }
 
     /** Shows the dialog filled with {@code values}, with {@code error} at the top if it isn't null. */
-    private static void show(Player player, InfoArea area, Mode mode, Values values, Component error) {
+    private static void show(Player player, Area area, Mode mode, Values values, Component error) {
         List<DialogBody> body = new ArrayList<>();
         if (error != null) {
             body.add(DialogBody.plainMessage(error.color(NamedTextColor.RED)));
@@ -282,7 +282,7 @@ public final class EditDialog {
 
         player.showDialog(Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(Component.text(mode.titleVerb + " Guidebook area ")
-                                .append(GuidebookMessages.stressed(area.getName())))
+                                .append(GuidebookMessages.stressed(area.name())))
                         .canCloseWithEscape(mode == Mode.EDIT)
                         // The dialog stays open after a button until the server replaces or closes it, so that typed
                         // text isn't lost. Minecraft only allows that for a dialog that doesn't pause the
@@ -299,12 +299,12 @@ public final class EditDialog {
      * Shows the typed Title, Subtitle and Description rendered as players see them, so staff can check their markup
      * before saving. Back reopens the Edit dialog with {@code values}, so nothing typed is lost.
      */
-    private static void showPreview(Player player, InfoArea area, Mode mode, Values values) {
+    private static void showPreview(Player player, Area area, Mode mode, Values values) {
         List<DialogBody> body = new ArrayList<>();
         addPreview(body, "Title", values.title(), values.showTitle() ? null : "not shown: Show title is off");
         addPreview(body, "Subtitle", values.subtitle(), values.showTitle() ? null : "not shown: Show title is off");
         Welcome asSaved = new Welcome(
-                area.getName(), values.title(), values.subtitle(), values.storedDescription(), values.showTitle());
+                area.name(), values.title(), values.subtitle(), values.storedDescription(), values.showTitle());
         List<Component> screens =
                 GuidebookPlugin.getPluginInstance().getDisplaySwitchboard().previewDescription(player, asSaved);
         if (screens.isEmpty()) {
@@ -328,7 +328,7 @@ public final class EditDialog {
 
         player.showDialog(Dialog.create(builder -> builder.empty()
                 .base(DialogBase.builder(Component.text("Preview of Guidebook area ")
-                                .append(GuidebookMessages.stressed(area.getName())))
+                                .append(GuidebookMessages.stressed(area.name())))
                         .afterAction(DialogBase.DialogAfterAction.NONE)
                         .pause(false)
                         .body(body)
@@ -355,11 +355,11 @@ public final class EditDialog {
         body.add(DialogBody.plainMessage(heading, PREVIEW_WIDTH));
     }
 
-    private static void save(Audience audience, InfoArea area, Mode mode, Values values) {
+    private static void save(Audience audience, Area area, Mode mode, Values values) {
         if (!(audience instanceof Player player)) {
             return;
         }
-        String areaName = area.getName();
+        String areaName = area.name();
         Optional<String> problem = problem(values);
         if (problem.isPresent()) {
             show(player, area, mode, values, Component.text(problem.get() + " Nothing was " + mode.done + "."));
@@ -389,9 +389,9 @@ public final class EditDialog {
     }
 
     /** Says the Area was saved or created, then previews its Welcome, which only a saved Area may show. */
-    private static void sendDone(Player player, InfoArea area, Mode mode) {
+    private static void sendDone(Player player, Area area, Mode mode) {
         // Kept short so it doesn't wrap. The Welcome follows straight after, so it needs no label
-        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.getName()), " was " + mode.done + ":");
+        GuidebookMessages.sendInfo(player, GuidebookMessages.area(area.name()), " was " + mode.done + ":");
         GuidebookPlugin.getPluginInstance().getWatchman().preview(player, area);
     }
 

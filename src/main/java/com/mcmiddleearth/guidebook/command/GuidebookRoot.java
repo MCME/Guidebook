@@ -4,13 +4,12 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.STAFF;
 import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
-import com.mcmiddleearth.guidebook.data.ChangeOutcome;
-import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.WorldPoint;
+import com.mcmiddleearth.guidebook.area.Area;
+import com.mcmiddleearth.guidebook.area.ChangeOutcome;
+import com.mcmiddleearth.guidebook.area.WorldPoint;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
-import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.guidebook.util.GuidebookMessages;
+import com.mcmiddleearth.guidebook.text.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,8 +21,6 @@ import java.util.logging.Logger;
 import net.strokkur.commands.Command;
 import net.strokkur.commands.DefaultExecutes;
 import net.strokkur.commands.Executes;
-import net.strokkur.commands.Literal;
-import net.strokkur.commands.arguments.IntArg;
 import net.strokkur.commands.arguments.StringArg;
 import net.strokkur.commands.paper.Description;
 import net.strokkur.commands.paper.Executor;
@@ -45,7 +42,7 @@ class GuidebookRoot {
     // lands on the node where its path ends, so an empty path would put it on the /guidebook root and lock
     // guidebook.user players out of on, off and help. See docs/adr/0001-commands-via-strokkcommands.md
 
-    // Runs for bare /guidebook and every incomplete command, such as "move" or "dev level". The root needs
+    // Runs for bare /guidebook and every incomplete command, such as "move" or "list". The root needs
     // guidebook.user or guidebook.staff, and the help is filtered to what the sender may run
     @DefaultExecutes
     void help(CommandSender sender, List<String> args) {
@@ -83,38 +80,38 @@ class GuidebookRoot {
 
     @Executes("select")
     @Permission(STAFF)
-    void select(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void select(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         // By name, as the Area's world may not be loaded
-        String worldName = area.getWorldName();
+        String worldName = area.worldName();
         World world = player.getWorld();
         if (!world.getName().equals(worldName)) {
             GuidebookMessages.sendError(
                     player,
-                    GuidebookMessages.area(area.getName()),
+                    GuidebookMessages.area(area.name()),
                     " is in " + worldName + ". Go to that world to select it.");
             return;
         }
-        WorldEditSelections.select(player, world, area.getGeometry());
+        WorldEditSelections.select(player, world, area.geometry());
         GuidebookMessages.sendInfo(
                 player,
                 "Your WorldEdit selection is now ",
-                GuidebookMessages.area(area.getName()),
-                " (" + area.getShape().displayName() + ").");
+                GuidebookMessages.area(area.name()),
+                " (" + area.shape().displayName() + ").");
     }
 
     @Executes("warp")
     @Permission(STAFF)
-    void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         // By name, as the Area's world may not be loaded
-        String worldName = area.getWorldName();
+        String worldName = area.worldName();
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
             GuidebookMessages.sendError(
-                    sender, GuidebookMessages.area(area.getName()), " is in " + worldName + ", which isn't loaded.");
+                    sender, GuidebookMessages.area(area.name()), " is in " + worldName + ", which isn't loaded.");
             return;
         }
-        player.teleport(area.getWarpPoint().toLocation(world));
-        GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
+        player.teleport(area.warpPoint().toLocation(world));
+        GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.name()), ".");
     }
 
     @Executes("create")
@@ -127,14 +124,14 @@ class GuidebookRoot {
 
     @Executes("move")
     @Permission(STAFF)
-    void move(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void move(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         PlacementDialog.openToMove(player, area);
     }
 
     @Executes("edit")
     @Permission(STAFF)
     void editHere(@Executor Player player) {
-        List<InfoArea> here = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
+        List<Area> here = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
                 .filter(area -> area.isInside(WorldPoint.from(player.getLocation())))
                 .toList();
         if (here.size() == 1) {
@@ -145,7 +142,7 @@ class GuidebookRoot {
         } else {
             List<Object> parts = new ArrayList<>();
             parts.add("You're standing in more than one Guidebook area (");
-            here.stream().map(InfoArea::getName).sorted().forEach(name -> {
+            here.stream().map(Area::name).sorted().forEach(name -> {
                 if (parts.size() > 1) {
                     parts.add(", ");
                 }
@@ -158,7 +155,7 @@ class GuidebookRoot {
 
     @Executes("edit")
     @Permission(STAFF)
-    void edit(@Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
+    void edit(@Executor Player player, @CustomArg(AreaArgument.class) Area area) {
         EditDialog.open(player, area);
     }
 
@@ -166,9 +163,9 @@ class GuidebookRoot {
     @Permission(STAFF)
     void rename(
             CommandSender sender,
-            @CustomArg(AreaArgument.class) InfoArea area,
+            @CustomArg(AreaArgument.class) Area area,
             @GuidebookCreate.NameSuggestions @CustomArg(NewAreaNameArgument.class) String newName) {
-        String oldName = area.getName();
+        String oldName = area.name();
         ChangeOutcome outcome =
                 GuidebookPlugin.getPluginInstance().getAreaStore().rename(area, newName);
         switch (outcome) {
@@ -209,7 +206,7 @@ class GuidebookRoot {
 
     @Executes("delete")
     @Permission(STAFF)
-    void delete(CommandSender sender, @CustomArg(AreaArgument.class) InfoArea area) {
+    void delete(CommandSender sender, @CustomArg(AreaArgument.class) Area area) {
         GuidebookDelete.delete(sender, area);
     }
 
@@ -233,43 +230,5 @@ class GuidebookRoot {
     void reload(CommandSender sender) {
         GuidebookPlugin.getPluginInstance().getAreaStore().reload();
         GuidebookMessages.sendInfo(sender, "All Guidebook areas reloaded from file.");
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void dev(CommandSender sender) {
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devConsole(
-            CommandSender sender,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("console") String console,
-            boolean output) {
-        DevUtil.setConsoleOutput(output);
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devLevel(
-            CommandSender sender,
-            @SuppressWarnings({"unused", "SameParameterValue"}) @Literal("level") String levelLiteral,
-            @IntArg int level) {
-        DevUtil.setLevel(level);
-        GuidebookDev.showState(sender);
-    }
-
-    @Executes("dev")
-    @Permission(STAFF)
-    void devWatchOrUnwatch(
-            CommandSender sender, @Executor Player player, @Literal({"watch", "unwatch"}) String action) {
-        if (action.equals("watch")) {
-            DevUtil.add(player);
-        } else {
-            DevUtil.remove(player);
-        }
-        GuidebookDev.showState(sender);
     }
 }
