@@ -1,6 +1,6 @@
 # Areas are plain geometry, and a prism's inside is WorldEdit's rule
 
-An Area holds its Shape as an `AreaGeometry`, the name of its world and its Warp point, all plain values. It doesn't hold a Bukkit `World` or a PluginUtils `Region`. Bukkit worlds are looked up by name only at the edges that need a live one: teleporting to a Warp point, and asking whether a world is loaded before drawing its Areas on the Web map. "Is this point inside a prism" is answered by WorldEdit's static `Polygonal2DRegion.contains`, for Welcomes, the Overlap check and the Placement check alike, so a prism Area is exactly the blocks staff selected.
+An Area holds its Shape as an `AreaGeometry`, the name of its world and its Warp point, all plain values. It doesn't hold a Bukkit `World` or a PluginUtils `Region`. Bukkit worlds are looked up by name only where a live one is needed, such as teleporting to a Warp point; the Web map needs only the name. "Is this point inside a prism" is answered by WorldEdit's static `Polygonal2DRegion.contains`, for Welcomes, the Overlap check and the Placement check alike, so a prism Area is exactly the blocks staff selected.
 
 ## Considered Options
 
