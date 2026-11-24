@@ -7,21 +7,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * Area files kept in memory, so tests can see what was written and make a write or delete fail. Loading builds new
  * Areas from what was written, as reading the files again would.
  */
-final class InMemoryAreaFiles implements AreaFiles {
+public final class InMemoryAreaFiles implements AreaFiles {
 
     private record Key(String world, String name) {}
 
-    /** What an Area's file holds, plus where its Shape is, since tests can't look a world up by its name. */
-    private record StoredFile(YamlConfiguration contents, AreaGeometry geometry, Location warpPoint) {}
-
-    private final Map<Key, StoredFile> files = new LinkedHashMap<>();
+    private final Map<Key, YamlConfiguration> files = new LinkedHashMap<>();
     private boolean failNextWrite;
     private boolean failNextDelete;
     private Optional<File> nextBackup = Optional.empty();
@@ -30,10 +26,8 @@ final class InMemoryAreaFiles implements AreaFiles {
     @Override
     public Loaded loadAll() {
         List<InfoArea> areas = new ArrayList<>();
-        files.forEach((key, file) -> areas.add(InfoArea.loaded(
-                key.name(),
-                file.contents(),
-                InfoArea.regionOf(file.geometry(), file.warpPoint().clone()))));
+        files.forEach(
+                (key, contents) -> AreaFileFormat.read(key.name(), contents).ifPresent(areas::add));
         Loaded loaded = new Loaded(areas, nextBackup, nextProblems);
         nextBackup = Optional.empty();
         nextProblems = List.of();
@@ -47,10 +41,8 @@ final class InMemoryAreaFiles implements AreaFiles {
             throw new IOException("Told to fail this write");
         }
         YamlConfiguration contents = new YamlConfiguration();
-        area.save(contents);
-        files.put(
-                new Key(area.getWorldName(), area.getName()),
-                new StoredFile(contents, area.getGeometry(), area.getLocation().clone()));
+        AreaFileFormat.write(area, contents);
+        files.put(new Key(area.getWorldName(), area.getName()), contents);
     }
 
     @Override
@@ -62,21 +54,9 @@ final class InMemoryAreaFiles implements AreaFiles {
         return files.remove(new Key(worldName, areaName)) != null;
     }
 
-    /** Holds a file for an Area in a world that isn't loaded, as a server can find one on disk. */
-    void holdInUnloadedWorld(String worldName, String areaName, AreaGeometry.Sphere sphere) {
-        YamlConfiguration contents = new YamlConfiguration();
-        contents.set("world", worldName);
-        contents.set("title", "Title of " + areaName);
-        contents.set("subtitle", "");
-        files.put(
-                new Key(worldName, areaName),
-                new StoredFile(
-                        contents, sphere, new Location(null, sphere.centerX(), sphere.centerY(), sphere.centerZ())));
-    }
-
     /** What the file of the Area {@code areaName} in {@code worldName} holds, if there is one. */
     Optional<YamlConfiguration> contents(String worldName, String areaName) {
-        return Optional.ofNullable(files.get(new Key(worldName, areaName))).map(StoredFile::contents);
+        return Optional.ofNullable(files.get(new Key(worldName, areaName)));
     }
 
     void failNextWrite() {

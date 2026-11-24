@@ -2,15 +2,25 @@ package com.mcmiddleearth.guidebook.welcome;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.mcmiddleearth.guidebook.data.AreaDetails;
+import com.mcmiddleearth.guidebook.data.AreaGeometry;
+import com.mcmiddleearth.guidebook.data.AreaStore;
+import com.mcmiddleearth.guidebook.data.ChangeOutcome;
+import com.mcmiddleearth.guidebook.data.InMemoryAreaFiles;
+import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.data.RecordingMarkerLayer;
+import com.mcmiddleearth.guidebook.data.TestAreas;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Logger;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -18,69 +28,63 @@ import org.junit.jupiter.api.Test;
 
 class WatchmanTest {
 
-    /** An Area filling x from {@code minX} to {@code maxX}, near up to 10 blocks outside that. */
-    static final class TestArea implements WelcomeArea {
-        final String name;
-        final int minX;
-        final int maxX;
-        String title = "";
-        String subtitle = "";
-        String description = "<guide>A place.";
-        boolean showTitle;
-        boolean showBossBar;
-        boolean enabled = true;
+    /** Holds every Area a test builds, so tests change Areas as a saved edit in the Edit dialog does. */
+    final AreaStore store = new AreaStore(
+            new InMemoryAreaFiles(), new RecordingMarkerLayer(), worldName -> true, Logger.getAnonymousLogger());
 
-        TestArea(String name, int minX, int maxX) {
-            this.name = name;
-            this.minX = minX;
-            this.maxX = maxX;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String getTitle() {
-            return title;
-        }
-
-        @Override
-        public String getSubtitle() {
-            return subtitle;
-        }
-
-        @Override
-        public String getDescription() {
-            return description;
-        }
-
-        @Override
-        public boolean isShowTitle() {
-            return showTitle;
-        }
-
-        @Override
-        public boolean isShowBossBar() {
-            return showBossBar;
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        @Override
-        public boolean isInside(Location location) {
-            return location.getX() >= minX && location.getX() <= maxX;
-        }
-
-        @Override
-        public boolean isNear(Location location) {
-            return location.getX() >= minX - 10 && location.getX() <= maxX + 10;
-        }
+    /** An Area filling x from {@code minX} to {@code maxX} at every height and depth the test players use. */
+    InfoArea area(String name, int minX, int maxX) {
+        InfoArea area = TestAreas.area(name, "middle-earth", new AreaGeometry.Cuboid(minX, 0, -100, maxX, 128, 100));
+        assertEquals(
+                new ChangeOutcome.Done(),
+                store.create(area, new AreaDetails(false, "", "", false, "<guide>A place.", true)));
+        return area;
     }
+
+    /** Gives the Area {@code details} through the Area store. */
+    void edit(InfoArea area, AreaDetails details) {
+        assertEquals(new ChangeOutcome.Done(), store.edit(area, details));
+    }
+
+    void setTitle(InfoArea area, String title) {
+        AreaDetails d = AreaDetails.of(area);
+        edit(area, new AreaDetails(d.showTitle(), title, d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
+    }
+
+    void setSubtitle(InfoArea area, String subtitle) {
+        AreaDetails d = AreaDetails.of(area);
+        edit(area, new AreaDetails(d.showTitle(), d.title(), subtitle, d.showBossBar(), d.description(), d.enabled()));
+    }
+
+    void setShowTitle(InfoArea area, boolean showTitle) {
+        AreaDetails d = AreaDetails.of(area);
+        edit(area, new AreaDetails(showTitle, d.title(), d.subtitle(), d.showBossBar(), d.description(), d.enabled()));
+    }
+
+    void setShowBossBar(InfoArea area, boolean showBossBar) {
+        AreaDetails d = AreaDetails.of(area);
+        edit(area, new AreaDetails(d.showTitle(), d.title(), d.subtitle(), showBossBar, d.description(), d.enabled()));
+    }
+
+    void setEnabled(InfoArea area, boolean enabled) {
+        AreaDetails d = AreaDetails.of(area);
+        edit(area, new AreaDetails(d.showTitle(), d.title(), d.subtitle(), d.showBossBar(), d.description(), enabled));
+    }
+
+    /**
+     * The world every test player stands in, answering only its name. Kept here, because a {@link Location} holds its
+     * world only weakly.
+     */
+    static final World WORLD = (World) Proxy.newProxyInstance(
+            World.class.getClassLoader(), new Class<?>[] {World.class}, (proxy, method, args) -> {
+                return switch (method.getName()) {
+                    case "getName" -> "middle-earth";
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "toString" -> "test world";
+                    default -> null;
+                };
+            });
 
     /**
      * A player standing at an x coordinate, who keeps the Boss bars they're shown. Bukkit's Player is an interface, so
@@ -98,7 +102,7 @@ class WatchmanTest {
                     Player.class.getClassLoader(), new Class<?>[] {Player.class}, (proxy, method, args) -> {
                         return switch (method.getName()) {
                             case "getUniqueId" -> id;
-                            case "getLocation" -> new Location(null, this.x, 64, 0);
+                            case "getLocation" -> new Location(WORLD, this.x, 64, 0);
                             case "showBossBar" -> {
                                 if (!bossBars.contains((BossBar) args[0])) {
                                     bossBars.add((BossBar) args[0]);
@@ -152,10 +156,9 @@ class WatchmanTest {
 
     @Test
     void aPlayerWalkingIntoAnAreaIsWelcomed() {
-        TestArea bree = new TestArea("bree", 0, 100);
-        bree.title = "Bree";
-        bree.subtitle = "The Prancing Pony";
-        bree.showTitle = true;
+        setTitle(bree, "Bree");
+        setSubtitle(bree, "The Prancing Pony");
+        setShowTitle(bree, true);
         TestPlayer player = new TestPlayer(-50);
 
         watchman.tick(List.of(bree), List.of(player.player));
@@ -170,7 +173,7 @@ class WatchmanTest {
                 shown);
     }
 
-    final TestArea bree = new TestArea("bree", 0, 100);
+    final InfoArea bree = area("bree", 0, 100);
 
     /** Moves the player to {@code x} and ticks over just Bree. */
     void moveTo(TestPlayer player, double x) {
@@ -289,7 +292,7 @@ class WatchmanTest {
 
     @Test
     void aDisabledAreaWelcomesNobody() {
-        bree.enabled = false;
+        setEnabled(bree, false);
         TestPlayer player = new TestPlayer(-50);
 
         moveTo(player, 50);
@@ -302,9 +305,9 @@ class WatchmanTest {
         TestPlayer player = new TestPlayer(-50);
         moveTo(player, 50);
 
-        bree.enabled = false;
+        setEnabled(bree, false);
         moveTo(player, 50);
-        bree.enabled = true;
+        setEnabled(bree, true);
         moveTo(player, 50);
 
         assertEquals(2, shown.size());
@@ -374,8 +377,8 @@ class WatchmanTest {
 
         @BeforeEach
         void showTheBossBar() {
-            bree.title = "<gold>Bree";
-            bree.showBossBar = true;
+            setTitle(bree, "<gold>Bree");
+            setShowBossBar(bree, true);
         }
 
         String bossBarText() {
@@ -386,7 +389,7 @@ class WatchmanTest {
 
         @Test
         void appearsAfterTheTitleOfAWelcome() {
-            bree.showTitle = true;
+            setShowTitle(bree, true);
 
             moveTo(player, 50);
 
@@ -427,7 +430,7 @@ class WatchmanTest {
             moveTo(player, 50);
             runLaterTasks();
 
-            bree.enabled = false;
+            setEnabled(bree, false);
             moveTo(player, 50);
 
             assertEquals(List.of(), player.bossBars);
@@ -438,7 +441,7 @@ class WatchmanTest {
             moveTo(player, 50);
             runLaterTasks();
 
-            bree.showBossBar = false;
+            setShowBossBar(bree, false);
             moveTo(player, 50);
 
             assertEquals(List.of(), player.bossBars);
@@ -449,7 +452,7 @@ class WatchmanTest {
             moveTo(player, 50);
             runLaterTasks();
 
-            bree.title = "Bree-land";
+            setTitle(bree, "Bree-land");
             moveTo(player, 50);
 
             assertEquals("Bree-land", bossBarText());

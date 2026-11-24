@@ -12,39 +12,16 @@ class PlacementCheckSphereClearanceTest {
     private static final String WORLD = "middle_earth";
     private static final PlacementCheck.StaffPosition STAFF = new PlacementCheck.StaffPosition(WORLD, 0, 64, 0);
 
-    record TestArea(String getName, String getWorldName, AreaGeometry getGeometry) implements MarkableArea {
-
-        @Override
-        public String getTitle() {
-            return getName;
-        }
-
-        @Override
-        public String getSubtitle() {
-            return "";
-        }
-
-        @Override
-        public String getDescription() {
-            return "";
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return true;
-        }
-    }
-
     // A one-block cuboid on the x axis, distance blocks east of the staff member
-    private static TestArea blockEastBy(String name, int distance) {
-        return new TestArea(name, WORLD, new AreaGeometry.Cuboid(distance, 64, 0, distance, 64, 0));
+    private static InfoArea blockEastBy(String name, int distance) {
+        return TestAreas.area(name, WORLD, new AreaGeometry.Cuboid(distance, 64, 0, distance, 64, 0));
     }
 
-    private static PlacementCheck.SphereClearance clearance(List<TestArea> areas) {
+    private static PlacementCheck.SphereClearance clearance(List<InfoArea> areas) {
         return clearance(areas, Optional.empty());
     }
 
-    private static PlacementCheck.SphereClearance clearance(List<TestArea> areas, Optional<String> moved) {
+    private static PlacementCheck.SphereClearance clearance(List<InfoArea> areas, Optional<String> moved) {
         return PlacementCheck.sphereClearance(STAFF, areas, moved, 1, 200);
     }
 
@@ -62,7 +39,7 @@ class PlacementCheckSphereClearanceTest {
 
     @Test
     void everyAreaReachedAtTheFirstOverlappingRadiusIsNamedInOrder() {
-        TestArea west = new TestArea("west", WORLD, new AreaGeometry.Cuboid(-30, 64, 0, -30, 64, 0));
+        InfoArea west = TestAreas.area("west", WORLD, new AreaGeometry.Cuboid(-30, 64, 0, -30, 64, 0));
         assertEquals(
                 new PlacementCheck.SphereClearance(29, List.of("east", "west")),
                 clearance(List.of(west, blockEastBy("east", 30))));
@@ -70,7 +47,7 @@ class PlacementCheckSphereClearanceTest {
 
     @Test
     void standingInAnotherAreaLeavesNoClearRadius() {
-        TestArea around = new TestArea("town", WORLD, new AreaGeometry.Cuboid(-5, 60, -5, 5, 70, 5));
+        InfoArea around = TestAreas.area("town", WORLD, new AreaGeometry.Cuboid(-5, 60, -5, 5, 70, 5));
         assertEquals(new PlacementCheck.SphereClearance(0, List.of("town")), clearance(List.of(around)));
     }
 

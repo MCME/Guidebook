@@ -1,0 +1,15 @@
+# A sphere Area as Guidebook writes it today: its centre is its Warp point.
+world: middle-earth
+locationX: 100
+locationY: 64
+locationZ: -200
+locationYaw: 90.5
+locationPitch: -12.25
+radius: 30
+description: Welcome
+title: <gold>Edoras
+subtitle: <gray>Capital of Rohan
+showScoreboard: true
+showTitle: true
+enabled: true
+minimessage: true

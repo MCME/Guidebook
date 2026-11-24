@@ -16,37 +16,24 @@
  */
 package com.mcmiddleearth.guidebook.data;
 
-import com.mcmiddleearth.guidebook.util.DevUtil;
-import com.mcmiddleearth.guidebook.welcome.WelcomeArea;
-import com.mcmiddleearth.pluginutil.region.CuboidRegion;
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import com.mcmiddleearth.pluginutil.region.Region;
-import com.mcmiddleearth.pluginutil.region.SphericalRegion;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.util.Vector;
 
 /**
- * An Area, made with {@link #create} or read from its file with {@link #load}. Its Shape is whichever region it holds,
- * which a move can change.
+ * An Area, made with {@link #create} or read from its file by the Area file adapter. Its Shape, world and Warp point
+ * are plain values, which a move can change; its world is named, and needn't be loaded.
  *
  * @author Eriol_Eandur
  */
-public final class InfoArea implements MarkableArea, WelcomeArea {
+public final class InfoArea {
 
-    private static final int NEAR_DISTANCE = 10;
-    private Region region;
+    /** How far beyond its Shape a player inside the Area can go before they Leave it. */
+    private static final int LEAVE_DISTANCE = 10;
+
+    private AreaGeometry geometry;
+    private String worldName;
+    private WarpPoint warpPoint;
 
     private String areaName;
-
-    /** The world named in the Area's file, kept for when that world isn't loaded and the region has none. */
-    private String loadedWorldName;
 
     private boolean status;
 
@@ -65,184 +52,69 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         status = true;
     }
 
-    private InfoArea(String areaName, ConfigurationSection config) {
-        this(areaName);
-
-        if (config.contains("title")) {
-            setTitle((String) config.get("title"));
-            setSubtitle((String) config.get("subtitle"));
-            // Stored under its old name, from when it was a scoreboard
-            showBossBar = config.getBoolean("showScoreboard");
-            showTitle = config.getBoolean("showTitle");
-            status = config.getBoolean("enabled", true);
-        }
-        description = config.getString("description", "");
-        // An old cuboid file keeps its world under its center
-        loadedWorldName = config.getString("world", config.getString("center.world"));
-    }
-
-    /** A new Area filling {@code geometry}, with its Warp point at {@code warpPoint}. */
-    public static InfoArea create(String areaName, Location warpPoint, AreaGeometry geometry) {
+    /** A new Area filling {@code geometry} in the world {@code worldName}, with its Warp point at {@code warpPoint}. */
+    public static InfoArea create(String areaName, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
         InfoArea area = new InfoArea(areaName);
-        area.region = regionOf(geometry, warpPoint);
+        area.place(worldName, warpPoint, geometry);
+        return area;
+    }
+
+    /** The Area {@code areaName} as read from its file. Its world needn't be loaded. */
+    static InfoArea loaded(
+            String areaName, String worldName, WarpPoint warpPoint, AreaGeometry geometry, AreaDetails details) {
+        InfoArea area = create(areaName, worldName, warpPoint, geometry);
+        area.setDetails(details);
         return area;
     }
 
     /**
-     * Reads the Area {@code areaName} from its file's contents.
-     *
-     * @return the Area, or empty if the file holds no Shape Guidebook knows
+     * Gives the Area {@code geometry} in the world {@code worldName}, with its Warp point at {@code warpPoint}. A
+     * sphere is centred on its Warp point, so its own centre is ignored.
      */
-    public static Optional<InfoArea> load(String areaName, ConfigurationSection config) {
-        Region region;
-        if (SphericalRegion.isValidConfig(config)) {
-            region = SphericalRegion.load(config);
-        } else if (PrismoidRegion.isValidConfig(config)) {
-            DevUtil.log("loadPrism " + config);
-            region = PrismoidRegion.load(config);
-        } else if (CuboidRegion.isValidConfig(config) || config.contains("xSize")) { // xSize is the old cuboid format
-            region = loadCuboid(config);
-        } else {
-            return Optional.empty();
-        }
-        return Optional.of(loaded(areaName, config, region));
-    }
-
-    /**
-     * The Area {@code areaName} with its file's contents and the region already read from them. Kept apart from
-     * reading the region, which looks its world up on the server, so tests can build Areas from file contents.
-     */
-    static InfoArea loaded(String areaName, ConfigurationSection config, Region region) {
-        InfoArea area = new InfoArea(areaName, config);
-        area.region = region;
-        return area;
-    }
-
-    private static CuboidRegion loadCuboid(ConfigurationSection config) {
-        if (!config.contains("center")) {
-            DevUtil.log("loadCuboid " + config);
-            return CuboidRegion.load(config);
-        }
-        // The old format: a centre and the sizes along each axis
-        Location center = deserializeLocation(config.getConfigurationSection("center"));
-        int sizeX = config.getInt("xSize");
-        int sizeY = config.getInt("ySize");
-        int sizeZ = config.getInt("zSize");
-        Vector minPos = new Vector(
-                center.getBlockX() - sizeX / 2, center.getBlockY() - sizeY / 2, center.getBlockZ() - sizeZ / 2);
-        Vector maxPos = new Vector(
-                center.getBlockX() + sizeX / 2, center.getBlockY() + sizeY / 2, center.getBlockZ() + sizeZ / 2);
-        DevUtil.log("CreateCuboid " + center + "     " + minPos + "    " + maxPos);
-        return new CuboidRegion(center, minPos, maxPos);
-    }
-
-    private static Location deserializeLocation(ConfigurationSection data) {
-        if (data == null) {
-            return null;
-        }
-        World world = Bukkit.getWorld(data.getString("world"));
-        if (world == null) {
-            return null;
-        } else {
-            return new Location(world, (Double) data.get("x"), (Double) data.get("y"), (Double) data.get("z"));
-        }
-    }
-
-    public Region getRegion() {
-        return this.region;
-    }
-
-    void setRegion(Region region) {
-        this.region = region;
-    }
-
-    /**
-     * The region filling {@code geometry}, with its Warp point at {@code warpPoint}. A sphere is centred on its Warp
-     * point, so its own centre is ignored.
-     */
-    static Region regionOf(AreaGeometry geometry, Location warpPoint) {
-        return switch (geometry) {
-            case AreaGeometry.Sphere sphere -> new SphericalRegion(warpPoint, sphere.radius());
-            case AreaGeometry.Cuboid cuboid ->
-                new CuboidRegion(
-                        warpPoint,
-                        new Vector(cuboid.minX(), cuboid.minY(), cuboid.minZ()),
-                        new Vector(cuboid.maxX(), cuboid.maxY(), cuboid.maxZ()));
-            case AreaGeometry.Prism prism ->
-                new PrismoidRegion(
-                        warpPoint,
-                        new ArrayList<>(prism.xs()),
-                        new ArrayList<>(prism.zs()),
-                        prism.minY(),
-                        prism.maxY());
+    void place(String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
+        this.worldName = worldName;
+        this.warpPoint = warpPoint;
+        this.geometry = switch (geometry) {
+            case AreaGeometry.Sphere sphere ->
+                new AreaGeometry.Sphere(warpPoint.x(), warpPoint.y(), warpPoint.z(), sphere.radius());
+            case AreaGeometry.Cuboid cuboid -> cuboid;
+            case AreaGeometry.Prism prism -> prism;
         };
     }
 
-    @Override
     public AreaGeometry getGeometry() {
-        return switch (region) {
-            case SphericalRegion sphere -> {
-                Location center = sphere.getLocation();
-                yield new AreaGeometry.Sphere(
-                        center.getBlockX(), center.getBlockY(), center.getBlockZ(), sphere.getRadius());
-            }
-            case CuboidRegion cuboid -> {
-                Vector min = cuboid.getMinCorner();
-                Vector max = cuboid.getMaxCorner();
-                yield new AreaGeometry.Cuboid(
-                        min.getBlockX(),
-                        min.getBlockY(),
-                        min.getBlockZ(),
-                        max.getBlockX(),
-                        max.getBlockY(),
-                        max.getBlockZ());
-            }
-            case PrismoidRegion prism ->
-                new AreaGeometry.Prism(
-                        List.of(prism.getXPoints()), List.of(prism.getZPoints()), prism.getMinY(), prism.getMaxY());
-            default -> throw new IllegalStateException("Unsupported region " + region);
-        };
+        return geometry;
+    }
+
+    // The Shape follows the geometry, since a move can give an Area another Shape
+    public Shape getShape() {
+        return geometry.shape();
     }
 
     /** The name of the Area's world, even when that world isn't loaded. */
-    @Override
     public String getWorldName() {
-        return region.isValid() ? region.getWorld().getName() : loadedWorldName;
+        return worldName;
     }
 
-    public Location getLocation() {
-        return region.getLocation();
+    public WarpPoint getWarpPoint() {
+        return warpPoint;
     }
 
-    @Override
-    public boolean isNear(Location loc) {
-        return region.isNear(loc, NEAR_DISTANCE);
+    /** Whether the point is in this Area's world, named exactly as it is, and within its Shape. */
+    public boolean isInside(WorldPoint point) {
+        return worldName.equals(point.worldName()) && geometry.contains(point.x(), point.y(), point.z());
     }
 
-    @Override
-    public boolean isInside(Location loc) {
-        return region.isInside(loc);
+    /**
+     * Whether the point is in this Area's world and no more than {@link #LEAVE_DISTANCE} blocks beyond its Shape, so a
+     * player inside the Area who is there doesn't yet Leave it (see Leave in the glossary).
+     */
+    public boolean isNear(WorldPoint point) {
+        return worldName.equals(point.worldName()) && geometry.near(point.x(), point.y(), point.z(), LEAVE_DISTANCE);
     }
 
-    @Override
     public boolean isEnabled() {
         return status;
-    }
-
-    public void save(ConfigurationSection config) {
-        /*if(region.getLocation()==null) {
-            GuidebookPlugin.getPluginInstance().getLogger().warning("Save region call with NULL location.");
-            return;
-        }*/
-        DevUtil.log("saveInfo " + config + " " + region.toString());
-        region.save(config);
-        config.set("description", description);
-        config.set("title", title);
-        config.set("subtitle", subtitle);
-        config.set("showScoreboard", showBossBar);
-        config.set("showTitle", showTitle);
-        config.set("enabled", status);
-        config.set(LegacyMarkupConverter.MARKER, true);
     }
 
     void setDetails(AreaDetails details) {
@@ -258,7 +130,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.description = description;
     }
 
-    @Override
     public String getTitle() {
         return title;
     }
@@ -275,12 +146,10 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         title = Objects.requireNonNullElse(newTitle, "");
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
 
-    @Override
     public String getSubtitle() {
         return subtitle;
     }
@@ -289,7 +158,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.subtitle = Objects.requireNonNullElse(subtitle, "");
     }
 
-    @Override
     public boolean isShowTitle() {
         return showTitle;
     }
@@ -298,7 +166,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.showTitle = showTitle;
     }
 
-    @Override
     public boolean isShowBossBar() {
         return showBossBar;
     }
@@ -307,7 +174,6 @@ public final class InfoArea implements MarkableArea, WelcomeArea {
         this.showBossBar = showBossBar;
     }
 
-    @Override
     public String getName() {
         return this.areaName;
     }

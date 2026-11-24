@@ -29,12 +29,31 @@ class AreaStoreTest {
     private final InMemoryAreaFiles files = new InMemoryAreaFiles();
     private final RecordingMarkerLayer layer = new RecordingMarkerLayer();
     private final List<LogRecord> logged = new ArrayList<>();
-    private final AreaStore store = new AreaStore(files, layer, recordingLogger());
+    private final AreaStore store =
+            new AreaStore(files, layer, worldName -> !worldName.equals(UNLOADED_WORLD), recordingLogger());
+
+    /** The one world the store is told isn't loaded. */
+    private static final String UNLOADED_WORLD = "old-world";
+
+    /** An Area in {@link #UNLOADED_WORLD}: a sphere of radius 5 centred on its Warp point at (0, 64, 0). */
+    private static InfoArea inUnloadedWorld(String name) {
+        return InfoArea.create(
+                name, UNLOADED_WORLD, new WarpPoint(0, 64, 0, 0, 0), new AreaGeometry.Sphere(0, 64, 0, 5));
+    }
 
     /** A real Area: a sphere of radius 5 centred on its Warp point at {@code x} in the world "middle-earth". */
     private static InfoArea sphereArea(String name, int x) {
         return InfoArea.create(
-                name, new Location(TestWorlds.named("middle-earth"), x, 64, 0), new AreaGeometry.Sphere(x, 64, 0, 5));
+                name, "middle-earth", new WarpPoint(x, 64, 0, 0, 0), new AreaGeometry.Sphere(x, 64, 0, 5));
+    }
+
+    /** The cuboid (-100, 0, -100) to (100, 90, 100) in "middle-earth", big enough to hold other Areas. */
+    private static InfoArea city() {
+        return InfoArea.create(
+                "city",
+                "middle-earth",
+                new WarpPoint(0, 64, 0, 0, 0),
+                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
     }
 
     /** Puts an Area's file on disk without the store knowing, as an admin copying files in would. */
@@ -63,14 +82,16 @@ class AreaStoreTest {
     }
 
     @Test
-    void anAreaWhoseWorldIsntLoadedIsErasedFromTheWebMapWithAWarning() throws IOException {
+    void anAreaWhoseWorldIsntLoadedIsLoadedFullyButErasedFromTheWebMapWithAWarning() throws IOException {
         fileOf(sphereArea("edoras", 0));
-        files.holdInUnloadedWorld("old-world", "barad-dur", new AreaGeometry.Sphere(0, 64, 0, 5));
+        fileOf(inUnloadedWorld("barad-dur"));
         layer.put(new Marker(AreaMarkers.id("barad-dur"), "old-world", "", "", new Outline.Circle(0, 0, 5), null));
 
         store.reload();
 
-        assertTrue(store.findExact("barad-dur").isPresent());
+        InfoArea baradDur = store.findExact("barad-dur").orElseThrow();
+        assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), baradDur.getGeometry());
+        assertEquals(UNLOADED_WORLD, baradDur.getWorldName());
         assertEquals(Set.of(AreaMarkers.id("edoras")), layer.ids());
         assertEquals(
                 List.of("Area barad-dur isn't drawn on the Web map because its world isn't loaded."),
@@ -79,7 +100,7 @@ class AreaStoreTest {
 
     @Test
     void anAreaWhoseWorldIsntLoadedStaysOffTheWebMapWhenAnotherAreaChanges() throws IOException {
-        files.holdInUnloadedWorld("old-world", "barad-dur", new AreaGeometry.Sphere(0, 64, 0, 5));
+        fileOf(inUnloadedWorld("barad-dur"));
         store.reload();
 
         store.create(sphereArea("edoras", 0), NEW_DETAILS);
@@ -90,11 +111,7 @@ class AreaStoreTest {
     // ADR 0007
     @Test
     void anAreaHoldingAnothersFootprintIsDrawnAsAnOutline() throws IOException {
-        InfoArea city = InfoArea.create(
-                "city",
-                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
-                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
-        fileOf(city);
+        fileOf(city());
         store.reload();
         assertTrue(fillOf("city") > 0);
 
@@ -107,19 +124,16 @@ class AreaStoreTest {
     // ADR 0007
     @Test
     void aMoveIntoAnotherAreasFootprintRedrawsThatAreaAsAnOutline() throws IOException {
-        InfoArea city = InfoArea.create(
-                "city",
-                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
-                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
-        fileOf(city);
+        fileOf(city());
         fileOf(sphereArea("tower", 500));
         store.reload();
         assertTrue(fillOf("city") > 0);
 
         store.move(
                 store.findExact("tower").orElseThrow(),
-                new AreaGeometry.Sphere(50, 64, 0, 5),
-                new Location(TestWorlds.named("middle-earth"), 50, 64, 0));
+                "middle-earth",
+                new WarpPoint(50, 64, 0, 0, 0),
+                new AreaGeometry.Sphere(50, 64, 0, 5));
 
         assertEquals(0, fillOf("city"));
         assertTrue(fillOf("tower") > 0);
@@ -255,11 +269,49 @@ class AreaStoreTest {
         assertEquals(Set.of(AreaMarkers.id("Edoras")), layer.ids());
     }
 
-    /** Far from every test Area, and centred on {@link #movedWarpPoint()}, as a sphere is. */
+    /** Far from every test Area, and centred on {@link #MOVED_WARP_POINT}, as a sphere is. */
     private static final AreaGeometry.Sphere MOVED_TO = new AreaGeometry.Sphere(500, 70, 0, 8);
 
-    private static Location movedWarpPoint() {
-        return new Location(TestWorlds.named("middle-earth"), 500, 70, 0);
+    private static final WarpPoint MOVED_WARP_POINT = new WarpPoint(500, 70, 0, 0, 0);
+
+    /** Where a staff member stands, part way into a block; the world doesn't matter to a Warp point. */
+    private static final Location STANDING = new Location(null, 500.7, 70.2, -0.4, 45.5f, -10.25f);
+
+    @Test
+    void aCreateRoundsTheWarpPointToWholeBlocksKeepingYawAndPitch() {
+        store.reload();
+        InfoArea edoras = InfoArea.create(
+                "edoras", "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Cuboid(490, 60, -10, 510, 80, 10));
+
+        store.create(edoras, NEW_DETAILS);
+
+        assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.getWarpPoint());
+        assertEquals(-1, files.contents("middle-earth", "edoras").orElseThrow().getInt("locationZ"));
+    }
+
+    @Test
+    void aMoveRoundsTheWarpPointToWholeBlocksKeepingYawAndPitch() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Cuboid(490, 60, -10, 510, 80, 10));
+
+        assertEquals(new WarpPoint(500, 70, -1, 45.5f, -10.25f), edoras.getWarpPoint());
+    }
+
+    @Test
+    void aSphereMovedToANewWarpPointIsCentredOnIt() throws IOException {
+        fileOf(sphereArea("edoras", 0));
+        store.reload();
+        InfoArea edoras = store.findExact("edoras").orElseThrow();
+
+        store.move(edoras, "middle-earth", WarpPoint.of(STANDING), new AreaGeometry.Sphere(0, 64, 0, 8));
+
+        assertEquals(new AreaGeometry.Sphere(500, 70, -1, 8), edoras.getGeometry());
+        assertEquals(
+                new Outline.Circle(500, -1, 8),
+                layer.markerOf("edoras").orElseThrow().outline());
     }
 
     @Test
@@ -268,12 +320,12 @@ class AreaStoreTest {
         store.reload();
         InfoArea edoras = store.findExact("edoras").orElseThrow();
 
-        ChangeOutcome outcome = store.move(edoras, MOVED_TO, movedWarpPoint());
+        ChangeOutcome outcome = store.move(edoras, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertSame(edoras, store.findExact("edoras").orElseThrow());
         assertEquals(MOVED_TO, edoras.getGeometry());
-        assertEquals(movedWarpPoint(), edoras.getLocation());
+        assertEquals(MOVED_WARP_POINT, edoras.getWarpPoint());
         YamlConfiguration file = files.contents("middle-earth", "edoras").orElseThrow();
         assertEquals(500, file.getDouble("locationX"));
         assertEquals(70, file.getDouble("locationY"));
@@ -292,11 +344,11 @@ class AreaStoreTest {
         Marker markerBefore = layer.markerOf("edoras").orElseThrow();
 
         files.failNextWrite();
-        ChangeOutcome outcome = store.move(edoras, MOVED_TO, movedWarpPoint());
+        ChangeOutcome outcome = store.move(edoras, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertInstanceOf(ChangeOutcome.NotWritten.class, outcome);
         assertEquals(new AreaGeometry.Sphere(0, 64, 0, 5), edoras.getGeometry());
-        assertEquals(new Location(TestWorlds.named("middle-earth"), 0, 64, 0), edoras.getLocation());
+        assertEquals(new WarpPoint(0, 64, 0, 0, 0), edoras.getWarpPoint());
         assertEquals(
                 fileBefore,
                 files.contents("middle-earth", "edoras").orElseThrow().saveToString());
@@ -310,7 +362,7 @@ class AreaStoreTest {
         InfoArea stale = store.findExact("edoras").orElseThrow();
         store.reload();
 
-        ChangeOutcome outcome = store.move(stale, MOVED_TO, movedWarpPoint());
+        ChangeOutcome outcome = store.move(stale, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertEquals(0, files.contents("middle-earth", "edoras").orElseThrow().getDouble("locationX"));
@@ -326,7 +378,7 @@ class AreaStoreTest {
         InfoArea deleted = store.findExact("edoras").orElseThrow();
         store.delete(deleted);
 
-        ChangeOutcome outcome = store.move(deleted, MOVED_TO, movedWarpPoint());
+        ChangeOutcome outcome = store.move(deleted, "middle-earth", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Gone(), outcome);
         assertTrue(files.contents("middle-earth", "edoras").isEmpty());
@@ -338,10 +390,8 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         store.reload();
         InfoArea edoras = store.findExact("edoras").orElseThrow();
-        Location inArda = new Location(TestWorlds.named("arda"), 500, 70, 0);
-
         files.failNextDelete();
-        ChangeOutcome outcome = store.move(edoras, MOVED_TO, inArda);
+        ChangeOutcome outcome = store.move(edoras, "arda", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.DoneButOldFileLeft("middle-earth", "edoras"), outcome);
         assertEquals("arda", edoras.getWorldName());
@@ -355,8 +405,7 @@ class AreaStoreTest {
         fileOf(sphereArea("edoras", 0));
         store.reload();
 
-        ChangeOutcome outcome = store.move(
-                store.findExact("edoras").orElseThrow(), MOVED_TO, new Location(TestWorlds.named("arda"), 500, 70, 0));
+        ChangeOutcome outcome = store.move(store.findExact("edoras").orElseThrow(), "arda", MOVED_WARP_POINT, MOVED_TO);
 
         assertEquals(new ChangeOutcome.Done(), outcome);
         assertTrue(files.contents("arda", "edoras").isPresent());
@@ -473,11 +522,7 @@ class AreaStoreTest {
     // ADR 0007
     @Test
     void aDeleteRemovesTheAreaItsFileAndItsMarkerAndRedrawsAnAreaThatHeldIt() throws IOException {
-        InfoArea city = InfoArea.create(
-                "city",
-                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
-                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
-        fileOf(city);
+        fileOf(city());
         fileOf(sphereArea("tower", 50));
         store.reload();
         assertEquals(0, fillOf("city"));
@@ -540,11 +585,7 @@ class AreaStoreTest {
     // ADR 0007
     @Test
     void anEditRedrawsEveryAreaSoOneHoldingAnotherStaysAnOutline() throws IOException {
-        InfoArea city = InfoArea.create(
-                "city",
-                new Location(TestWorlds.named("middle-earth"), 0, 64, 0),
-                new AreaGeometry.Cuboid(-100, 0, -100, 100, 90, 100));
-        fileOf(city);
+        fileOf(city());
         fileOf(sphereArea("tower", 50));
         store.reload();
 

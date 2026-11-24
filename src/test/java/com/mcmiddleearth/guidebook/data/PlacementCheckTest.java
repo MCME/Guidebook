@@ -4,12 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.List;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.junit.jupiter.api.Test;
 
 class PlacementCheckTest {
@@ -274,8 +269,8 @@ class PlacementCheckTest {
     }
 
     /**
-     * Outside must agree with the inside rule that decides who gets a Welcome, PluginUtils' {@link PrismoidRegion},
-     * for every block in and around the polygon, including its slanted and concave edges.
+     * Outside must agree with the inside rule that decides who gets a Welcome, the Area's own, for every block in and
+     * around the polygon, including its slanted and concave edges.
      */
     @Test
     void outsideAPrismAgreesWithWhoGetsAWelcome() {
@@ -285,18 +280,12 @@ class PlacementCheckTest {
                 new AreaGeometry.Prism(List.of(0, 7, 15, 7, 2), List.of(0, 13, 1, 5, 9), 60, 62),
                 // A triangle drawn the other way round
                 new AreaGeometry.Prism(List.of(0, 3, 17), List.of(0, 11, 4), 60, 62));
-        World world = world("middle_earth");
         for (AreaGeometry.Prism prism : prisms) {
-            PrismoidRegion region = new PrismoidRegion(
-                    new Location(world, 0, 61, 0),
-                    new ArrayList<>(prism.xs()),
-                    new ArrayList<>(prism.zs()),
-                    prism.minY(),
-                    prism.maxY());
+            InfoArea area = TestAreas.area("bree", "middle_earth", prism);
             for (int x = -3; x <= 23; x++) {
                 for (int y = 58; y <= 64; y++) {
                     for (int z = -3; z <= 23; z++) {
-                        boolean welcomed = region.isInside(new Location(world, x + 0.5, y, z + 0.5));
+                        boolean welcomed = area.isInside(new WorldPoint("middle_earth", x + 0.5, y, z + 0.5));
                         boolean outside = !outsideFindings(prism, x, y, z).isEmpty();
                         assertEquals(
                                 !welcomed,
@@ -306,20 +295,6 @@ class PlacementCheckTest {
                 }
             }
         }
-    }
-
-    // A world that only has a name, enough for a region to compare Locations
-    private static World world(String name) {
-        return (World) Proxy.newProxyInstance(
-                World.class.getClassLoader(),
-                new Class<?>[] {World.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getName" -> name;
-                    case "equals" -> proxy == args[0];
-                    case "hashCode" -> System.identityHashCode(proxy);
-                    case "toString" -> "World " + name;
-                    default -> throw new UnsupportedOperationException(method.getName());
-                });
     }
 
     @Test

@@ -1,7 +1,6 @@
 package com.mcmiddleearth.guidebook.data;
 
 import com.mcmiddleearth.guidebook.webmap.MarkerLayer;
-import com.mcmiddleearth.pluginutil.region.Region;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
-import org.bukkit.Location;
 
 /**
  * Holds every Area, keeps each one's file up to date through {@link AreaFiles}, and draws every Area on the Web map
@@ -20,20 +19,24 @@ import org.bukkit.Location;
 public final class AreaStore {
 
     private final Map<String, InfoArea> areas = new HashMap<>();
-    private final AreaRegistry<InfoArea> registry = new AreaRegistry<>(areas.values());
+    private final AreaRegistry registry = new AreaRegistry(areas.values());
 
     private final AreaFiles files;
     private final MarkerLayer webMapLayer;
+    private final Predicate<String> worldLoaded;
     private final Logger logger;
 
     /**
      * Holds no Areas until {@link #reload()}.
      *
+     * @param worldLoaded whether the world of that name is loaded now. An Area whose world isn't has nowhere to be
+     *     drawn on the Web map; it's asked at each drawing, so a world loaded later shows its Areas at the next change
      * @param logger where load problems and Areas left off the Web map are logged
      */
-    public AreaStore(AreaFiles files, MarkerLayer webMapLayer, Logger logger) {
+    public AreaStore(AreaFiles files, MarkerLayer webMapLayer, Predicate<String> worldLoaded, Logger logger) {
         this.files = files;
         this.webMapLayer = webMapLayer;
+        this.worldLoaded = worldLoaded;
         this.logger = logger;
     }
 
@@ -129,27 +132,27 @@ public final class AreaStore {
     }
 
     /**
-     * Gives the Area {@code geometry}, which may be another Shape, with its Warp point at {@code warpPoint}, writes its
-     * file, and redraws the Web map. If the file can't be written, the Area goes back where it was. Moving it to
-     * another world deletes its file in the old world's folder.
+     * Puts the Area in the world {@code worldName}, with its Warp point at {@code warpPoint} and {@code geometry},
+     * which may be another Shape, as {@link InfoArea#place} does, writes its file, and redraws the Web map. If the file
+     * can't be written, the Area goes back where it was. Moving it to another world deletes its file in the old world's
+     * folder.
      *
      * @return {@link ChangeOutcome.Done}, {@link ChangeOutcome.Gone}, {@link ChangeOutcome.NotWritten}, or
      *     {@link ChangeOutcome.DoneButOldFileLeft} if the old world's file couldn't be deleted
      */
-    public ChangeOutcome move(InfoArea area, AreaGeometry geometry, Location warpPoint) {
+    public ChangeOutcome move(InfoArea area, String worldName, WarpPoint warpPoint, AreaGeometry geometry) {
         if (!isCurrent(area)) {
             return new ChangeOutcome.Gone();
         }
-        Region region = InfoArea.regionOf(geometry, warpPoint);
-        Region oldRegion = area.getRegion();
-        // Found before the move: the world comes from the region
         String oldWorldName = area.getWorldName();
+        WarpPoint oldWarpPoint = area.getWarpPoint();
+        AreaGeometry oldGeometry = area.getGeometry();
 
-        area.setRegion(region);
+        area.place(worldName, warpPoint, geometry);
         try {
             files.write(area);
         } catch (IOException ex) {
-            area.setRegion(oldRegion);
+            area.place(oldWorldName, oldWarpPoint, oldGeometry);
             return new ChangeOutcome.NotWritten(ex);
         }
         boolean oldFileGone =
@@ -219,7 +222,7 @@ public final class AreaStore {
     private void drawWebMap() {
         webMapLayer.clear();
         areas.values().stream()
-                .filter(area -> !area.getRegion().isValid())
+                .filter(area -> !isInLoadedWorld(area))
                 .forEach(area -> logger.warning(
                         "Area " + area.getName() + " isn't drawn on the Web map because its world isn't loaded."));
         drawAreas();
@@ -230,11 +233,14 @@ public final class AreaStore {
      * An Area whose world isn't loaded has nowhere to be drawn, so its marker is erased.
      */
     private void drawAreas() {
-        List<InfoArea> drawn = areas.values().stream()
-                .filter(area -> area.getRegion().isValid())
-                .toList();
+        List<InfoArea> drawn =
+                areas.values().stream().filter(this::isInLoadedWorld).toList();
         drawn.forEach(area -> webMapLayer.put(AreaMarkers.toMarker(area, drawn)));
-        areas.values().stream().filter(area -> !area.getRegion().isValid()).forEach(area -> eraseArea(area.getName()));
+        areas.values().stream().filter(area -> !isInLoadedWorld(area)).forEach(area -> eraseArea(area.getName()));
+    }
+
+    private boolean isInLoadedWorld(InfoArea area) {
+        return worldLoaded.test(area.getWorldName());
     }
 
     private void eraseArea(String areaName) {

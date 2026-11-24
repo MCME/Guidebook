@@ -29,6 +29,8 @@ see the GitHub history.
   one you enter.
 - `/guidebook reload` no longer undoes `/guidebook on` and `off` used since the server started.
 - `GuidebookSendEvent` isn't fired for Opted out players.
+- A polygon Area's corners are written to its Area file in the order staff selected them. The
+  polygon is unchanged, and older Guidebook versions read it the same.
 
 ### Fixed
 
@@ -36,6 +38,16 @@ see the GitHub history.
   saved" message says. Before, the new Title, Subtitle, Description, Show title, Boss bar and
   Enabled were already live for players and on the Web map until the next `/guidebook reload`
   undid them.
+- A player inside a polygon Area who warps to another world now leaves it, instead of keeping its
+  Boss bar and missing the Welcome when they come back.
+- Players are Welcomed into polygon Areas on exactly the blocks staff selected with WorldEdit.
+  Before, sloped edges could start a Welcome a block early or late.
+- An Area file holding no Shape Guidebook knows is now reported in the server log when loading,
+  instead of being skipped silently.
+- An Area whose world isn't loaded can now be saved (edited or renamed), instead of failing.
+- `/guidebook warp` to an Area whose world isn't loaded says so, instead of failing.
+- Right after `/guidebook create` or `/guidebook move`, an Area's Warp point, and a sphere's centre,
+  sit on whole blocks, as they already did after a `/guidebook reload`.
 
 ## [2.0.1] - 2026-10-20
 

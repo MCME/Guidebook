@@ -2,14 +2,9 @@ package com.mcmiddleearth.guidebook.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.mcmiddleearth.pluginutil.region.PrismoidRegion;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -19,31 +14,8 @@ class PlacementCheckOverlapTest {
 
     private static final String WORLD = "middle_earth";
 
-    record TestArea(String getName, String getWorldName, AreaGeometry getGeometry) implements MarkableArea {
-
-        @Override
-        public String getTitle() {
-            return getName;
-        }
-
-        @Override
-        public String getSubtitle() {
-            return "";
-        }
-
-        @Override
-        public String getDescription() {
-            return "";
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return true;
-        }
-    }
-
-    private static TestArea area(String name, AreaGeometry geometry) {
-        return new TestArea(name, WORLD, geometry);
+    private static InfoArea area(String name, AreaGeometry geometry) {
+        return TestAreas.area(name, WORLD, geometry);
     }
 
     private static AreaGeometry cuboid(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
@@ -55,11 +27,11 @@ class PlacementCheckOverlapTest {
     }
 
     /** The names the check reports overlapping when {@code proposed} is placed among {@code areas}, or none. */
-    private static List<String> overlapping(AreaGeometry proposed, TestArea... areas) {
+    private static List<String> overlapping(AreaGeometry proposed, InfoArea... areas) {
         return overlapping(proposed, Optional.empty(), areas);
     }
 
-    private static List<String> overlapping(AreaGeometry proposed, Optional<String> moved, TestArea... areas) {
+    private static List<String> overlapping(AreaGeometry proposed, Optional<String> moved, InfoArea... areas) {
         // The staff member stands in the proposal's world, so Another world never applies
         PlacementCheck.StaffPosition staff = new PlacementCheck.StaffPosition(WORLD, 0, 64, 0);
         return PlacementCheck.check(new PlacementCheck.Proposal(WORLD, proposed), staff, List.of(areas), moved).stream()
@@ -269,56 +241,36 @@ class PlacementCheckOverlapTest {
         return new AreaGeometry.Prism(xs, zs, minY, maxY);
     }
 
-    // Prisms take their inside rule from PrismoidRegion, so a single block must overlap one exactly when the region
-    // itself says the block is inside
+    // One rule: a single block overlaps a prism exactly when a player standing in it is inside the prism's Area
 
     @Test
-    void aBlockOverlapsAPrismExactlyWhenThePrismsRegionHasItInside() {
-        Random random = new Random(1937);
-        for (int polygon = 0; polygon < 300; polygon++) {
-            int corners = 3 + random.nextInt(6);
-            List<Integer> xs = new ArrayList<>();
-            List<Integer> zs = new ArrayList<>();
-            for (int corner = 0; corner < corners; corner++) {
-                xs.add(random.nextInt(13) - 6);
-                zs.add(random.nextInt(13) - 6);
-            }
-            AreaGeometry.Prism prism = new AreaGeometry.Prism(xs, zs, 60, 62);
-            PrismoidRegion region = new PrismoidRegion(at(0, 60, 0), new ArrayList<>(xs), new ArrayList<>(zs), 60, 62);
-            for (int x = -8; x <= 8; x++) {
-                for (int z = -8; z <= 8; z++) {
+    void aBlockOverlapsAPrismExactlyWhereThePrismsAreaHasAPlayerInside() {
+        List<AreaGeometry> prisms = List.of(
+                // A sloped triangle
+                prism(60, 62, 0, 0, 20, 7, 5, 18),
+                // A concave arrowhead, notched at (1, 3)
+                prism(60, 62, 0, 0, 4, 14, 7, 0, 1, 3));
+        for (AreaGeometry prism : prisms) {
+            InfoArea bree = area("bree", prism);
+            for (int x = -2; x <= 22; x++) {
+                for (int z = -2; z <= 20; z++) {
                     for (int y = 59; y <= 63; y++) {
-                        boolean inside = region.isInside(at(x, y, z));
+                        boolean inside = bree.isInside(new WorldPoint(WORLD, x + 0.5, y, z + 0.5));
                         assertEquals(
                                 inside ? List.of("bree") : List.of(),
-                                overlapping(cuboid(x, y, z, x, y, z), area("bree", prism)),
-                                "block " + x + " " + y + " " + z + " and " + region);
+                                overlapping(cuboid(x, y, z, x, y, z), bree),
+                                "block " + x + " " + y + " " + z + " of " + prism);
                     }
                 }
             }
         }
     }
 
-    // A world for PrismoidRegion, which only compares worlds with each other
-    private static final World TEST_WORLD = (World) Proxy.newProxyInstance(
-            World.class.getClassLoader(),
-            new Class<?>[] {World.class},
-            (proxy, method, args) -> switch (method.getName()) {
-                case "equals" -> proxy == args[0];
-                case "hashCode" -> 0;
-                case "toString" -> "test world";
-                default -> null;
-            });
-
-    private static Location at(int x, int y, int z) {
-        return new Location(TEST_WORLD, x, y, z);
-    }
-
     // Worlds, moves and order
 
     @Test
     void anAreaInAnotherWorldNeverOverlaps() {
-        TestArea elsewhere = new TestArea("moria-gate", "moria", cuboid(0, 60, 0, 20, 80, 20));
+        InfoArea elsewhere = TestAreas.area("moria-gate", "moria", cuboid(0, 60, 0, 20, 80, 20));
 
         assertEquals(List.of(), overlapping(cuboid(0, 60, 0, 20, 80, 20), elsewhere));
     }

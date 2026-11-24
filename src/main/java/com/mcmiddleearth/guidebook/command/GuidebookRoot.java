@@ -6,6 +6,7 @@ import static com.mcmiddleearth.guidebook.command.GuidebookHelp.USER;
 import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
+import com.mcmiddleearth.guidebook.data.WorldPoint;
 import com.mcmiddleearth.guidebook.dialog.EditDialog;
 import com.mcmiddleearth.guidebook.dialog.PlacementDialog;
 import com.mcmiddleearth.guidebook.util.DevUtil;
@@ -28,6 +29,7 @@ import net.strokkur.commands.paper.Description;
 import net.strokkur.commands.paper.Executor;
 import net.strokkur.commands.paper.arguments.CustomArg;
 import net.strokkur.commands.permission.Permission;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -103,7 +105,15 @@ class GuidebookRoot {
     @Executes("warp")
     @Permission(STAFF)
     void warp(CommandSender sender, @Executor Player player, @CustomArg(AreaArgument.class) InfoArea area) {
-        player.teleport(area.getLocation());
+        // By name, as the Area's world may not be loaded
+        String worldName = area.getWorldName();
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            GuidebookMessages.sendError(
+                    sender, GuidebookMessages.area(area.getName()), " is in " + worldName + ", which isn't loaded.");
+            return;
+        }
+        player.teleport(area.getWarpPoint().toLocation(world));
         GuidebookMessages.sendInfo(sender, "You are now at ", GuidebookMessages.area(area.getName()), ".");
     }
 
@@ -125,7 +135,7 @@ class GuidebookRoot {
     @Permission(STAFF)
     void editHere(@Executor Player player) {
         List<InfoArea> here = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
-                .filter(area -> area.isInside(player.getLocation()))
+                .filter(area -> area.isInside(WorldPoint.from(player.getLocation())))
                 .toList();
         if (here.size() == 1) {
             EditDialog.open(player, here.getFirst());

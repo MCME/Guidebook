@@ -1,0 +1,18 @@
+# An old cuboid Area: a centre and its sizes along each axis, from before cuboids kept their corners.
+# Its centre (100, 64, -200) with sizes 40, 40, 60 is the cuboid from (80, 44, -230) to (120, 84, -170).
+world: middle-earth
+center:
+  world: middle-earth
+  x: 100.0
+  y: 64.0
+  z: -200.0
+xSize: 40
+ySize: 40
+zSize: 60
+description: Welcome
+title: <gold>Edoras
+subtitle: <gray>Capital of Rohan
+showScoreboard: true
+showTitle: true
+enabled: true
+minimessage: true

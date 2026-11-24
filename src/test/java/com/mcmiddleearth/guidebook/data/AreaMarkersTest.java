@@ -15,22 +15,24 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AreaMarkersTest {
 
-    record TestArea(
-            String getName,
-            String getTitle,
-            String getSubtitle,
-            String getDescription,
-            boolean isEnabled,
-            String getWorldName,
-            AreaGeometry getGeometry)
-            implements MarkableArea {}
+    private static InfoArea area(
+            String name,
+            String title,
+            String subtitle,
+            String description,
+            boolean enabled,
+            String worldName,
+            AreaGeometry geometry) {
+        return TestAreas.area(
+                name, worldName, geometry, new AreaDetails(false, title, subtitle, false, description, enabled));
+    }
 
-    private static TestArea sphere(String name) {
-        return new TestArea(
+    private static InfoArea sphere(String name) {
+        return area(
                 name, "Minas Tirith", "", "<guide>The city", true, "world", new AreaGeometry.Sphere(10, 64, 20, 30));
     }
 
-    private static Marker markerOf(TestArea area) {
+    private static Marker markerOf(InfoArea area) {
         return AreaMarkers.toMarker(area, List.of(area));
     }
 
@@ -43,8 +45,8 @@ class AreaMarkersTest {
 
     @Test
     void aSphereIsACircleWithItsCentreAndRadiusInItsWorld() {
-        TestArea area = new TestArea(
-                "minas", "Minas Tirith", "", "", true, "middle_earth", new AreaGeometry.Sphere(-120, 70, 340, 45));
+        InfoArea area =
+                area("minas", "Minas Tirith", "", "", true, "middle_earth", new AreaGeometry.Sphere(-120, 70, 340, 45));
 
         Marker marker = markerOf(area);
 
@@ -52,8 +54,8 @@ class AreaMarkersTest {
         assertEquals(new Outline.Circle(-120, 340, 45), marker.outline());
     }
 
-    private static TestArea shaped(AreaGeometry geometry) {
-        return new TestArea("minas", "Minas Tirith", "", "", true, "world", geometry);
+    private static InfoArea shaped(AreaGeometry geometry) {
+        return area("minas", "Minas Tirith", "", "", true, "world", geometry);
     }
 
     // A cuboid's max corner is a block inside it, so the outline reaches that block's far edge
@@ -83,9 +85,8 @@ class AreaMarkersTest {
                 marker.outline());
     }
 
-    private static TestArea titled(String title, boolean enabled) {
-        return new TestArea(
-                "world-gondor-minas", title, "", "", enabled, "world", new AreaGeometry.Sphere(0, 64, 0, 10));
+    private static InfoArea titled(String title, boolean enabled) {
+        return area("world-gondor-minas", title, "", "", enabled, "world", new AreaGeometry.Sphere(0, 64, 0, 10));
     }
 
     @Test
@@ -130,7 +131,7 @@ class AreaMarkersTest {
     }
 
     private static String popupOf(String title, String subtitle, String description, boolean enabled) {
-        TestArea area = new TestArea(
+        InfoArea area = area(
                 "world-gondor-minas",
                 title,
                 subtitle,
@@ -211,17 +212,17 @@ class AreaMarkersTest {
         assertFalse(popup.contains("<script>"), popup);
     }
 
-    private static TestArea placed(String name, String world, AreaGeometry geometry) {
-        return new TestArea(name, "Title", "", "", true, world, geometry);
+    private static InfoArea placed(String name, String world, AreaGeometry geometry) {
+        return area(name, "Title", "", "", true, world, geometry);
     }
 
-    private static double fillOf(TestArea area, TestArea... drawn) {
+    private static double fillOf(InfoArea area, InfoArea... drawn) {
         return AreaMarkers.toMarker(area, List.of(drawn)).style().fillOpacity();
     }
 
-    private static final TestArea CITY = placed("city", "world", new AreaGeometry.Cuboid(0, 0, 0, 100, 90, 100));
+    private static final InfoArea CITY = placed("city", "world", new AreaGeometry.Cuboid(0, 0, 0, 100, 90, 100));
 
-    private static final TestArea TOWER = placed("tower", "world", new AreaGeometry.Cuboid(40, 60, 40, 50, 90, 50));
+    private static final InfoArea TOWER = placed("tower", "world", new AreaGeometry.Cuboid(40, 60, 40, 50, 90, 50));
 
     // Unfilled, LiveAtlas draws only the outline, so the Area inside can be clicked
     @Test
@@ -241,7 +242,7 @@ class AreaMarkersTest {
     // Each still has a part of its own to click, so neither gives up its fill
     @Test
     void areasThatOnlyPartlyOverlapAreBothFilled() {
-        TestArea neighbour = placed("neighbour", "world", new AreaGeometry.Cuboid(50, 0, 50, 150, 90, 150));
+        InfoArea neighbour = placed("neighbour", "world", new AreaGeometry.Cuboid(50, 0, 50, 150, 90, 150));
 
         assertTrue(fillOf(CITY, CITY, neighbour) > 0);
         assertTrue(fillOf(neighbour, CITY, neighbour) > 0);
@@ -250,23 +251,23 @@ class AreaMarkersTest {
     // Heights are ignored because the Web map is flat
     @Test
     void anAreaAboveOrBelowAnotherStillCountsAsInsideIt() {
-        TestArea cellar = placed("cellar", "world", new AreaGeometry.Cuboid(10, -40, 10, 20, -30, 20));
+        InfoArea cellar = placed("cellar", "world", new AreaGeometry.Cuboid(10, -40, 10, 20, -30, 20));
 
         assertEquals(0, fillOf(CITY, CITY, cellar));
     }
 
     @Test
     void anAreaInAnotherWorldDoesntCount() {
-        TestArea elsewhere = placed("elsewhere", "nether", new AreaGeometry.Cuboid(40, 60, 40, 50, 90, 50));
+        InfoArea elsewhere = placed("elsewhere", "nether", new AreaGeometry.Cuboid(40, 60, 40, 50, 90, 50));
 
         assertTrue(fillOf(CITY, CITY, elsewhere) > 0);
     }
 
     @Test
     void aCircleAndAPrismHoldWhatIsInsideTheirBoxes() {
-        TestArea circle = placed("circle", "world", new AreaGeometry.Sphere(0, 64, 0, 30));
-        TestArea prism = placed("prism", "world", new AreaGeometry.Prism(List.of(0, 60, 30), List.of(0, 0, 60), 0, 90));
-        TestArea small = placed("small", "world", new AreaGeometry.Cuboid(10, 0, 10, 20, 90, 20));
+        InfoArea circle = placed("circle", "world", new AreaGeometry.Sphere(0, 64, 0, 30));
+        InfoArea prism = placed("prism", "world", new AreaGeometry.Prism(List.of(0, 60, 30), List.of(0, 0, 60), 0, 90));
+        InfoArea small = placed("small", "world", new AreaGeometry.Cuboid(10, 0, 10, 20, 90, 20));
 
         assertEquals(0, fillOf(circle, circle, small));
         assertEquals(0, fillOf(prism, prism, small));
@@ -275,8 +276,8 @@ class AreaMarkersTest {
     // Otherwise each would leave the other unclickable, or neither would be filled
     @Test
     void ofTwoAreasWithTheSameBoxOnlyTheFirstByNameIsUnfilled() {
-        TestArea first = placed("Alpha", "world", new AreaGeometry.Cuboid(0, 0, 0, 10, 10, 10));
-        TestArea second = placed("beta", "world", new AreaGeometry.Sphere(5, 5, 5, 5));
+        InfoArea first = placed("Alpha", "world", new AreaGeometry.Cuboid(0, 0, 0, 10, 10, 10));
+        InfoArea second = placed("beta", "world", new AreaGeometry.Sphere(5, 5, 5, 5));
 
         assertEquals(0, fillOf(first, first, second));
         assertTrue(fillOf(second, first, second) > 0);
@@ -285,7 +286,7 @@ class AreaMarkersTest {
     // Unclamped, the radius would turn the sphere's box inside out, reaching back across the city
     @Test
     void aSphereWithANegativeRadiusIsHeldOnlyWhereItsCentreIs() {
-        TestArea broken = placed("broken", "world", new AreaGeometry.Sphere(200, 64, 50, -150));
+        InfoArea broken = placed("broken", "world", new AreaGeometry.Sphere(200, 64, 50, -150));
 
         assertTrue(fillOf(CITY, CITY, broken) > 0);
     }
