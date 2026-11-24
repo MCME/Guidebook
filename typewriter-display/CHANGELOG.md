@@ -27,10 +27,10 @@ from. It opens with these lines, the first three of which CI checks before relea
   Welcome entry, because replacing it loses staff's panel edits. Otherwise `keep`, or `new` on the
   first release.
 
-## [Unreleased]
+## [0.1.0] - 2026-11-24
 
 - **Typewriter build:** `0.9.0-beta-177`
-- **Lowest Guidebook version:** the first Guidebook release with Displays, after 2.0.1
+- **Lowest Guidebook version:** `2.1.0`
 - **Typewriter page:** new: copy `guidebook.json` into `plugins/Typewriter/pages/`
 
 ### Added

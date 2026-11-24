@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.mcmiddleearth"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 // Built into the jar, so an older Guidebook gets one log line instead of a class-loading error. 2.1.0 is the first
 // Guidebook with Displays. When a Guidebook change breaks this jar's build, raise this to the Guidebook version that
