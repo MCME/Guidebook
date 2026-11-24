@@ -17,7 +17,9 @@
 package com.mcmiddleearth.guidebook;
 
 import com.mcmiddleearth.guidebook.command.GuidebookRootBrigadier;
-import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.data.AreaFolder;
+import com.mcmiddleearth.guidebook.data.AreaMarkers;
+import com.mcmiddleearth.guidebook.data.AreaStore;
 import com.mcmiddleearth.guidebook.events.GuidebookSendEvent;
 import com.mcmiddleearth.guidebook.webmap.NoWebMap;
 import com.mcmiddleearth.guidebook.webmap.WebMap;
@@ -49,6 +51,8 @@ public class GuidebookPlugin extends JavaPlugin {
 
     private WebMap webMap = new NoWebMap();
 
+    private AreaStore areaStore;
+
     private DisplaySwitchboard displaySwitchboard;
     private Watchman watchman;
 
@@ -59,9 +63,12 @@ public class GuidebookPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         pluginInstance = this;
-        // Before loading, so loading draws the Areas once
         useWebMap();
-        PluginData.loadData();
+        areaStore = new AreaStore(
+                new AreaFolder(getDataFolder()),
+                webMap.layer(AreaMarkers.LAYER_ID, AreaMarkers.LAYER_LABEL, true),
+                getLogger());
+        areaStore.reload();
 
         startWatchman();
 
@@ -94,6 +101,11 @@ public class GuidebookPlugin extends JavaPlugin {
         return displaySwitchboard;
     }
 
+    /** Holds every Area, keeping its file and its marker on the Web map up to date. */
+    public AreaStore getAreaStore() {
+        return areaStore;
+    }
+
     /** Notices players entering Areas and gives them their Welcomes. */
     public Watchman getWatchman() {
         return watchman;
@@ -106,7 +118,6 @@ public class GuidebookPlugin extends JavaPlugin {
         } else {
             getLogger().info("Dynmap isn't running, so Guidebook areas aren't drawn on a Web map.");
         }
-        PluginData.useWebMap(webMap);
     }
 
     private void startWatchman() {
@@ -136,7 +147,7 @@ public class GuidebookPlugin extends JavaPlugin {
                 .getScheduler()
                 .scheduleSyncRepeatingTask(
                         this,
-                        () -> watchman.tick(PluginData.getInfoAreas().values(), Bukkit.getOnlinePlayers()),
+                        () -> watchman.tick(areaStore.all(), Bukkit.getOnlinePlayers()),
                         INITIAL_DELAY_TICKS,
                         INTERVAL_TICKS);
     }

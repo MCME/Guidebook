@@ -1,6 +1,6 @@
 package com.mcmiddleearth.guidebook.command;
 
-import com.mcmiddleearth.guidebook.data.PluginData;
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -21,7 +21,8 @@ final class NewAreaNameArgument implements CustomArgumentType.Converted<String, 
 
     @Override
     public String convert(String name) throws CommandSyntaxException {
-        Optional<String> problem = PluginData.newAreaNameProblem(name);
+        Optional<String> problem =
+                GuidebookPlugin.getPluginInstance().getAreaStore().newNameProblem(name);
         if (problem.isPresent()) {
             throw UNUSABLE_NAME.create(problem.get());
         }

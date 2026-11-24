@@ -1,8 +1,8 @@
 package com.mcmiddleearth.guidebook.command;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.AreaRegistry;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -28,11 +28,10 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
 
     @Override
     public InfoArea convert(String name) throws CommandSyntaxException {
-        InfoArea area = PluginData.getInfoArea(name);
-        if (area == null) {
-            throw UNKNOWN_AREA.create(name);
-        }
-        return area;
+        return GuidebookPlugin.getPluginInstance()
+                .getAreaStore()
+                .find(name)
+                .orElseThrow(() -> UNKNOWN_AREA.create(name));
     }
 
     @Override
@@ -47,7 +46,8 @@ final class AreaArgument implements CustomArgumentType.Converted<InfoArea, Strin
 
     /** Suggests the Area names matching the typed text, each with its Title, Shape and whether it's disabled. */
     static CompletableFuture<Suggestions> suggestAreaNames(SuggestionsBuilder builder) {
-        for (AreaRegistry.Suggestion suggestion : PluginData.suggestAreas(builder.getRemaining())) {
+        for (AreaRegistry.Suggestion suggestion :
+                GuidebookPlugin.getPluginInstance().getAreaStore().suggest(builder.getRemaining())) {
             builder.suggest(
                     suggestion.name(), MessageComponentSerializer.message().serialize(tooltip(suggestion)));
         }

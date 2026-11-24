@@ -1,10 +1,11 @@
 package com.mcmiddleearth.guidebook.dialog;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.AreaGeometry;
+import com.mcmiddleearth.guidebook.data.ChangeOutcome;
 import com.mcmiddleearth.guidebook.data.InfoArea;
 import com.mcmiddleearth.guidebook.data.PlacementCheck;
 import com.mcmiddleearth.guidebook.data.PlacementFinding;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import com.mcmiddleearth.guidebook.worldedit.WorldEditSelections;
 import io.papermc.paper.dialog.Dialog;
@@ -212,34 +213,32 @@ public final class PlacementDialog {
 
         @Override
         public void place(Player player, AreaGeometry geometry, Location warpPoint) {
-            // A rename keeps the same Area, but a delete or reload while the dialog was open drops it from the store
-            if (PluginData.getInfoAreaExact(area.getName()) != area) {
-                player.closeDialog();
-                GuidebookMessages.sendError(
-                        player,
-                        GuidebookMessages.area(area.getName()),
-                        " was deleted or reloaded while you decided. It was NOT moved.");
-                return;
-            }
-            String oldWorld = area.getWorldName();
-            boolean oldFileDeleted;
-            try {
-                oldFileDeleted = PluginData.moveInfoArea(area, geometry, warpPoint);
-            } catch (IOException ex) {
-                Logger.getLogger(PlacementDialog.class.getName()).log(Level.SEVERE, null, ex);
-                player.closeDialog();
-                GuidebookMessages.sendNotDone(player, area.getName(), "moved");
-                return;
-            }
+            String name = area.getName();
+            ChangeOutcome outcome =
+                    GuidebookPlugin.getPluginInstance().getAreaStore().move(area, geometry, warpPoint);
             player.closeDialog();
-            GuidebookMessages.sendInfo(
-                    player, GuidebookMessages.area(area.getName()), " was moved to your location and selection.");
-            if (!oldFileDeleted) {
-                GuidebookMessages.sendError(
-                        player,
-                        "The old data file " + oldWorld + "/" + area.getName()
-                                + ".yml couldn't be deleted. Delete it before reloading, or the area will load twice.");
+            switch (outcome) {
+                case ChangeOutcome.Done() -> sendMoved(player, name);
+                case ChangeOutcome.DoneButOldFileLeft(String oldWorld, String areaName) -> {
+                    sendMoved(player, name);
+                    GuidebookMessages.sendError(
+                            player,
+                            "The old Area file " + oldWorld + "/" + areaName
+                                    + ".yml couldn't be deleted. Delete it before reloading, or the Area will load"
+                                    + " twice.");
+                }
+                case ChangeOutcome.Gone() -> GuidebookMessages.sendGoneMeanwhile(player, name, "decided", "moved");
+                case ChangeOutcome.NotWritten(IOException cause) -> {
+                    Logger.getLogger(PlacementDialog.class.getName()).log(Level.SEVERE, null, cause);
+                    GuidebookMessages.sendNotDone(player, name, "moved");
+                }
+                case ChangeOutcome.NameTaken _ -> {}
             }
+        }
+
+        private static void sendMoved(Player player, String name) {
+            GuidebookMessages.sendInfo(
+                    player, GuidebookMessages.area(name), " was moved to your location and selection.");
         }
     }
 
@@ -336,7 +335,11 @@ public final class PlacementDialog {
     private static void showSphere(Player player, Purpose purpose) {
         PlacementCheck.StaffPosition staff = positionOf(player);
         PlacementCheck.SphereClearance clearance = PlacementCheck.sphereClearance(
-                staff, PluginData.getInfoAreas().values(), purpose.movedAreaName(), RADIUS_MIN, RADIUS_MAX);
+                staff,
+                GuidebookPlugin.getPluginInstance().getAreaStore().all(),
+                purpose.movedAreaName(),
+                RADIUS_MIN,
+                RADIUS_MAX);
         int clear = clearance.largestClearRadius();
 
         List<DialogBody> body = new ArrayList<>();
@@ -421,7 +424,10 @@ public final class PlacementDialog {
 
     private static List<PlacementFinding> check(Player player, Purpose purpose, PlacementCheck.Proposal proposal) {
         return PlacementCheck.check(
-                proposal, positionOf(player), PluginData.getInfoAreas().values(), purpose.movedAreaName());
+                proposal,
+                positionOf(player),
+                GuidebookPlugin.getPluginInstance().getAreaStore().all(),
+                purpose.movedAreaName());
     }
 
     private static boolean hasBlocking(List<PlacementFinding> findings) {

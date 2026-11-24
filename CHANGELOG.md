@@ -30,6 +30,13 @@ see the GitHub history.
 - `/guidebook reload` no longer undoes `/guidebook on` and `off` used since the server started.
 - `GuidebookSendEvent` isn't fired for Opted out players.
 
+### Fixed
+
+- An Edit dialog save whose Area file can't be written leaves the Area as it was, as the "NOT
+  saved" message says. Before, the new Title, Subtitle, Description, Show title, Boss bar and
+  Enabled were already live for players and on the Web map until the next `/guidebook reload`
+  undid them.
+
 ## [2.0.1] - 2026-10-20
 
 Guidebook for Paper 26.2. Staff edit Areas in dialogs, Area text is MiniMessage, and every Area is

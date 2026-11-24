@@ -5,8 +5,8 @@
  */
 package com.mcmiddleearth.guidebook.command;
 
+import com.mcmiddleearth.guidebook.GuidebookPlugin;
 import com.mcmiddleearth.guidebook.data.InfoArea;
-import com.mcmiddleearth.guidebook.data.PluginData;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.util.GuidebookMessages;
 import java.util.Comparator;
@@ -38,7 +38,7 @@ final class GuidebookList {
      */
     static void send(CommandSender sender, String filter, int page) {
         String search = filter.toLowerCase(Locale.ROOT);
-        List<InfoArea> areas = PluginData.getInfoAreas().values().stream()
+        List<InfoArea> areas = GuidebookPlugin.getPluginInstance().getAreaStore().all().stream()
                 .filter(area -> area.getName().toLowerCase(Locale.ROOT).contains(search))
                 .sorted(Comparator.comparing(InfoArea::getName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
