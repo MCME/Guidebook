@@ -20,6 +20,10 @@ see the GitHub history.
 
 ### Changed
 
+- An Area marker's popup on the Web map is a compact card: the Area name (marked if the Area is
+  Disabled), the Title and Subtitle on one line, then the Description, all in the colours players see.
+  Missing text shows as a dashed "no Title", "no Subtitle" or "no Description". The Shape is no longer
+  listed.
 - Re-Enabling an Area Welcomes the players standing in it.
 - `/guidebook on` Welcomes you to the Areas you're standing in, instead of waiting for the next
   one you enter.

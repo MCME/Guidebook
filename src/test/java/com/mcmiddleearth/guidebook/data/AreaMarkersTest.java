@@ -1,6 +1,7 @@
 package com.mcmiddleearth.guidebook.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mcmiddleearth.guidebook.webmap.Marker;
@@ -82,15 +83,6 @@ class AreaMarkersTest {
                 marker.outline());
     }
 
-    @Test
-    void thePopupNamesACuboidsAndAPrismsShape() {
-        Marker cuboid = markerOf(shaped(new AreaGeometry.Cuboid(0, 0, 0, 1, 1, 1)));
-        Marker prism = markerOf(shaped(new AreaGeometry.Prism(List.of(0, 1, 1), List.of(0, 0, 1), 0, 1)));
-
-        assertEquals("Shape: cuboid", cuboid.popup().lines().skip(1).findFirst().orElseThrow());
-        assertEquals("Shape: prism", prism.popup().lines().skip(1).findFirst().orElseThrow());
-    }
-
     private static TestArea titled(String title, boolean enabled) {
         return new TestArea(
                 "world-gondor-minas", title, "", "", enabled, "world", new AreaGeometry.Sphere(0, 64, 0, 10));
@@ -134,58 +126,89 @@ class AreaMarkersTest {
     }
 
     private static String popupOf(String title, String subtitle, String description) {
+        return popupOf(title, subtitle, description, true);
+    }
+
+    private static String popupOf(String title, String subtitle, String description, boolean enabled) {
         TestArea area = new TestArea(
                 "world-gondor-minas",
                 title,
                 subtitle,
                 description,
-                true,
+                enabled,
                 "world",
                 new AreaGeometry.Sphere(0, 64, 0, 10));
         return markerOf(area).popup();
     }
 
-    // The name is alone on its line so it can be copied straight into a command
+    // What a browser shows of the popup, one block or line break per line
+    private static String visibleText(String html) {
+        return html.replace("<br>", "\n")
+                .replace("</div>", "\n")
+                .replaceAll("<[^>]+>", "")
+                .replaceAll("\n+", "\n")
+                .strip()
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'")
+                .replace("&amp;", "&");
+    }
+
     @Test
-    void thePopupShowsTheNameThenTheShapeAndTextAsPlainText() {
+    void thePopupShowsTheNameThenTheTitleAndSubtitleThenTheDescription() {
         String popup =
                 popupOf("<gold>Minas Tirith", "<i>The Tower of Guard", "<guide>The <term:'a city'>great city</term>");
 
         assertEquals(
-                "world-gondor-minas\nShape: sphere\nTitle: Minas Tirith\nSubtitle: The Tower of Guard\n\n"
-                        + "Guide: The great city",
-                popup);
+                "world-gondor-minas\nMinas Tirith — The Tower of Guard\nGuide: The great city", visibleText(popup));
+    }
+
+    @Test
+    void aDisabledAreasPopupSaysSo() {
+        assertEquals(
+                "world-gondor-minas\nDisabled\nMinas Tirith — The Tower of Guard\nGuide:",
+                visibleText(popupOf("Minas Tirith", "The Tower of Guard", "<guide>", false)));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"", "  ", "<gold></gold>"})
-    void aMissingTitleAndSubtitleAreShownAsNone(String missing) {
+    void aMissingTitleAndSubtitleAreSpelledOut(String missing) {
         assertEquals(
-                "world-gondor-minas\nShape: sphere\nTitle: (none)\nSubtitle: (none)\n\nGuide: ",
-                popupOf(missing, missing, "<guide>"));
+                "world-gondor-minas\nno Title — no Subtitle\nGuide:",
+                visibleText(popupOf(missing, missing, "<guide>")));
     }
 
     @Test
-    void aMissingDescriptionIsShownAsNone() {
+    void aMissingDescriptionIsSpelledOut() {
         assertEquals(
-                "world-gondor-minas\nShape: sphere\nTitle: Minas Tirith\nSubtitle: (none)\n\n(no Description)",
-                popupOf("Minas Tirith", "", " "));
+                "world-gondor-minas\nMinas Tirith — no Subtitle\nno Description",
+                visibleText(popupOf("Minas Tirith", "", " ")));
     }
 
     @Test
     void theDescriptionKeepsItsLineBreaks() {
         assertEquals(
-                "world-gondor-minas\nShape: sphere\nTitle: Minas Tirith\nSubtitle: (none)\n\n"
-                        + "Guide: The city\n▸ The citadel\n▸ The gate",
-                popupOf("Minas Tirith", "", "<guide>The city\n<bullet>The citadel<newline><bullet>The gate"));
+                "world-gondor-minas\nMinas Tirith — no Subtitle\n" + "Guide: The city\n▸ The citadel\n▸ The gate",
+                visibleText(
+                        popupOf("Minas Tirith", "", "<guide>The city\n<bullet>The citadel<newline><bullet>The gate")));
     }
 
-    // Escaping for the Web map's own format is each Web map's job
     @Test
-    void charactersSpecialToHtmlAreLeftAsTheyAre() {
-        assertEquals(
-                "world-gondor-minas\nShape: sphere\nTitle: Fish & Chips\nSubtitle: (none)\n\na < b > c & d",
-                popupOf("Fish & Chips", "", "a < b > c & d"));
+    void theTextIsShownInItsColours() {
+        String popup = popupOf("<gold>Minas Tirith", "", "<date>T.A. 1900</date>");
+
+        assertTrue(popup.contains("<span style=\"color:#FFAA00\">Minas Tirith</span>"), popup);
+        assertTrue(popup.contains("<span style=\"color:#FFFF55\">T.A. 1900</span>"), popup);
+    }
+
+    // Area text is escaped, so it can't break the Web map's page
+    @Test
+    void charactersSpecialToHtmlAreShownAsTheyAre() {
+        String popup = popupOf("Fish & Chips", "", "a < b > c & d <script>");
+
+        assertEquals("world-gondor-minas\nFish & Chips — no Subtitle\na < b > c & d <script>", visibleText(popup));
+        assertFalse(popup.contains("<script>"), popup);
     }
 
     private static TestArea placed(String name, String world, AreaGeometry geometry) {

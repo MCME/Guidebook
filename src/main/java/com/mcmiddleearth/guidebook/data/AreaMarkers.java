@@ -1,5 +1,6 @@
 package com.mcmiddleearth.guidebook.data;
 
+import com.mcmiddleearth.guidebook.util.AreaHtml;
 import com.mcmiddleearth.guidebook.util.AreaText;
 import com.mcmiddleearth.guidebook.webmap.Marker;
 import com.mcmiddleearth.guidebook.webmap.MarkerStyle;
@@ -19,13 +20,21 @@ public final class AreaMarkers {
     public static final String LAYER_LABEL = "Guidebook";
 
     // Okabe–Ito blue and vermillion, which stay distinct for the common colour blindnesses
-    private static final MarkerStyle ENABLED_STYLE = new MarkerStyle(0x0072B2, 2, 0x0072B2, 0.2);
-    private static final MarkerStyle DISABLED_STYLE = new MarkerStyle(0xD55E00, 2, 0xD55E00, 0.2);
+    private static final int ENABLED_RGB = 0x0072B2;
+    private static final int DISABLED_RGB = 0xD55E00;
+
+    private static final MarkerStyle ENABLED_STYLE = new MarkerStyle(ENABLED_RGB, 2, ENABLED_RGB, 0.2);
+    private static final MarkerStyle DISABLED_STYLE = new MarkerStyle(DISABLED_RGB, 2, DISABLED_RGB, 0.2);
 
     // With no fill, LiveAtlas draws only the outline, so the Areas inside it can be clicked. The outline is all of it
     // that can be hovered or clicked, and LiveAtlas counts a click within half the line's width, so the line is thick
-    private static final MarkerStyle ENABLED_CONTAINER_STYLE = new MarkerStyle(0x0072B2, 3, 0x0072B2, 0);
-    private static final MarkerStyle DISABLED_CONTAINER_STYLE = new MarkerStyle(0xD55E00, 3, 0xD55E00, 0);
+    private static final MarkerStyle ENABLED_CONTAINER_STYLE = new MarkerStyle(ENABLED_RGB, 3, ENABLED_RGB, 0);
+    private static final MarkerStyle DISABLED_CONTAINER_STYLE = new MarkerStyle(DISABLED_RGB, 3, DISABLED_RGB, 0);
+
+    // The popup brings its own background, LiveAtlas's popup grey, so Area text in Minecraft's colours (made for a dark
+    // chat box) stays readable on a Web map with light popups too. Unstyled text is white, as it is in game
+    private static final String POPUP_CSS = "background:#222222;color:#ffffff;padding:6px 8px 6px 10px";
+    private static final String MUTED_HEX = "#8a8a8a";
 
     private AreaMarkers() {}
 
@@ -51,19 +60,49 @@ public final class AreaMarkers {
         return area.isEnabled() ? title : title + " (Disabled)";
     }
 
-    // <guide> is kept as "Guide: ", so staff can spot Descriptions missing the house opening
+    /**
+     * A compact card, since staff scan many Areas for problems and check their wording. The text is in the colours
+     * players see, and has no labels: a label read the same as the text it labelled. Missing text is spelled out
+     * instead, so a gap stands out.
+     */
     private static String popup(MarkableArea area) {
-        // The name is alone on its line so it can be copied straight into a command
-        return area.getName()
-                + "\nShape: " + area.getShape().displayName()
-                + "\nTitle: " + orNone(area.getTitle(), "(none)")
-                + "\nSubtitle: " + orNone(area.getSubtitle(), "(none)")
-                + "\n\n" + orNone(area.getDescription(), "(no Description)");
+        // Nearly every Area is Enabled, so only a Disabled one says so, where it stands out
+        String disabledMark = area.isEnabled()
+                ? ""
+                : "<div style=\"font-size:11px;font-weight:bold;text-transform:uppercase\">"
+                        + styled("color:" + hex(DISABLED_RGB), "Disabled") + "</div>";
+        // The name is a block of its own, so a triple-click selects just it to copy into a command
+        String header = "<div style=\"display:flex;justify-content:space-between;align-items:baseline;gap:8px\">"
+                + "<div style=\"font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:bold\">"
+                + AreaHtml.escape(area.getName()) + "</div>"
+                + disabledMark
+                + "</div>";
+        String title = orMissing(area.getTitle(), "no Title", "font-size:14px");
+        String subtitle = orMissing(area.getSubtitle(), "no Subtitle", "");
+        String titleLine = "<div style=\"margin:6px 0 8px\">" + title + " " + styled("color:" + MUTED_HEX, "—") + " "
+                + subtitle + "</div>";
+        String description = "<div>" + orMissing(area.getDescription(), "no Description", "") + "</div>";
+        String edgeHex = hex(area.isEnabled() ? ENABLED_RGB : DISABLED_RGB);
+        return "<div style=\"" + POPUP_CSS + ";border-left:4px solid " + edgeHex + "\">" + header + titleLine
+                + description + "</div>";
     }
 
-    // Missing text is spelled out, so staff can spot it rather than an empty gap
-    private static String orNone(String miniMessage, String none) {
-        return AreaText.isVisiblyBlank(miniMessage) ? none : AreaText.plainText(miniMessage);
+    private static String orMissing(String miniMessage, String missing, String css) {
+        if (AreaText.isVisiblyBlank(miniMessage)) {
+            return styled(
+                    "border:1px dashed " + MUTED_HEX + ";color:" + MUTED_HEX
+                            + ";border-radius:4px;padding:0 5px;font-size:11px",
+                    missing);
+        }
+        return AreaHtml.span(css, AreaHtml.of(miniMessage));
+    }
+
+    private static String styled(String css, String plainText) {
+        return AreaHtml.span(css, AreaHtml.escape(plainText));
+    }
+
+    private static String hex(int rgb) {
+        return String.format("#%06x", rgb);
     }
 
     private static MarkerStyle style(MarkableArea area, boolean holdsAnother) {
